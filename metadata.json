@@ -1,0 +1,6 @@
+{
+  "name": "Aliyun CDT Operations Workbench",
+  "description": "An interactive task-driven cloud operations dashboard for Aliyun CDT, enabling cloud operators to deploy resources, manage cloud accounts, view ECS instances, and inspect workflow logs.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -44,10 +44,15 @@ export interface ECSInstance {
   zone: string;
   publicIp: string;
   privateIp: string;
-  trafficUsed: number;
+  trafficUsage: number | null;
+  trafficUsageUnit: string;
+  trafficUsageSource?: string;
+  trafficUsageCollectedAt?: string;
+  trafficRate: number | null;
+  trafficRateUnit: string;
+  trafficRateSource?: string;
+  trafficRateCollectedAt?: string;
   trafficLimit: number;
-  trafficUnit: string;
-  trafficCollectedAt?: string;
   monitoringEnabled: boolean;
   overflowAction: string;
   inherited: boolean;

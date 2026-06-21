@@ -115,10 +115,15 @@ export default function DashboardView({
                 <div key={instance.id} className="rounded border border-signal-amber/30 bg-signal-amber/[0.05] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div className="font-medium text-primary-ink">{instance.name}</div>
-                    <span className="text-xs font-semibold text-signal-amber">{instance.trafficUsed}/{instance.trafficLimit} {instance.trafficUnit}</span>
+                    <span className="text-xs font-semibold text-signal-amber">
+                      {instance.trafficUsage === null ? '累计流量不可用' : `${instance.trafficUsage}/${instance.trafficLimit} ${instance.trafficUsageUnit}`}
+                    </span>
                   </div>
                   <div className="mt-1 text-xs text-secondary-ink">
                     外网 {instance.publicIp} · 内网 {instance.privateIp}
+                  </div>
+                  <div className="mt-1 text-xs text-secondary-ink">
+                    当前速率 {instance.trafficRate === null ? '不可用' : `${instance.trafficRate} ${instance.trafficRateUnit}`}
                   </div>
                   {instance.alerts.length > 0 && <div className="mt-2 text-xs text-signal-amber">{instance.alerts[0]}</div>}
                 </div>

@@ -1273,6 +1273,96 @@
                 "status": {
                   "type": "string"
                 },
+                "trafficRate": {
+                  "properties": {
+                    "available": {
+                      "type": "boolean"
+                    },
+                    "capacity": {
+                      "type": "number"
+                    },
+                    "collectedAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "freshnessSec": {
+                      "type": "integer"
+                    },
+                    "metricName": {
+                      "type": "string"
+                    },
+                    "scopeId": {
+                      "type": "string"
+                    },
+                    "scopeType": {
+                      "type": "string"
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "available",
+                    "collectedAt",
+                    "metricName",
+                    "scopeId",
+                    "scopeType",
+                    "unit",
+                    "value"
+                  ],
+                  "type": "object"
+                },
+                "trafficUsage": {
+                  "properties": {
+                    "available": {
+                      "type": "boolean"
+                    },
+                    "capacity": {
+                      "type": "number"
+                    },
+                    "collectedAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "freshnessSec": {
+                      "type": "integer"
+                    },
+                    "metricName": {
+                      "type": "string"
+                    },
+                    "scopeId": {
+                      "type": "string"
+                    },
+                    "scopeType": {
+                      "type": "string"
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "available",
+                    "collectedAt",
+                    "metricName",
+                    "scopeId",
+                    "scopeType",
+                    "unit",
+                    "value"
+                  ],
+                  "type": "object"
+                },
                 "zoneId": {
                   "type": "string"
                 }
@@ -1354,6 +1444,96 @@
           "status": {
             "type": "string"
           },
+          "trafficRate": {
+            "properties": {
+              "available": {
+                "type": "boolean"
+              },
+              "capacity": {
+                "type": "number"
+              },
+              "collectedAt": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "freshnessSec": {
+                "type": "integer"
+              },
+              "metricName": {
+                "type": "string"
+              },
+              "scopeId": {
+                "type": "string"
+              },
+              "scopeType": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "unit": {
+                "type": "string"
+              },
+              "value": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "available",
+              "collectedAt",
+              "metricName",
+              "scopeId",
+              "scopeType",
+              "unit",
+              "value"
+            ],
+            "type": "object"
+          },
+          "trafficUsage": {
+            "properties": {
+              "available": {
+                "type": "boolean"
+              },
+              "capacity": {
+                "type": "number"
+              },
+              "collectedAt": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "freshnessSec": {
+                "type": "integer"
+              },
+              "metricName": {
+                "type": "string"
+              },
+              "scopeId": {
+                "type": "string"
+              },
+              "scopeType": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "unit": {
+                "type": "string"
+              },
+              "value": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "available",
+              "collectedAt",
+              "metricName",
+              "scopeId",
+              "scopeType",
+              "unit",
+              "value"
+            ],
+            "type": "object"
+          },
           "zoneId": {
             "type": "string"
           }
@@ -1392,6 +1572,9 @@
           },
           "measurement": {
             "properties": {
+              "available": {
+                "type": "boolean"
+              },
               "capacity": {
                 "type": "number"
               },
@@ -1411,6 +1594,9 @@
               "scopeType": {
                 "type": "string"
               },
+              "source": {
+                "type": "string"
+              },
               "unit": {
                 "type": "string"
               },
@@ -1419,6 +1605,7 @@
               }
             },
             "required": [
+              "available",
               "collectedAt",
               "metricName",
               "scopeId",
@@ -1503,6 +1690,9 @@
       },
       "TrafficMeasurement": {
         "properties": {
+          "available": {
+            "type": "boolean"
+          },
           "capacity": {
             "type": "number"
           },
@@ -1522,6 +1712,9 @@
           "scopeType": {
             "type": "string"
           },
+          "source": {
+            "type": "string"
+          },
           "unit": {
             "type": "string"
           },
@@ -1530,6 +1723,7 @@
           }
         },
         "required": [
+          "available",
           "collectedAt",
           "metricName",
           "scopeId",

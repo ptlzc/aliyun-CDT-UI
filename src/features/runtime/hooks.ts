@@ -141,7 +141,7 @@ function resolveExternalIP(graph: ApiResourceGraph, instanceId: string, metadata
 
 function normalizeInstanceStatus(node: ApiResourceGraph['nodes'][number], metadata?: Record<string, string>): ECSInstance['status'] {
   const effectiveMax = Number.parseFloat(metadata?.trafficEffectiveMaximumGb || '0') || 0;
-  const current = Number.parseFloat(metadata?.trafficCurrentValue || '0') || 0;
+  const current = node.trafficUsage?.available ? node.trafficUsage.value : 0;
   if (node.status !== 'Running') {
     return 'Stopped';
   }
@@ -160,13 +160,18 @@ function mapGraphToInstances(graphs: ApiResourceGraph[], accounts: ApiAccount[],
       .filter((node) => node.kind === 'ecs')
       .map((node) => {
         const metadata = node.metadata || {};
-        const currentTraffic = Number.parseFloat(metadata.trafficCurrentValue || '0') || 0;
         const maximumTraffic = Number.parseFloat(metadata.trafficEffectiveMaximumGb || '0') || 0;
         const inherited = !metadata.trafficOverrideMaximumGb && !metadata.trafficOverrideOverflowAction && !metadata.trafficOverrideMonitoringEnabled;
         const policy = accountPolicies.find((item) => item.scopeType === 'instance' && item.scopeId === node.id);
+        const usage = node.trafficUsage;
+        const rate = node.trafficRate;
+        const currentTraffic = usage?.available ? usage.value : 0;
         const alerts: string[] = [];
         if (maximumTraffic > 0 && currentTraffic / maximumTraffic >= 0.8) {
-          alerts.push(`Traffic usage at ${Math.round((currentTraffic / maximumTraffic) * 100)}% of the configured limit.`);
+          alerts.push(`Cumulative traffic usage at ${Math.round((currentTraffic / maximumTraffic) * 100)}% of the configured limit.`);
+        }
+        if (!usage?.available) {
+          alerts.push('Cumulative traffic usage is currently unavailable for this instance.');
         }
         if (metadata.trafficMonitoringEnabled === 'false') {
           alerts.push('Monitoring disabled for this instance.');
@@ -181,10 +186,15 @@ function mapGraphToInstances(graphs: ApiResourceGraph[], accounts: ApiAccount[],
           zone: node.zoneId || node.regionId || '-',
           publicIp: resolveExternalIP(graph, node.id, metadata),
           privateIp: metadata.privateIps || metadata.primaryPrivateIp || '未提供',
-          trafficUsed: Math.round(currentTraffic),
+          trafficUsage: usage?.available ? Math.round(usage.value * 100) / 100 : null,
+          trafficUsageUnit: usage?.unit || 'GB',
+          trafficUsageSource: usage?.source,
+          trafficUsageCollectedAt: usage?.collectedAt,
+          trafficRate: rate?.available ? Math.round(rate.value * 100) / 100 : null,
+          trafficRateUnit: rate?.unit || 'Mbps',
+          trafficRateSource: rate?.source,
+          trafficRateCollectedAt: rate?.collectedAt,
           trafficLimit: Math.round(maximumTraffic),
-          trafficUnit: metadata.trafficCurrentUnit || 'GB',
-          trafficCollectedAt: metadata.trafficCollectedAt,
           monitoringEnabled: metadata.trafficMonitoringEnabled !== 'false',
           overflowAction: metadata.trafficEffectiveOverflowAction || 'notify',
           inherited,

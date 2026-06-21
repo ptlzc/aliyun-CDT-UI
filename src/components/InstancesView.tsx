@@ -78,7 +78,12 @@ export default function InstancesView({instances, onManageInstance}: InstancesVi
             <div className="mt-4 space-y-2 text-xs text-secondary-ink">
               <div>公网: {instance.publicIp}</div>
               <div>内网: {instance.privateIp}</div>
-              <div>流量: {instance.trafficUsed}/{instance.trafficLimit} {instance.trafficUnit}</div>
+              <div>
+                累计流量: {instance.trafficUsage === null ? '不可用' : `${instance.trafficUsage}/${instance.trafficLimit} ${instance.trafficUsageUnit}`}
+              </div>
+              <div>
+                当前速率: {instance.trafficRate === null ? '不可用' : `${instance.trafficRate} ${instance.trafficRateUnit}`}
+              </div>
               <div>监控: {instance.monitoringEnabled ? '开启' : '关闭'} · 继承: {instance.inherited ? '是' : '否'}</div>
             </div>
 

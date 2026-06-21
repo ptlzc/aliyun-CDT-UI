@@ -43,13 +43,15 @@ describe('DashboardView', () => {
             zone: 'cn-hangzhou-i',
             publicIp: '1.1.1.1',
             privateIp: '10.0.0.1',
-            trafficUsed: 180,
+            trafficUsage: 180,
+            trafficUsageUnit: 'GB',
+            trafficRate: 22.5,
+            trafficRateUnit: 'Mbps',
             trafficLimit: 200,
-            trafficUnit: 'GB',
             monitoringEnabled: true,
             overflowAction: 'notify',
             inherited: true,
-            alerts: ['Traffic usage at 90%'],
+            alerts: ['Cumulative traffic usage at 90% of the configured limit.'],
           },
         ]}
         summary={{
@@ -82,7 +84,8 @@ describe('DashboardView', () => {
     expect(screen.getByText('控制台概览')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
     expect(screen.getByText('Account A')).toBeInTheDocument();
-    expect(screen.getByText('Traffic usage at 90%')).toBeInTheDocument();
+    expect(screen.getByText('Cumulative traffic usage at 90% of the configured limit.')).toBeInTheDocument();
+    expect(screen.getByText('当前速率 22.5 Mbps')).toBeInTheDocument();
 
     await user.click(screen.getByText('查看全部'));
     expect(setActiveTab).toHaveBeenCalledWith('accounts');

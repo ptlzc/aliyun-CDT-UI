@@ -378,6 +378,30 @@ export type ResourceGraph = {
         name: string;
         regionId?: string;
         status: string;
+        trafficRate?: {
+            available: boolean;
+            capacity?: number;
+            collectedAt: string;
+            freshnessSec?: number;
+            metricName: string;
+            scopeId: string;
+            scopeType: string;
+            source?: string;
+            unit: string;
+            value: number;
+        };
+        trafficUsage?: {
+            available: boolean;
+            capacity?: number;
+            collectedAt: string;
+            freshnessSec?: number;
+            metricName: string;
+            scopeId: string;
+            scopeType: string;
+            source?: string;
+            unit: string;
+            value: number;
+        };
         zoneId?: string;
     }>;
     refreshedAt?: string;
@@ -400,6 +424,30 @@ export type ResourceNode = {
     name: string;
     regionId?: string;
     status: string;
+    trafficRate?: {
+        available: boolean;
+        capacity?: number;
+        collectedAt: string;
+        freshnessSec?: number;
+        metricName: string;
+        scopeId: string;
+        scopeType: string;
+        source?: string;
+        unit: string;
+        value: number;
+    };
+    trafficUsage?: {
+        available: boolean;
+        capacity?: number;
+        collectedAt: string;
+        freshnessSec?: number;
+        metricName: string;
+        scopeId: string;
+        scopeType: string;
+        source?: string;
+        unit: string;
+        value: number;
+    };
     zoneId?: string;
 };
 
@@ -414,12 +462,14 @@ export type TrafficEvaluation = {
     id: string;
     matched: boolean;
     measurement: {
+        available: boolean;
         capacity?: number;
         collectedAt: string;
         freshnessSec?: number;
         metricName: string;
         scopeId: string;
         scopeType: string;
+        source?: string;
         unit: string;
         value: number;
     };
@@ -445,12 +495,14 @@ export type TrafficGovernanceDefaultsRequest = {
 };
 
 export type TrafficMeasurement = {
+    available: boolean;
     capacity?: number;
     collectedAt: string;
     freshnessSec?: number;
     metricName: string;
     scopeId: string;
     scopeType: string;
+    source?: string;
     unit: string;
     value: number;
 };

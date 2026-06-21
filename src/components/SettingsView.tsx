@@ -27,13 +27,13 @@ export default function SettingsView({defaults}: SettingsViewProps) {
     <div className="flex flex-col gap-6 font-sans">
       <div>
         <h1 className="font-space text-2xl font-bold text-primary-ink">系统设置</h1>
-        <p className="mt-1 text-sm text-secondary-ink">配置平台默认流量治理参数，并支持显式应用到现有账号。</p>
+        <p className="mt-1 text-sm text-secondary-ink">配置平台默认累计流量治理参数，并支持显式应用到现有账号。</p>
       </div>
 
       <section className="rounded-lg border border-hairline-divider bg-surface-white p-6 shadow-xs">
         <div className="grid gap-5 md:grid-cols-2">
           <label className="flex flex-col gap-2 text-sm">
-            <span className="font-medium text-primary-ink">默认最大流量（GB）</span>
+            <span className="font-medium text-primary-ink">默认累计流量上限（GB）</span>
             <input
               type="number"
               min={1}

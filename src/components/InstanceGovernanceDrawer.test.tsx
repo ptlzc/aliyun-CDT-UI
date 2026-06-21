@@ -33,9 +33,11 @@ describe('InstanceGovernanceDrawer', () => {
           zone: 'cn-hangzhou-i',
           publicIp: '1.1.1.1',
           privateIp: '10.0.0.1',
-          trafficUsed: 180,
+          trafficUsage: 180,
+          trafficUsageUnit: 'GB',
+          trafficRate: 22.5,
+          trafficRateUnit: 'Mbps',
           trafficLimit: 200,
-          trafficUnit: 'GB',
           monitoringEnabled: true,
           overflowAction: 'notify',
           inherited: false,
@@ -53,6 +55,10 @@ describe('InstanceGovernanceDrawer', () => {
         onClose={() => {}}
       />,
     );
+
+    expect(screen.getByText('GB 阈值仅针对累计流量。留空表示继续继承账号默认值。')).toBeInTheDocument();
+    expect(screen.getByText('当前累计流量: 180 GB')).toBeInTheDocument();
+    expect(screen.getByText('当前实时速率: 22.5 Mbps')).toBeInTheDocument();
 
     const spinbuttons = screen.getAllByRole('spinbutton');
     await user.clear(spinbuttons[0]);

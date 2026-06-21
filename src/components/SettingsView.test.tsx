@@ -33,6 +33,8 @@ describe('SettingsView', () => {
       />,
     );
 
+    expect(screen.getByText('默认累计流量上限（GB）')).toBeInTheDocument();
+
     await user.clear(screen.getByDisplayValue('200'));
     await user.type(screen.getByRole('spinbutton'), '300');
     await user.selectOptions(screen.getByRole('combobox'), 'keepalive-job');

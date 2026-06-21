@@ -51,10 +51,14 @@ export default function InstanceGovernanceDrawer({instance, onClose}: InstanceGo
 
         <section className="mt-6 rounded-lg border border-hairline-divider p-5">
           <h3 className="text-base font-semibold text-primary-ink">Traffic Governance</h3>
-          <p className="mt-1 text-xs text-secondary-ink">留空表示继续继承账号默认值。</p>
+          <p className="mt-1 text-xs text-secondary-ink">GB 阈值仅针对累计流量。留空表示继续继承账号默认值。</p>
+          <div className="mt-3 rounded bg-emphasis-layer/50 p-3 text-xs text-secondary-ink">
+            <div>当前累计流量: {instance.trafficUsage === null ? '不可用' : `${instance.trafficUsage} ${instance.trafficUsageUnit}`}</div>
+            <div>当前实时速率: {instance.trafficRate === null ? '不可用' : `${instance.trafficRate} ${instance.trafficRateUnit}`}</div>
+          </div>
           <div className="mt-4 grid gap-4">
             <label className="flex flex-col gap-2 text-sm">
-              <span className="font-medium text-primary-ink">实例最大流量（GB）</span>
+              <span className="font-medium text-primary-ink">实例累计流量上限（GB）</span>
               <input
                 type="number"
                 value={maximumTrafficGb}
@@ -102,7 +106,7 @@ export default function InstanceGovernanceDrawer({instance, onClose}: InstanceGo
               启用实例策略
             </label>
             <label className="flex flex-col gap-2 text-sm">
-              <span className="font-medium text-primary-ink">阈值（百分比）</span>
+              <span className="font-medium text-primary-ink">阈值（累计流量百分比）</span>
               <input type="number" value={thresholdValue} onChange={(event) => setThresholdValue(Number(event.target.value))} className="rounded border border-hairline-divider px-3 py-2" />
             </label>
             <label className="flex flex-col gap-2 text-sm">

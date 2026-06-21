@@ -2,8 +2,8 @@ import { Cloud, LayoutDashboard, KeyRound, Server, Cpu, FileText, FileQuestion, 
 import { motion } from 'motion/react';
 
 interface SidebarProps {
-  activeTab: 'dashboard' | 'accounts' | 'instances' | 'workflows';
-  setActiveTab: (tab: 'dashboard' | 'accounts' | 'instances' | 'workflows') => void;
+  activeTab: 'dashboard' | 'accounts' | 'instances' | 'workflows' | 'settings';
+  setActiveTab: (tab: 'dashboard' | 'accounts' | 'instances' | 'workflows' | 'settings') => void;
   onDeployTrigger: () => void;
 }
 
@@ -13,6 +13,7 @@ export default function Sidebar({ activeTab, setActiveTab, onDeployTrigger }: Si
     { id: 'accounts', label: '账户管理', subLabel: 'Accounts', icon: KeyRound },
     { id: 'instances', label: 'ECS 实例列表', subLabel: 'Instances', icon: Server },
     { id: 'workflows', label: '自动化工作流', subLabel: 'Workflows', icon: Cpu },
+    { id: 'settings', label: '系统设置', subLabel: 'Settings', icon: FileText },
   ] as const;
 
   return (

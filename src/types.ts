@@ -1,54 +1,89 @@
 export type AccountStatus = 'Active' | 'Sync Delayed' | 'Auth Failed' | 'Inactive';
 
+export interface TrafficDefaults {
+  maximumTrafficGb: number;
+  overflowAction: string;
+  monitoringEnabled: boolean;
+}
+
 export interface CloudAccount {
-  id: string; // e.g. ali-prod-192837
-  name: string; // e.g. Production Core
+  id: string;
+  name: string;
   status: AccountStatus;
-  providerRegion: string; // e.g. Aliyun China East 1
-  mainRegion: string; // e.g. cn-hangzhou
-  lastSynced: string; // e.g. 10 mins ago (or a date)
-  creationDate: string; // e.g. 2023-10-14 08:30 UTC
-  owner: string; // e.g. sysadmin@aliyun.com
+  providerRegion: string;
+  mainRegion: string;
+  lastSynced: string;
+  creationDate: string;
+  owner: string;
   accessKeyId: string;
   accessKeySecret: string;
   roleArn?: string;
-  managedRegions: string; // e.g. "cn-hangzhou, cn-shanghai, cn-beijing"
+  managedRegions: string;
+  trafficDefaults: TrafficDefaults;
 }
 
-export type InstanceStatus = 'Running' | 'Stopped' | 'High CPU';
+export type InstanceStatus = 'Running' | 'Stopped' | 'Attention';
+
+export interface InstanceTrafficPolicy {
+  id?: string;
+  name: string;
+  thresholdValue: number;
+  thresholdType: string;
+  action: string;
+  cooldownMinutes: number;
+  enabled: boolean;
+}
 
 export interface ECSInstance {
-  id: string; // e.g. i-bp142n2kcx1q2e9u0y
-  name: string; // e.g. prod-web-front-01
+  id: string;
+  accountId: string;
+  accountName: string;
+  name: string;
   status: InstanceStatus;
-  type: string; // e.g. ecs.g6.large
-  zone: string; // e.g. cn-hangzhou-i
-  publicIp: string; // e.g. 47.97.102.45
-  trafficUsed: number; // in GB
-  trafficLimit: number; // in GB
+  type: string;
+  zone: string;
+  publicIp: string;
+  privateIp: string;
+  trafficUsed: number;
+  trafficLimit: number;
+  trafficUnit: string;
+  trafficCollectedAt?: string;
+  monitoringEnabled: boolean;
+  overflowAction: string;
+  inherited: boolean;
   alerts: string[];
+  trafficPolicy?: InstanceTrafficPolicy | null;
+}
+
+export interface DashboardSummary {
+  accountCount: number;
+  ecsCount: number;
+  eipCount: number;
+  activeWorkflowCount: number;
+  attentionInstanceCount: number;
+  monitoredInstanceCount: number;
 }
 
 export type WorkflowStatus = 'Running' | 'Success' | 'Failed' | 'Idle';
 
 export interface WorkflowTask {
-  id: string; // e.g. task-vpc-verify
+  id: string;
   name: string;
   status: 'Completed' | 'In Progress' | 'Pending' | 'Success' | 'Failed';
   description: string;
-  properties?: { [key: string]: string | number };
-  progress?: number; // 0 to 100
+  properties?: {[key: string]: string | number};
+  progress?: number;
 }
 
 export interface WorkflowRun {
-  id: string; // e.g. wkf-8a7b6c5d
-  name: string; // e.g. ECS 创建任务
+  id: string;
+  name: string;
   status: WorkflowStatus;
-  activeStepIndex: number; // 0: Resource Discovery, 1: Network Bootstrap, 2: Provisioning, 3: Validation
-  initiatedBy: string; // e.g. operator_system
-  targetRegion: string; // e.g. China East 1 (cn-hangzhou)
+  activeStepIndex: number;
+  initiatedBy: string;
+  targetRegion: string;
   startedAt: string;
-  duration: string; // e.g. 04:12
+  duration: string;
   tasks: WorkflowTask[];
   logs: string[];
 }

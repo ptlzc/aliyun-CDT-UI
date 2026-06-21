@@ -2,15 +2,16 @@ import React, { useState, useMemo } from 'react';
 import { CloudAccount } from '../types';
 import { Search, Filter, RefreshCw, Plus, Edit, Trash2, KeyRound, ArrowLeft, ShieldAlert, Copy, Eye, EyeOff, MapPin, Calendar, User, History, Check, ShieldCheck, ChevronLeft, ChevronRight, FileCode, Server } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useSaveAccountMutation } from '../features/runtime/hooks';
 
 interface AccountsViewProps {
   accounts: CloudAccount[];
-  setAccounts: React.Dispatch<React.SetStateAction<CloudAccount[]>>;
   selectedAccount: CloudAccount | null;
   setSelectedAccount: (acc: CloudAccount | null) => void;
 }
 
-export default function AccountsView({ accounts, setAccounts, selectedAccount, setSelectedAccount }: AccountsViewProps) {
+export default function AccountsView({ accounts, selectedAccount, setSelectedAccount }: AccountsViewProps) {
+  const saveAccountMutation = useSaveAccountMutation();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -88,6 +89,11 @@ export default function AccountsView({ accounts, setAccounts, selectedAccount, s
       accessKeySecret: '',
       roleArn: '',
       managedRegions: 'cn-hangzhou',
+      trafficDefaults: {
+        maximumTrafficGb: 200,
+        overflowAction: 'notify',
+        monitoringEnabled: true,
+      },
     });
     setName('');
     setAccessKeyId('');
@@ -98,60 +104,28 @@ export default function AccountsView({ accounts, setAccounts, selectedAccount, s
     setOwner('sysadmin@aliyun.com');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name || !accessKeyId || !accessKeySecret) {
       alert('请输入必填字段：账户名称、Access Key ID、Access Key Secret');
       return;
     }
-
-    if (isCreating && selectedAccount) {
-      const newAcc: CloudAccount = {
-        ...selectedAccount,
+    try {
+      await saveAccountMutation.mutateAsync({
+        id: isCreating ? undefined : selectedAccount?.id,
         name,
+        siteType: mainRegion.includes('cn-') ? 'domestic' : 'international',
         accessKeyId,
         accessKeySecret,
-        roleArn,
-        managedRegions,
-        mainRegion,
-        owner,
-        status: 'Active',
-      };
-      setAccounts((prev) => [...prev, newAcc]);
+        regions: managedRegions.split(',').map((item) => item.trim()).filter(Boolean),
+        regionId: managedRegions.split(',')[0]?.trim() || mainRegion,
+        zoneId: mainRegion,
+        ossBucket: '',
+        ossEndpoint: mainRegion.includes('cn-') ? 'oss-cn-hangzhou.aliyuncs.com' : 'oss-cn-hongkong.aliyuncs.com',
+      });
       setIsCreating(false);
       setSelectedAccount(null);
-    } else if (selectedAccount) {
-      setAccounts((prev) =>
-        prev.map((acc) => {
-          if (acc.id === selectedAccount.id) {
-            // If editing an "Auth Failed" account, resolve it to "Active" as credentials are recovered
-            const resolvedStatus = acc.status === 'Auth Failed' ? 'Active' : acc.status;
-            return {
-              ...acc,
-              name,
-              accessKeyId,
-              accessKeySecret,
-              roleArn,
-              managedRegions,
-              mainRegion,
-              owner,
-              status: resolvedStatus,
-              lastSynced: 'Just now',
-            };
-          }
-          return acc;
-        })
-      );
-      setSelectedAccount(null);
-    }
-  };
-
-  const handleDelete = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (confirm('确认删除此多云账号关联？这不会影响云端实体资源，但会终止当前控制台同步链路。')) {
-      setAccounts((prev) => prev.filter((acc) => acc.id !== id));
-      if (selectedAccount?.id === id) {
-        setSelectedAccount(null);
-      }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '保存失败');
     }
   };
 
@@ -321,9 +295,9 @@ export default function AccountsView({ accounts, setAccounts, selectedAccount, s
                                 <Edit className="w-3.5 h-3.5" />
                               </button>
                               <button
-                                onClick={(e) => handleDelete(acc.id, e)}
+                                onClick={(e) => e.stopPropagation()}
                                 className="p-1.5 text-on-surface-variant hover:text-recovery-red hover:bg-emphasis-layer rounded transition-colors"
-                                title="断开账户关联"
+                                title="删除能力未开放"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>

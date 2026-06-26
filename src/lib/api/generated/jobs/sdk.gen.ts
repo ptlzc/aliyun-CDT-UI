@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { EvaluateTrafficPoliciesData, EvaluateTrafficPoliciesResponses, ListJobsData, ListJobsResponses, ListTrafficAuditsData, ListTrafficAuditsResponses, ListTrafficEvaluationsData, ListTrafficEvaluationsResponses, ListTrafficPoliciesData, ListTrafficPoliciesResponses, SaveTrafficPolicyData, SaveTrafficPolicyResponses } from './types.gen';
+import type { EvaluateTrafficPoliciesData, EvaluateTrafficPoliciesResponses, GetCdtFreeQuotaData, GetCdtFreeQuotaResponses, GetCdtTotalTrafficData, GetCdtTotalTrafficResponses, ListJobsData, ListJobsResponses, ListTrafficAuditsData, ListTrafficAuditsResponses, ListTrafficEvaluationsData, ListTrafficEvaluationsResponses, ListTrafficPoliciesData, ListTrafficPoliciesResponses, SaveTrafficPolicyData, SaveTrafficPolicyResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -17,6 +17,10 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+export const getCdtFreeQuota = <ThrowOnError extends boolean = false>(options: Options<GetCdtFreeQuotaData, ThrowOnError>): RequestResult<GetCdtFreeQuotaResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetCdtFreeQuotaResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/cdt-free-quota', ...options });
+
+export const getCdtTotalTraffic = <ThrowOnError extends boolean = false>(options: Options<GetCdtTotalTrafficData, ThrowOnError>): RequestResult<GetCdtTotalTrafficResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetCdtTotalTrafficResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/cdt-traffic', ...options });
 
 export const listTrafficAudits = <ThrowOnError extends boolean = false>(options: Options<ListTrafficAuditsData, ThrowOnError>): RequestResult<ListTrafficAuditsResponses, unknown, ThrowOnError> => (options.client ?? client).get<ListTrafficAuditsResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/traffic-audits', ...options });
 

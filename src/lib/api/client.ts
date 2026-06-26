@@ -14,11 +14,16 @@ import type {ImportImageRequest, ImportImageResponse2} from './generated/import/
 import {client as instancesClient} from './generated/instances/client.gen';
 import {
   getEcsTrafficGovernance as getEcsTrafficGovernanceRequest,
+  getEcsInstanceState as getEcsInstanceStateRequest,
+  getEcsMetrics as getEcsMetricsRequest,
+  getEcsVncUrl as getEcsVncUrlRequest,
   saveEcsTrafficGovernanceOverride as saveEcsTrafficGovernanceOverrideRequest,
+  startEcsInstance as startEcsInstanceRequest,
+  stopEcsInstance as stopEcsInstanceRequest,
 } from './generated/instances/sdk.gen';
-import type {EcsTrafficGovernance, EcsTrafficGovernanceOverride} from './generated/instances/types.gen';
+import type {ActionAudit, EcsMetricsSnapshot, EcsTrafficGovernance, EcsTrafficGovernanceOverride, ECSInstanceStateResponse, ECSVncUrlResponse} from './generated/instances/types.gen';
 import {client as jobsClient} from './generated/jobs/client.gen';
-import {listJobs as listJobsRequest, listTrafficPolicies as listTrafficPoliciesRequest, saveTrafficPolicy as saveTrafficPolicyRequest} from './generated/jobs/sdk.gen';
+import {getCdtFreeQuota as getCdtFreeQuotaRequest, listJobs as listJobsRequest, listTrafficPolicies as listTrafficPoliciesRequest, saveTrafficPolicy as saveTrafficPolicyRequest} from './generated/jobs/sdk.gen';
 import type {Job, JobListResponse, TrafficPolicy, TrafficPolicyListResponse, TrafficPolicyRequest} from './generated/jobs/types.gen';
 import {client as provisionClient} from './generated/provision/client.gen';
 import {provision as provisionRequest} from './generated/provision/sdk.gen';
@@ -26,14 +31,28 @@ import type {ProvisionRequest, ProvisionResponse2} from './generated/provision/t
 import {client as settingsClient} from './generated/settings/client.gen';
 import {
   applyPlatformTrafficGovernanceDefaultsToAccounts as applyPlatformTrafficGovernanceDefaultsToAccountsRequest,
+  createRegionGroup as createRegionGroupRequest,
+  deleteRegionGroup as deleteRegionGroupRequest,
+  deleteRegionGroupTrafficRule as deleteRegionGroupTrafficRuleRequest,
+  getEffectiveTrafficGovernance as getEffectiveTrafficGovernanceRequest,
   getPlatformTrafficGovernanceDefaults as getPlatformTrafficGovernanceDefaultsRequest,
+  getRegionGroup as getRegionGroupRequest,
+  getRegionGroupTrafficRule as getRegionGroupTrafficRuleRequest,
+  listRegionGroups as listRegionGroupsRequest,
   savePlatformTrafficGovernanceDefaults as savePlatformTrafficGovernanceDefaultsRequest,
+  saveRegionGroupTrafficRule as saveRegionGroupTrafficRuleRequest,
+  updateRegionGroup as updateRegionGroupRequest,
 } from './generated/settings/sdk.gen';
 import type {
+  EffectiveTrafficGovernance,
   PlatformTrafficGovernance,
   PlatformTrafficGovernanceRolloutResult,
+  RegionGroup,
+  RegionGroupListResponse,
+  RegionGroupTrafficRule,
   TrafficGovernanceDefaults,
   TrafficGovernanceDefaultsRequest,
+  TrafficQuotaSnapshot,
 } from './generated/settings/types.gen';
 
 const API_BASE_URL = (
@@ -59,18 +78,25 @@ function unwrapData<T>(result: GeneratedResult<T>): T {
 }
 
 export type ApiAccount = Account;
+export type ApiActionAudit = ActionAudit;
 export type ApiCreateAccountRequest = CreateAccountRequest | UpdateAccountRequest;
 export type ApiECSTrafficGovernance = EcsTrafficGovernance;
 export type ApiECSTrafficGovernanceOverride = EcsTrafficGovernanceOverride;
+export type ApiECSMetricsSnapshot = EcsMetricsSnapshot;
+export type ApiEffectiveTrafficGovernance = EffectiveTrafficGovernance;
 export type ApiJob = Job;
 export type ApiPlatformTrafficGovernance = PlatformTrafficGovernance;
 export type ApiPlatformTrafficGovernanceRolloutResult = PlatformTrafficGovernanceRolloutResult;
 export type ApiProvisionRequest = ProvisionRequest;
+export type ApiRegionGroup = RegionGroup;
+export type ApiRegionGroupListResponse = RegionGroupListResponse;
+export type ApiRegionGroupTrafficRule = RegionGroupTrafficRule;
 export type ApiResourceGraph = ResourceGraph;
 export type ApiTrafficGovernanceDefaults = TrafficGovernanceDefaults;
 export type ApiTrafficGovernanceDefaultsRequest = TrafficGovernanceDefaultsRequest;
 export type ApiTrafficPolicy = TrafficPolicy;
 export type ApiTrafficPolicyRequest = TrafficPolicyRequest;
+export type ApiTrafficQuotaSnapshot = TrafficQuotaSnapshot;
 
 export type RuntimeEvent = {
   type: 'job.updated' | 'job.log.appended' | 'discovery.progress';
@@ -183,6 +209,28 @@ export async function saveECSTrafficGovernance(
   })) as GeneratedResult<ApiECSTrafficGovernance>);
 }
 
+export async function startECSInstance(accountId: string, instanceId: string): Promise<ApiActionAudit> {
+  return unwrapData((await startEcsInstanceRequest({path: {accountId, instanceId}})) as GeneratedResult<ApiActionAudit>);
+}
+
+export async function stopECSInstance(accountId: string, instanceId: string): Promise<ApiActionAudit> {
+  return unwrapData((await stopEcsInstanceRequest({path: {accountId, instanceId}})) as GeneratedResult<ApiActionAudit>);
+}
+
+export async function getECSInstanceState(accountId: string, instanceId: string): Promise<string> {
+  const response = unwrapData((await getEcsInstanceStateRequest({path: {accountId, instanceId}})) as GeneratedResult<ECSInstanceStateResponse>);
+  return response.state;
+}
+
+export async function getECSVncUrl(accountId: string, instanceId: string): Promise<string> {
+  const response = unwrapData((await getEcsVncUrlRequest({path: {accountId, instanceId}})) as GeneratedResult<ECSVncUrlResponse>);
+  return response.vncUrl;
+}
+
+export async function getECSMetrics(accountId: string, instanceId: string): Promise<ApiECSMetricsSnapshot> {
+  return unwrapData((await getEcsMetricsRequest({path: {accountId, instanceId}})) as GeneratedResult<EcsMetricsSnapshot>);
+}
+
 export async function importImage(accountId: string, payload: ImportImageRequest): Promise<ImportImageResponse2> {
   return unwrapData((await importImageRequest({
     path: {accountId},
@@ -195,4 +243,86 @@ export async function provision(accountId: string, payload: ApiProvisionRequest)
     path: {accountId},
     body: payload,
   })) as GeneratedResult<ProvisionResponse2>);
+}
+
+export async function listRegionGroups(): Promise<ApiRegionGroup[]> {
+  const response = unwrapData((await listRegionGroupsRequest()) as GeneratedResult<RegionGroupListResponse>);
+  return response.items;
+}
+
+export async function createRegionGroup(payload: Omit<ApiRegionGroup, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiRegionGroup> {
+  return unwrapData((await createRegionGroupRequest({
+    body: payload as RegionGroup,
+  })) as GeneratedResult<ApiRegionGroup>);
+}
+
+export async function getRegionGroup(id: string): Promise<ApiRegionGroup> {
+  return unwrapData((await getRegionGroupRequest({path: {regionGroupId: id}})) as GeneratedResult<ApiRegionGroup>);
+}
+
+export async function updateRegionGroup(id: string, payload: ApiRegionGroup): Promise<ApiRegionGroup> {
+  return unwrapData((await updateRegionGroupRequest({
+    path: {regionGroupId: id},
+    body: payload,
+  })) as GeneratedResult<ApiRegionGroup>);
+}
+
+export async function deleteRegionGroup(id: string): Promise<void> {
+  await deleteRegionGroupRequest({path: {regionGroupId: id}});
+}
+
+export async function getRegionGroupTrafficRule(regionGroupId: string): Promise<ApiRegionGroupTrafficRule> {
+  return unwrapData((await getRegionGroupTrafficRuleRequest({path: {regionGroupId}})) as GeneratedResult<ApiRegionGroupTrafficRule>);
+}
+
+export async function saveRegionGroupTrafficRule(
+  regionGroupId: string,
+  payload: Omit<ApiRegionGroupTrafficRule, 'regionGroupId'>,
+): Promise<ApiRegionGroupTrafficRule> {
+  return unwrapData((await saveRegionGroupTrafficRuleRequest({
+    path: {regionGroupId},
+    body: {regionGroupId, ...payload} as RegionGroupTrafficRule,
+  })) as GeneratedResult<ApiRegionGroupTrafficRule>);
+}
+
+export async function deleteRegionGroupTrafficRule(regionGroupId: string): Promise<void> {
+  await deleteRegionGroupTrafficRuleRequest({path: {regionGroupId}});
+}
+
+export async function getEffectiveTrafficGovernance(accountId: string): Promise<ApiEffectiveTrafficGovernance> {
+  return unwrapData((await getEffectiveTrafficGovernanceRequest({path: {accountId}})) as GeneratedResult<ApiEffectiveTrafficGovernance>);
+}
+
+export async function getCdtFreeQuota(accountId: string): Promise<ApiTrafficQuotaSnapshot> {
+  return unwrapData((await getCdtFreeQuotaRequest({path: {accountId}})) as GeneratedResult<ApiTrafficQuotaSnapshot>);
+}
+
+export interface CdtPermissionResult {
+  permitted: boolean;
+  error?: string;
+  errorType?: 'permission' | 'credential' | 'network';
+}
+
+export async function checkCdtPermission(accountId: string): Promise<CdtPermissionResult> {
+  const response = await fetch(`${API_BASE_URL}/accounts/${accountId}/cdt-permission`);
+  if (!response.ok) {
+    return {permitted: false, error: `HTTP ${response.status}`};
+  }
+  return response.json() as Promise<CdtPermissionResult>;
+}
+
+export interface ValidateAccountResult {
+  valid: boolean;
+  errorType?: 'credential' | 'permission' | 'network';
+  error?: string;
+  warning?: string;
+}
+
+export async function validateAccount(accountId: string): Promise<ValidateAccountResult> {
+  const response = await fetch(`${API_BASE_URL}/accounts/${accountId}/validate`, {method: 'POST'});
+  if (!response.ok) {
+    const text = await response.text();
+    return {valid: false, errorType: 'credential', error: text};
+  }
+  return response.json() as Promise<ValidateAccountResult>;
 }

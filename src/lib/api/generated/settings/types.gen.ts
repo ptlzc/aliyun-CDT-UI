@@ -40,6 +40,7 @@ export type Account = {
         maximumTrafficGb: number;
         monitoringEnabled: boolean;
         overflowAction: string;
+        underflowAction: string;
     };
     updatedAt: string;
     zoneId: string;
@@ -111,6 +112,12 @@ export type BootstrapStatus = {
     updatedAt?: string;
 };
 
+export type CdtPermissionResult = {
+    error?: string;
+    errorType?: 'permission' | 'credential' | 'network';
+    permitted: boolean;
+};
+
 export type CreateAccountRequest = {
     accessKeyId: string;
     accessKeySecret: string;
@@ -125,11 +132,37 @@ export type CreateAccountRequest = {
     zoneId?: string;
 };
 
+export type EcsInstanceStateResponse = {
+    state: string;
+};
+
+export type EcsMetricPoint = {
+    collectedAt: string;
+    displayName: string;
+    metricName: string;
+    unit: string;
+    value: number;
+};
+
+export type EcsMetricsSnapshot = {
+    collectedAt: string;
+    instanceId: string;
+    metrics: Array<{
+        collectedAt: string;
+        displayName: string;
+        metricName: string;
+        unit: string;
+        value: number;
+    }>;
+    state: string;
+};
+
 export type EcsTrafficGovernance = {
     effective: {
         maximumTrafficGb: number;
         monitoringEnabled: boolean;
         overflowAction: string;
+        underflowAction: string;
     };
     instanceId: string;
     override: {
@@ -150,6 +183,18 @@ export type EcsTrafficGovernanceOverrideRequest = {
     maximumTrafficGb?: number;
     monitoringEnabled?: boolean;
     overflowAction?: string;
+};
+
+export type EcsVncUrlResponse = {
+    vncUrl: string;
+};
+
+export type EffectiveTrafficGovernance = {
+    maximumTrafficGb: number;
+    monitoringEnabled: boolean;
+    overflowAction: string;
+    sourceLayer: string;
+    underflowAction: string;
 };
 
 export type ErrorResponse = {
@@ -307,7 +352,15 @@ export type PlatformTrafficGovernance = {
         maximumTrafficGb: number;
         monitoringEnabled: boolean;
         overflowAction: string;
+        underflowAction: string;
     };
+    regionGroups?: Array<{
+        maximumTrafficGb: number;
+        monitoringEnabled: boolean;
+        overflowAction: string;
+        regionGroupId: string;
+        underflowAction: string;
+    }>;
     updatedAt?: string;
 };
 
@@ -356,6 +409,27 @@ export type ProvisionResponse = {
     result: StringMap;
 };
 
+export type RegionGroup = {
+    createdAt: string;
+    id: string;
+    name: string;
+    regionPatterns: Array<string>;
+    siteType: string;
+    updatedAt: string;
+};
+
+export type RegionGroupListResponse = {
+    items: Array<RegionGroup>;
+};
+
+export type RegionGroupTrafficRule = {
+    maximumTrafficGb: number;
+    monitoringEnabled: boolean;
+    overflowAction: string;
+    regionGroupId: string;
+    underflowAction: string;
+};
+
 export type ResourceEdge = {
     from: string;
     to: string;
@@ -382,8 +456,20 @@ export type ResourceGraph = {
             available: boolean;
             capacity?: number;
             collectedAt: string;
+            errorReason?: string;
             freshnessSec?: number;
             metricName: string;
+            quotaSnapshot?: {
+                billingMonth: string;
+                collectedAt: string;
+                dataDelayHours: number;
+                domesticCapacityGb: number;
+                domesticRemainingGb: number;
+                domesticUsedGb: number;
+                internationalCapacityGb: number;
+                internationalRemainingGb: number;
+                internationalUsedGb: number;
+            };
             scopeId: string;
             scopeType: string;
             source?: string;
@@ -394,8 +480,20 @@ export type ResourceGraph = {
             available: boolean;
             capacity?: number;
             collectedAt: string;
+            errorReason?: string;
             freshnessSec?: number;
             metricName: string;
+            quotaSnapshot?: {
+                billingMonth: string;
+                collectedAt: string;
+                dataDelayHours: number;
+                domesticCapacityGb: number;
+                domesticRemainingGb: number;
+                domesticUsedGb: number;
+                internationalCapacityGb: number;
+                internationalRemainingGb: number;
+                internationalUsedGb: number;
+            };
             scopeId: string;
             scopeType: string;
             source?: string;
@@ -428,8 +526,20 @@ export type ResourceNode = {
         available: boolean;
         capacity?: number;
         collectedAt: string;
+        errorReason?: string;
         freshnessSec?: number;
         metricName: string;
+        quotaSnapshot?: {
+            billingMonth: string;
+            collectedAt: string;
+            dataDelayHours: number;
+            domesticCapacityGb: number;
+            domesticRemainingGb: number;
+            domesticUsedGb: number;
+            internationalCapacityGb: number;
+            internationalRemainingGb: number;
+            internationalUsedGb: number;
+        };
         scopeId: string;
         scopeType: string;
         source?: string;
@@ -440,8 +550,20 @@ export type ResourceNode = {
         available: boolean;
         capacity?: number;
         collectedAt: string;
+        errorReason?: string;
         freshnessSec?: number;
         metricName: string;
+        quotaSnapshot?: {
+            billingMonth: string;
+            collectedAt: string;
+            dataDelayHours: number;
+            domesticCapacityGb: number;
+            domesticRemainingGb: number;
+            domesticUsedGb: number;
+            internationalCapacityGb: number;
+            internationalRemainingGb: number;
+            internationalUsedGb: number;
+        };
         scopeId: string;
         scopeType: string;
         source?: string;
@@ -465,8 +587,20 @@ export type TrafficEvaluation = {
         available: boolean;
         capacity?: number;
         collectedAt: string;
+        errorReason?: string;
         freshnessSec?: number;
         metricName: string;
+        quotaSnapshot?: {
+            billingMonth: string;
+            collectedAt: string;
+            dataDelayHours: number;
+            domesticCapacityGb: number;
+            domesticRemainingGb: number;
+            domesticUsedGb: number;
+            internationalCapacityGb: number;
+            internationalRemainingGb: number;
+            internationalUsedGb: number;
+        };
         scopeId: string;
         scopeType: string;
         source?: string;
@@ -485,21 +619,35 @@ export type TrafficEvaluationListResponse = {
 export type TrafficGovernanceDefaults = {
     maximumTrafficGb: number;
     monitoringEnabled: boolean;
-    overflowAction: string;
+    overflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    underflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
 };
 
 export type TrafficGovernanceDefaultsRequest = {
     maximumTrafficGb: number;
     monitoringEnabled?: boolean;
-    overflowAction: string;
+    overflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    underflowAction?: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
 };
 
 export type TrafficMeasurement = {
     available: boolean;
     capacity?: number;
     collectedAt: string;
+    errorReason?: string;
     freshnessSec?: number;
     metricName: string;
+    quotaSnapshot?: {
+        billingMonth: string;
+        collectedAt: string;
+        dataDelayHours: number;
+        domesticCapacityGb: number;
+        domesticRemainingGb: number;
+        domesticUsedGb: number;
+        internationalCapacityGb: number;
+        internationalRemainingGb: number;
+        internationalUsedGb: number;
+    };
     scopeId: string;
     scopeType: string;
     source?: string;
@@ -540,6 +688,18 @@ export type TrafficPolicyRequest = {
     thresholdValue: number;
 };
 
+export type TrafficQuotaSnapshot = {
+    billingMonth: string;
+    collectedAt: string;
+    dataDelayHours: number;
+    domesticCapacityGb: number;
+    domesticRemainingGb: number;
+    domesticUsedGb: number;
+    internationalCapacityGb: number;
+    internationalRemainingGb: number;
+    internationalUsedGb: number;
+};
+
 export type UpdateAccountRequest = {
     accessKeyId: string;
     accessKeySecret?: string;
@@ -553,6 +713,24 @@ export type UpdateAccountRequest = {
     siteType: 'domestic' | 'international';
     zoneId?: string;
 };
+
+export type GetEffectiveTrafficGovernanceData = {
+    body?: never;
+    path: {
+        accountId: string;
+    };
+    query?: never;
+    url: '/accounts/{accountId}/effective-traffic-governance';
+};
+
+export type GetEffectiveTrafficGovernanceResponses = {
+    /**
+     * success
+     */
+    200: EffectiveTrafficGovernance;
+};
+
+export type GetEffectiveTrafficGovernanceResponse = GetEffectiveTrafficGovernanceResponses[keyof GetEffectiveTrafficGovernanceResponses];
 
 export type GetTrafficGovernanceDefaultsData = {
     body?: never;
@@ -589,6 +767,146 @@ export type SaveTrafficGovernanceDefaultsResponses = {
 };
 
 export type SaveTrafficGovernanceDefaultsResponse = SaveTrafficGovernanceDefaultsResponses[keyof SaveTrafficGovernanceDefaultsResponses];
+
+export type ListRegionGroupsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/region-groups';
+};
+
+export type ListRegionGroupsResponses = {
+    /**
+     * success
+     */
+    200: RegionGroupListResponse;
+};
+
+export type ListRegionGroupsResponse = ListRegionGroupsResponses[keyof ListRegionGroupsResponses];
+
+export type CreateRegionGroupData = {
+    body: RegionGroup;
+    path?: never;
+    query?: never;
+    url: '/region-groups';
+};
+
+export type CreateRegionGroupResponses = {
+    /**
+     * success
+     */
+    201: RegionGroup;
+};
+
+export type CreateRegionGroupResponse = CreateRegionGroupResponses[keyof CreateRegionGroupResponses];
+
+export type DeleteRegionGroupData = {
+    body?: never;
+    path: {
+        regionGroupId: string;
+    };
+    query?: never;
+    url: '/region-groups/{regionGroupId}';
+};
+
+export type DeleteRegionGroupResponses = {
+    /**
+     * no content
+     */
+    204: void;
+};
+
+export type DeleteRegionGroupResponse = DeleteRegionGroupResponses[keyof DeleteRegionGroupResponses];
+
+export type GetRegionGroupData = {
+    body?: never;
+    path: {
+        regionGroupId: string;
+    };
+    query?: never;
+    url: '/region-groups/{regionGroupId}';
+};
+
+export type GetRegionGroupResponses = {
+    /**
+     * success
+     */
+    200: RegionGroup;
+};
+
+export type GetRegionGroupResponse = GetRegionGroupResponses[keyof GetRegionGroupResponses];
+
+export type UpdateRegionGroupData = {
+    body: RegionGroup;
+    path: {
+        regionGroupId: string;
+    };
+    query?: never;
+    url: '/region-groups/{regionGroupId}';
+};
+
+export type UpdateRegionGroupResponses = {
+    /**
+     * success
+     */
+    200: RegionGroup;
+};
+
+export type UpdateRegionGroupResponse = UpdateRegionGroupResponses[keyof UpdateRegionGroupResponses];
+
+export type DeleteRegionGroupTrafficRuleData = {
+    body?: never;
+    path: {
+        regionGroupId: string;
+    };
+    query?: never;
+    url: '/region-groups/{regionGroupId}/traffic-rule';
+};
+
+export type DeleteRegionGroupTrafficRuleResponses = {
+    /**
+     * no content
+     */
+    204: void;
+};
+
+export type DeleteRegionGroupTrafficRuleResponse = DeleteRegionGroupTrafficRuleResponses[keyof DeleteRegionGroupTrafficRuleResponses];
+
+export type GetRegionGroupTrafficRuleData = {
+    body?: never;
+    path: {
+        regionGroupId: string;
+    };
+    query?: never;
+    url: '/region-groups/{regionGroupId}/traffic-rule';
+};
+
+export type GetRegionGroupTrafficRuleResponses = {
+    /**
+     * success
+     */
+    200: RegionGroupTrafficRule;
+};
+
+export type GetRegionGroupTrafficRuleResponse = GetRegionGroupTrafficRuleResponses[keyof GetRegionGroupTrafficRuleResponses];
+
+export type SaveRegionGroupTrafficRuleData = {
+    body: RegionGroupTrafficRule;
+    path: {
+        regionGroupId: string;
+    };
+    query?: never;
+    url: '/region-groups/{regionGroupId}/traffic-rule';
+};
+
+export type SaveRegionGroupTrafficRuleResponses = {
+    /**
+     * success
+     */
+    200: RegionGroupTrafficRule;
+};
+
+export type SaveRegionGroupTrafficRuleResponse = SaveRegionGroupTrafficRuleResponses[keyof SaveRegionGroupTrafficRuleResponses];
 
 export type GetPlatformTrafficGovernanceDefaultsData = {
     body?: never;

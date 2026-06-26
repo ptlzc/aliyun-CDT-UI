@@ -42,11 +42,13 @@ export interface ECSInstance {
   status: InstanceStatus;
   type: string;
   zone: string;
+  regionId: string;
   publicIp: string;
   privateIp: string;
   trafficUsage: number | null;
   trafficUsageUnit: string;
   trafficUsageSource?: string;
+  trafficUsageErrorReason?: string;
   trafficUsageCollectedAt?: string;
   trafficRate: number | null;
   trafficRateUnit: string;

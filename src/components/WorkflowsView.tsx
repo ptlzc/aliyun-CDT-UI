@@ -63,7 +63,7 @@ export default function WorkflowsView({ workflows }: WorkflowsViewProps) {
         <div className="flex items-center gap-3">
           <Layers className="w-5 h-5 text-primary" />
           <div>
-            <h1 className="text-xl font-bold font-space text-primary-ink">自动化工作流中心 (CDT Workflows)</h1>
+            <h1 className="text-xl font-bold font-space text-primary-ink">自动化工作流中心</h1>
             <p className="text-xs text-secondary-ink mt-1">当前没有运行或历史作业。触发镜像导入、拓扑发现或实例置备后，这里会出现实时日志。</p>
           </div>
         </div>
@@ -77,7 +77,7 @@ export default function WorkflowsView({ workflows }: WorkflowsViewProps) {
         <div className="flex items-center gap-3">
           <Layers className="w-5 h-5 text-primary" />
           <div>
-            <h1 className="text-xl font-bold font-space text-primary-ink">自动化工作流中心 (CDT Workflows)</h1>
+            <h1 className="text-xl font-bold font-space text-primary-ink">自动化工作流中心</h1>
             <p className="text-xs text-secondary-ink mt-1">当前由后端任务状态和 runtime 事件流驱动。REST 提供快照，WebSocket 提供增量更新。</p>
           </div>
         </div>
@@ -165,7 +165,7 @@ export default function WorkflowsView({ workflows }: WorkflowsViewProps) {
                           <div className="bg-primary h-full progress-bar duration-300 transition-all" style={{ width: `${task.progress}%` }} />
                         </div>
                         <div className="flex justify-between text-[9px] text-[#8b949e]">
-                          <span>Provider progress</span>
+                          <span>执行进度</span>
                           <span className="font-bold text-primary">{task.progress}%</span>
                         </div>
                       </div>
@@ -180,7 +180,7 @@ export default function WorkflowsView({ workflows }: WorkflowsViewProps) {
             <header className="px-4 py-3 bg-[#161b22] border-b border-[#30363d] flex justify-between items-center select-none shrink-0">
               <div className="flex items-center gap-2">
                 <Terminal className="w-4 h-4 text-[#8b949e]" />
-                <span className="text-xs font-mono text-[#c9d1d9] font-bold">同步编排审计日志 (CDT Job Logs)</span>
+                <span className="text-xs font-mono text-[#c9d1d9] font-bold">同步编排审计日志</span>
               </div>
 
               <div className="flex items-center gap-4 text-[#8b949e] text-xs">
@@ -191,7 +191,7 @@ export default function WorkflowsView({ workflows }: WorkflowsViewProps) {
                     onChange={(event) => setAutoScroll(event.target.checked)}
                     className="rounded text-primary bg-[#0d1117] border-[#30363d] focus:ring-0 focus:ring-offset-0 h-3 w-3"
                   />
-                  <span>Auto-scroll</span>
+                  <span>自动滚动</span>
                 </label>
                 <button onClick={handleDownloadLogs} className="p-1 hover:text-white rounded transition-colors cursor-pointer" title="下载系统日志">
                   <Download className="w-4 h-4" />

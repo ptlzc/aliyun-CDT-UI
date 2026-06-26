@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Bell, Cloud, Cpu, KeyRound, LayoutDashboard, Menu, RefreshCw, Server, Settings, X } from 'lucide-react';
+import { Bell, Cloud, Cpu, KeyRound, LayoutDashboard, Menu, RefreshCw, Server, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
 import Sidebar from './components/Sidebar';
@@ -74,18 +74,6 @@ export default function App() {
               <Bell className="w-4 h-4 text-outline" />
               {notificationCount > 0 && <span className="absolute top-1 right-1 w-2 h-2 bg-signal-amber rounded-full border border-surface-white" />}
             </button>
-            <button className="p-1.5 text-on-surface-variant hover:bg-emphasis-layer rounded transition-colors cursor-pointer" title="设置首选项">
-              <Settings className="w-4 h-4 text-outline" />
-            </button>
-            <div className="h-4 w-[1px] bg-hairline-divider mx-1 hidden sm:block" />
-            <div className="w-8 h-8 rounded-full overflow-hidden border border-hairline-divider cursor-pointer shrink-0 flex items-center justify-center hover:scale-105 active:scale-95 transition-all ml-1" title="Operator details">
-              <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsbPUAz6XH8YQd1ZwyxmGNz_Tx-pPdPa-51nkyrgoRlWsW7QDPIgYO_veVPfNztTUmSWEQ0NQlcxJz6m8T5lgCZmwXgl-LR0iJjrJ-CjBMY0nzyrLroHX0clCHXYmKts7Ibm2gbHdPU6No11R_VbhSsJFkOrxr_9gqYayXCFgemARKlWO2RGL2_ZQu7MrF1yc53ZZD8Al7gIIT2haCnMglU91-u7J8hNPrsPh8yaC23g8l3qWxkTXMfdyJ6k0gSIYxtDeGaAq6Rd4"
-                alt="Cloud Engineer Operator Profile"
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            </div>
           </div>
         </header>
 
@@ -118,6 +106,7 @@ export default function App() {
               <motion.div key="instances" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }}>
                 <InstancesView
                   instances={runtime.instances}
+                  isLoading={runtime.isLoading}
                   onManageInstance={(instance) => {
                     setSelectedInstanceId(instance.id);
                   }}
@@ -156,9 +145,9 @@ export default function App() {
               <div className="px-5 mb-5 flex items-center justify-between border-b pb-3 border-hairline-divider/50">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded bg-primary flex items-center justify-center text-white"><Cloud className="w-4.5 h-4.5" /></div>
-                  <span className="font-space font-black text-xs text-primary uppercase">Aliyun Ops Menu</span>
+                  <span className="font-space font-black text-xs text-primary uppercase">阿里云运维菜单</span>
                 </div>
-                <button onClick={() => setMobileMenuOpen(false)} className="p-1 text-on-surface-variant hover:text-primary-ink hover:bg-emphasis-layer rounded-full cursor-pointer" title="Close Menu">
+                <button onClick={() => setMobileMenuOpen(false)} className="p-1 text-on-surface-variant hover:text-primary-ink hover:bg-emphasis-layer rounded-full cursor-pointer" title="关闭菜单">
                   <X className="w-4 h-4" />
                 </button>
               </div>

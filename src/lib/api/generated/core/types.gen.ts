@@ -40,6 +40,7 @@ export type Account = {
         maximumTrafficGb: number;
         monitoringEnabled: boolean;
         overflowAction: string;
+        underflowAction: string;
     };
     updatedAt: string;
     zoneId: string;
@@ -111,6 +112,12 @@ export type BootstrapStatus = {
     updatedAt?: string;
 };
 
+export type CdtPermissionResult = {
+    error?: string;
+    errorType?: 'permission' | 'credential' | 'network';
+    permitted: boolean;
+};
+
 export type CreateAccountRequest = {
     accessKeyId: string;
     accessKeySecret: string;
@@ -125,11 +132,37 @@ export type CreateAccountRequest = {
     zoneId?: string;
 };
 
+export type EcsInstanceStateResponse = {
+    state: string;
+};
+
+export type EcsMetricPoint = {
+    collectedAt: string;
+    displayName: string;
+    metricName: string;
+    unit: string;
+    value: number;
+};
+
+export type EcsMetricsSnapshot = {
+    collectedAt: string;
+    instanceId: string;
+    metrics: Array<{
+        collectedAt: string;
+        displayName: string;
+        metricName: string;
+        unit: string;
+        value: number;
+    }>;
+    state: string;
+};
+
 export type EcsTrafficGovernance = {
     effective: {
         maximumTrafficGb: number;
         monitoringEnabled: boolean;
         overflowAction: string;
+        underflowAction: string;
     };
     instanceId: string;
     override: {
@@ -150,6 +183,18 @@ export type EcsTrafficGovernanceOverrideRequest = {
     maximumTrafficGb?: number;
     monitoringEnabled?: boolean;
     overflowAction?: string;
+};
+
+export type EcsVncUrlResponse = {
+    vncUrl: string;
+};
+
+export type EffectiveTrafficGovernance = {
+    maximumTrafficGb: number;
+    monitoringEnabled: boolean;
+    overflowAction: string;
+    sourceLayer: string;
+    underflowAction: string;
 };
 
 export type ErrorResponse = {
@@ -307,7 +352,15 @@ export type PlatformTrafficGovernance = {
         maximumTrafficGb: number;
         monitoringEnabled: boolean;
         overflowAction: string;
+        underflowAction: string;
     };
+    regionGroups?: Array<{
+        maximumTrafficGb: number;
+        monitoringEnabled: boolean;
+        overflowAction: string;
+        regionGroupId: string;
+        underflowAction: string;
+    }>;
     updatedAt?: string;
 };
 
@@ -356,6 +409,27 @@ export type ProvisionResponse = {
     result: StringMap;
 };
 
+export type RegionGroup = {
+    createdAt: string;
+    id: string;
+    name: string;
+    regionPatterns: Array<string>;
+    siteType: string;
+    updatedAt: string;
+};
+
+export type RegionGroupListResponse = {
+    items: Array<RegionGroup>;
+};
+
+export type RegionGroupTrafficRule = {
+    maximumTrafficGb: number;
+    monitoringEnabled: boolean;
+    overflowAction: string;
+    regionGroupId: string;
+    underflowAction: string;
+};
+
 export type ResourceEdge = {
     from: string;
     to: string;
@@ -382,8 +456,20 @@ export type ResourceGraph = {
             available: boolean;
             capacity?: number;
             collectedAt: string;
+            errorReason?: string;
             freshnessSec?: number;
             metricName: string;
+            quotaSnapshot?: {
+                billingMonth: string;
+                collectedAt: string;
+                dataDelayHours: number;
+                domesticCapacityGb: number;
+                domesticRemainingGb: number;
+                domesticUsedGb: number;
+                internationalCapacityGb: number;
+                internationalRemainingGb: number;
+                internationalUsedGb: number;
+            };
             scopeId: string;
             scopeType: string;
             source?: string;
@@ -394,8 +480,20 @@ export type ResourceGraph = {
             available: boolean;
             capacity?: number;
             collectedAt: string;
+            errorReason?: string;
             freshnessSec?: number;
             metricName: string;
+            quotaSnapshot?: {
+                billingMonth: string;
+                collectedAt: string;
+                dataDelayHours: number;
+                domesticCapacityGb: number;
+                domesticRemainingGb: number;
+                domesticUsedGb: number;
+                internationalCapacityGb: number;
+                internationalRemainingGb: number;
+                internationalUsedGb: number;
+            };
             scopeId: string;
             scopeType: string;
             source?: string;
@@ -428,8 +526,20 @@ export type ResourceNode = {
         available: boolean;
         capacity?: number;
         collectedAt: string;
+        errorReason?: string;
         freshnessSec?: number;
         metricName: string;
+        quotaSnapshot?: {
+            billingMonth: string;
+            collectedAt: string;
+            dataDelayHours: number;
+            domesticCapacityGb: number;
+            domesticRemainingGb: number;
+            domesticUsedGb: number;
+            internationalCapacityGb: number;
+            internationalRemainingGb: number;
+            internationalUsedGb: number;
+        };
         scopeId: string;
         scopeType: string;
         source?: string;
@@ -440,8 +550,20 @@ export type ResourceNode = {
         available: boolean;
         capacity?: number;
         collectedAt: string;
+        errorReason?: string;
         freshnessSec?: number;
         metricName: string;
+        quotaSnapshot?: {
+            billingMonth: string;
+            collectedAt: string;
+            dataDelayHours: number;
+            domesticCapacityGb: number;
+            domesticRemainingGb: number;
+            domesticUsedGb: number;
+            internationalCapacityGb: number;
+            internationalRemainingGb: number;
+            internationalUsedGb: number;
+        };
         scopeId: string;
         scopeType: string;
         source?: string;
@@ -465,8 +587,20 @@ export type TrafficEvaluation = {
         available: boolean;
         capacity?: number;
         collectedAt: string;
+        errorReason?: string;
         freshnessSec?: number;
         metricName: string;
+        quotaSnapshot?: {
+            billingMonth: string;
+            collectedAt: string;
+            dataDelayHours: number;
+            domesticCapacityGb: number;
+            domesticRemainingGb: number;
+            domesticUsedGb: number;
+            internationalCapacityGb: number;
+            internationalRemainingGb: number;
+            internationalUsedGb: number;
+        };
         scopeId: string;
         scopeType: string;
         source?: string;
@@ -485,21 +619,35 @@ export type TrafficEvaluationListResponse = {
 export type TrafficGovernanceDefaults = {
     maximumTrafficGb: number;
     monitoringEnabled: boolean;
-    overflowAction: string;
+    overflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    underflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
 };
 
 export type TrafficGovernanceDefaultsRequest = {
     maximumTrafficGb: number;
     monitoringEnabled?: boolean;
-    overflowAction: string;
+    overflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    underflowAction?: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
 };
 
 export type TrafficMeasurement = {
     available: boolean;
     capacity?: number;
     collectedAt: string;
+    errorReason?: string;
     freshnessSec?: number;
     metricName: string;
+    quotaSnapshot?: {
+        billingMonth: string;
+        collectedAt: string;
+        dataDelayHours: number;
+        domesticCapacityGb: number;
+        domesticRemainingGb: number;
+        domesticUsedGb: number;
+        internationalCapacityGb: number;
+        internationalRemainingGb: number;
+        internationalUsedGb: number;
+    };
     scopeId: string;
     scopeType: string;
     source?: string;
@@ -538,6 +686,18 @@ export type TrafficPolicyRequest = {
     scopeType: string;
     thresholdType: string;
     thresholdValue: number;
+};
+
+export type TrafficQuotaSnapshot = {
+    billingMonth: string;
+    collectedAt: string;
+    dataDelayHours: number;
+    domesticCapacityGb: number;
+    domesticRemainingGb: number;
+    domesticUsedGb: number;
+    internationalCapacityGb: number;
+    internationalRemainingGb: number;
+    internationalUsedGb: number;
 };
 
 export type UpdateAccountRequest = {

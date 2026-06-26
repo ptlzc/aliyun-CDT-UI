@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ApplyPlatformTrafficGovernanceDefaultsToAccountsData, ApplyPlatformTrafficGovernanceDefaultsToAccountsResponses, GetPlatformTrafficGovernanceDefaultsData, GetPlatformTrafficGovernanceDefaultsResponses, GetTrafficGovernanceDefaultsData, GetTrafficGovernanceDefaultsResponses, SavePlatformTrafficGovernanceDefaultsData, SavePlatformTrafficGovernanceDefaultsResponses, SaveTrafficGovernanceDefaultsData, SaveTrafficGovernanceDefaultsResponses } from './types.gen';
+import type { ApplyPlatformTrafficGovernanceDefaultsToAccountsData, ApplyPlatformTrafficGovernanceDefaultsToAccountsResponses, CreateRegionGroupData, CreateRegionGroupResponses, DeleteRegionGroupData, DeleteRegionGroupResponses, DeleteRegionGroupTrafficRuleData, DeleteRegionGroupTrafficRuleResponses, GetEffectiveTrafficGovernanceData, GetEffectiveTrafficGovernanceResponses, GetPlatformTrafficGovernanceDefaultsData, GetPlatformTrafficGovernanceDefaultsResponses, GetRegionGroupData, GetRegionGroupResponses, GetRegionGroupTrafficRuleData, GetRegionGroupTrafficRuleResponses, GetTrafficGovernanceDefaultsData, GetTrafficGovernanceDefaultsResponses, ListRegionGroupsData, ListRegionGroupsResponses, SavePlatformTrafficGovernanceDefaultsData, SavePlatformTrafficGovernanceDefaultsResponses, SaveRegionGroupTrafficRuleData, SaveRegionGroupTrafficRuleResponses, SaveTrafficGovernanceDefaultsData, SaveTrafficGovernanceDefaultsResponses, UpdateRegionGroupData, UpdateRegionGroupResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -18,10 +18,49 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
 
+export const getEffectiveTrafficGovernance = <ThrowOnError extends boolean = false>(options: Options<GetEffectiveTrafficGovernanceData, ThrowOnError>): RequestResult<GetEffectiveTrafficGovernanceResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetEffectiveTrafficGovernanceResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/effective-traffic-governance', ...options });
+
 export const getTrafficGovernanceDefaults = <ThrowOnError extends boolean = false>(options: Options<GetTrafficGovernanceDefaultsData, ThrowOnError>): RequestResult<GetTrafficGovernanceDefaultsResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetTrafficGovernanceDefaultsResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/traffic-governance', ...options });
 
 export const saveTrafficGovernanceDefaults = <ThrowOnError extends boolean = false>(options: Options<SaveTrafficGovernanceDefaultsData, ThrowOnError>): RequestResult<SaveTrafficGovernanceDefaultsResponses, unknown, ThrowOnError> => (options.client ?? client).put<SaveTrafficGovernanceDefaultsResponses, unknown, ThrowOnError>({
     url: '/accounts/{accountId}/traffic-governance',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const listRegionGroups = <ThrowOnError extends boolean = false>(options?: Options<ListRegionGroupsData, ThrowOnError>): RequestResult<ListRegionGroupsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListRegionGroupsResponses, unknown, ThrowOnError>({ url: '/region-groups', ...options });
+
+export const createRegionGroup = <ThrowOnError extends boolean = false>(options: Options<CreateRegionGroupData, ThrowOnError>): RequestResult<CreateRegionGroupResponses, unknown, ThrowOnError> => (options.client ?? client).post<CreateRegionGroupResponses, unknown, ThrowOnError>({
+    url: '/region-groups',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteRegionGroup = <ThrowOnError extends boolean = false>(options: Options<DeleteRegionGroupData, ThrowOnError>): RequestResult<DeleteRegionGroupResponses, unknown, ThrowOnError> => (options.client ?? client).delete<DeleteRegionGroupResponses, unknown, ThrowOnError>({ url: '/region-groups/{regionGroupId}', ...options });
+
+export const getRegionGroup = <ThrowOnError extends boolean = false>(options: Options<GetRegionGroupData, ThrowOnError>): RequestResult<GetRegionGroupResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRegionGroupResponses, unknown, ThrowOnError>({ url: '/region-groups/{regionGroupId}', ...options });
+
+export const updateRegionGroup = <ThrowOnError extends boolean = false>(options: Options<UpdateRegionGroupData, ThrowOnError>): RequestResult<UpdateRegionGroupResponses, unknown, ThrowOnError> => (options.client ?? client).put<UpdateRegionGroupResponses, unknown, ThrowOnError>({
+    url: '/region-groups/{regionGroupId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteRegionGroupTrafficRule = <ThrowOnError extends boolean = false>(options: Options<DeleteRegionGroupTrafficRuleData, ThrowOnError>): RequestResult<DeleteRegionGroupTrafficRuleResponses, unknown, ThrowOnError> => (options.client ?? client).delete<DeleteRegionGroupTrafficRuleResponses, unknown, ThrowOnError>({ url: '/region-groups/{regionGroupId}/traffic-rule', ...options });
+
+export const getRegionGroupTrafficRule = <ThrowOnError extends boolean = false>(options: Options<GetRegionGroupTrafficRuleData, ThrowOnError>): RequestResult<GetRegionGroupTrafficRuleResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRegionGroupTrafficRuleResponses, unknown, ThrowOnError>({ url: '/region-groups/{regionGroupId}/traffic-rule', ...options });
+
+export const saveRegionGroupTrafficRule = <ThrowOnError extends boolean = false>(options: Options<SaveRegionGroupTrafficRuleData, ThrowOnError>): RequestResult<SaveRegionGroupTrafficRuleResponses, unknown, ThrowOnError> => (options.client ?? client).put<SaveRegionGroupTrafficRuleResponses, unknown, ThrowOnError>({
+    url: '/region-groups/{regionGroupId}/traffic-rule',
     ...options,
     headers: {
         'Content-Type': 'application/json',

@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateAccountData, CreateAccountResponses, GetAccountData, GetAccountResponses, ListAccountsData, ListAccountsResponses, ListRegionsData, ListRegionsForAccountData, ListRegionsForAccountResponses, ListRegionsResponses, UpdateAccountData, UpdateAccountResponses, ValidateAccountData, ValidateAccountResponses } from './types.gen';
+import type { CheckCdtPermissionData, CheckCdtPermissionResponses, CreateAccountData, CreateAccountResponses, GetAccountData, GetAccountResponses, ListAccountsData, ListAccountsResponses, ListRegionsData, ListRegionsForAccountData, ListRegionsForAccountResponses, ListRegionsResponses, UpdateAccountData, UpdateAccountResponses, ValidateAccountData, ValidateAccountResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -57,5 +57,7 @@ export const updateAccount = <ThrowOnError extends boolean = false>(options: Opt
         ...options.headers
     }
 });
+
+export const checkCdtPermission = <ThrowOnError extends boolean = false>(options: Options<CheckCdtPermissionData, ThrowOnError>): RequestResult<CheckCdtPermissionResponses, unknown, ThrowOnError> => (options.client ?? client).get<CheckCdtPermissionResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/cdt-permission', ...options });
 
 export const listRegionsForAccount = <ThrowOnError extends boolean = false>(options: Options<ListRegionsForAccountData, ThrowOnError>): RequestResult<ListRegionsForAccountResponses, unknown, ThrowOnError> => (options.client ?? client).get<ListRegionsForAccountResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/regions', ...options });

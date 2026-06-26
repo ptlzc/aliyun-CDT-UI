@@ -1,4 +1,4 @@
-import { Cloud, LayoutDashboard, KeyRound, Server, Cpu, FileText, FileQuestion, Headphones, Plus } from 'lucide-react';
+import { Cloud, LayoutDashboard, KeyRound, Server, Cpu, FileText, Plus } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface SidebarProps {
@@ -9,11 +9,11 @@ interface SidebarProps {
 
 export default function Sidebar({ activeTab, setActiveTab, onDeployTrigger }: SidebarProps) {
   const menuItems = [
-    { id: 'dashboard', label: '仪表盘', subLabel: 'Dashboard', icon: LayoutDashboard },
-    { id: 'accounts', label: '账户管理', subLabel: 'Accounts', icon: KeyRound },
-    { id: 'instances', label: 'ECS 实例列表', subLabel: 'Instances', icon: Server },
-    { id: 'workflows', label: '自动化工作流', subLabel: 'Workflows', icon: Cpu },
-    { id: 'settings', label: '系统设置', subLabel: 'Settings', icon: FileText },
+    { id: 'dashboard', label: '仪表盘', icon: LayoutDashboard },
+    { id: 'accounts', label: '账户管理', icon: KeyRound },
+    { id: 'instances', label: 'ECS 实例列表', icon: Server },
+    { id: 'workflows', label: '自动化工作流', icon: Cpu },
+    { id: 'settings', label: '系统设置', icon: FileText },
   ] as const;
 
   return (
@@ -66,43 +66,12 @@ export default function Sidebar({ activeTab, setActiveTab, onDeployTrigger }: Si
                 <IconComponent className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-primary' : 'text-outline'}`} />
                 <div className="flex flex-col">
                   <span className="text-xs font-medium leading-tight">{item.label}</span>
-                  <span className="text-[10px] text-secondary-ink font-mono tracking-wide leading-none">{item.subLabel}</span>
                 </div>
               </button>
             </li>
           );
         })}
       </ul>
-
-      {/* Support and Docs footer menu */}
-      <div className="mt-auto px-3 border-t border-hairline-divider pt-4">
-        <ul className="flex flex-col gap-1">
-          <li>
-            <a
-              href="#docs"
-              className="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-emphasis-layer/50 hover:text-primary-ink transition-colors cursor-pointer"
-            >
-              <FileQuestion className="w-4 h-4 text-outline" />
-              <div className="flex flex-col">
-                <span className="text-xs">帮助文档</span>
-                <span className="text-[9px] text-secondary-ink font-mono tracking-wide">Documentation</span>
-              </div>
-            </a>
-          </li>
-          <li>
-            <a
-              href="#support"
-              className="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-emphasis-layer/50 hover:text-primary-ink transition-colors cursor-pointer"
-            >
-              <Headphones className="w-4 h-4 text-outline" />
-              <div className="flex flex-col">
-                <span className="text-xs">技术支持</span>
-                <span className="text-[9px] text-secondary-ink font-mono tracking-wide">Technical Support</span>
-              </div>
-            </a>
-          </li>
-        </ul>
-      </div>
     </nav>
   );
 }

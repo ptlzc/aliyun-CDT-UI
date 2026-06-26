@@ -3,25 +3,43 @@ import {useMutation, useQueries, useQuery, useQueryClient} from '@tanstack/react
 
 import {
   applyPlatformTrafficGovernanceToAccounts,
+  checkCdtPermission,
   createAccount,
+  createRegionGroup,
+  deleteRegionGroup,
+  getCdtFreeQuota,
+  getEffectiveTrafficGovernance,
   getPlatformTrafficGovernance,
   listAccounts,
   listGraph,
   listJobs,
+  listRegionGroups,
   listTrafficPolicies,
   saveECSTrafficGovernance,
   savePlatformTrafficGovernance,
   saveTrafficPolicy,
+  startECSInstance,
+  stopECSInstance,
+  getECSInstanceState,
+  getECSVncUrl,
+  getECSMetrics,
   updateAccount,
+  updateRegionGroup,
   type ApiAccount,
   type ApiCreateAccountRequest,
   type ApiECSTrafficGovernance,
+  type ApiECSMetricsSnapshot,
+  type ApiEffectiveTrafficGovernance,
   type ApiJob,
   type ApiPlatformTrafficGovernance,
+  type ApiRegionGroup,
   type ApiResourceGraph,
   type ApiTrafficGovernanceDefaults,
   type ApiTrafficPolicy,
   type ApiTrafficPolicyRequest,
+  type ApiTrafficQuotaSnapshot,
+  type CdtPermissionResult,
+  validateAccount,
 } from '@/src/lib/api/client';
 import type {CloudAccount, DashboardSummary, ECSInstance, WorkflowRun, WorkflowTask} from '@/src/types';
 
@@ -31,6 +49,7 @@ export const runtimeKeys = {
   jobs: ['runtime', 'jobs'] as const,
   settings: ['runtime', 'settings', 'traffic-governance'] as const,
   policies: (accountId: string) => ['runtime', 'traffic-policies', accountId] as const,
+  cdtPermission: (accountId: string) => ['runtime', 'cdt-permission', accountId] as const,
 };
 
 function formatDateLabel(value?: string): string {
@@ -184,11 +203,13 @@ function mapGraphToInstances(graphs: ApiResourceGraph[], accounts: ApiAccount[],
           status: normalizeInstanceStatus(node, metadata),
           type: metadata.instanceType || 'ecs.unknown',
           zone: node.zoneId || node.regionId || '-',
+          regionId: node.regionId || account?.regionId || '',
           publicIp: resolveExternalIP(graph, node.id, metadata),
           privateIp: metadata.privateIps || metadata.primaryPrivateIp || '未提供',
           trafficUsage: usage?.available ? Math.round(usage.value * 100) / 100 : null,
           trafficUsageUnit: usage?.unit || 'GB',
           trafficUsageSource: usage?.source,
+          trafficUsageErrorReason: usage?.errorReason,
           trafficUsageCollectedAt: usage?.collectedAt,
           trafficRate: rate?.available ? Math.round(rate.value * 100) / 100 : null,
           trafficRateUnit: rate?.unit || 'Mbps',
@@ -355,6 +376,128 @@ export function useSaveTrafficPolicyMutation() {
     onSuccess: (_, variables) => {
       void queryClient.invalidateQueries({queryKey: runtimeKeys.policies(variables.accountId)});
       void queryClient.invalidateQueries({queryKey: runtimeKeys.graph(variables.accountId)});
+    },
+  });
+}
+
+export function useStartECSInstanceMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({accountId, instanceId}: {accountId: string; instanceId: string}) => startECSInstance(accountId, instanceId),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({queryKey: runtimeKeys.graph(variables.accountId)});
+      void queryClient.invalidateQueries({queryKey: runtimeKeys.jobs});
+    },
+  });
+}
+
+export function useStopECSInstanceMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({accountId, instanceId}: {accountId: string; instanceId: string}) => stopECSInstance(accountId, instanceId),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({queryKey: runtimeKeys.graph(variables.accountId)});
+      void queryClient.invalidateQueries({queryKey: runtimeKeys.jobs});
+    },
+  });
+}
+
+export function useECSInstanceStateQuery(accountId: string | null, instanceId: string | null) {
+  return useQuery<string>({
+    queryKey: ['ecs-instance-state', accountId, instanceId],
+    queryFn: () => getECSInstanceState(accountId!, instanceId!),
+    enabled: Boolean(accountId && instanceId),
+    refetchInterval: 15_000,
+  });
+}
+
+export function useECSVncUrlQuery(accountId: string | null, instanceId: string | null, enabled = true) {
+  return useQuery<string>({
+    queryKey: ['ecs-vnc-url', accountId, instanceId],
+    queryFn: () => getECSVncUrl(accountId!, instanceId!),
+    enabled: Boolean(accountId && instanceId && enabled),
+    staleTime: 10_000, // VNC URL is short-lived (15s), keep cached briefly
+  });
+}
+
+export function useECSMetricsQuery(accountId: string | null, instanceId: string | null, enabled = true) {
+  return useQuery<ApiECSMetricsSnapshot>({
+    queryKey: ['ecs-metrics', accountId, instanceId],
+    queryFn: () => getECSMetrics(accountId!, instanceId!),
+    enabled: Boolean(accountId && instanceId && enabled),
+    refetchInterval: 30_000, // refresh CMS metrics every 30s
+  });
+}
+
+export function useRegionGroupsQuery() {
+  return useQuery<ApiRegionGroup[]>({
+    queryKey: ['region-groups'],
+    queryFn: listRegionGroups,
+  });
+}
+
+export function useCreateRegionGroupMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Omit<ApiRegionGroup, 'id' | 'createdAt' | 'updatedAt'>) => createRegionGroup(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({queryKey: ['region-groups']});
+    },
+  });
+}
+
+export function useUpdateRegionGroupMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({id, payload}: {id: string; payload: ApiRegionGroup}) => updateRegionGroup(id, payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({queryKey: ['region-groups']});
+    },
+  });
+}
+
+export function useDeleteRegionGroupMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteRegionGroup(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({queryKey: ['region-groups']});
+    },
+  });
+}
+
+export function useEffectiveTrafficGovernanceQuery(accountId: string | null) {
+  return useQuery<ApiEffectiveTrafficGovernance>({
+    queryKey: ['effective-traffic-governance', accountId],
+    queryFn: () => getEffectiveTrafficGovernance(accountId!),
+    enabled: Boolean(accountId),
+  });
+}
+
+export function useCdtFreeQuotaQuery(accountId: string | null) {
+  return useQuery<ApiTrafficQuotaSnapshot>({
+    queryKey: ['cdt-free-quota', accountId],
+    queryFn: () => getCdtFreeQuota(accountId!),
+    enabled: Boolean(accountId),
+    refetchInterval: 60_000,
+  });
+}
+
+export function useCdtPermissionQuery(accountId: string | null) {
+  return useQuery<CdtPermissionResult>({
+    queryKey: runtimeKeys.cdtPermission(accountId || ''),
+    queryFn: () => checkCdtPermission(accountId!),
+    enabled: Boolean(accountId),
+    refetchInterval: 120_000,
+  });
+}
+
+export function useValidateAccountMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (accountId: string) => validateAccount(accountId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries();
     },
   });
 }

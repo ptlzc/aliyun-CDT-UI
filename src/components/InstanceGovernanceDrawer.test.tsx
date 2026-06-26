@@ -56,7 +56,7 @@ describe('InstanceGovernanceDrawer', () => {
       />,
     );
 
-    expect(screen.getByText('GB 阈值仅针对累计流量。留空表示继续继承账号默认值。')).toBeInTheDocument();
+    expect(screen.getByText('阈值仅针对累计流量。留空表示继续继承账号默认值。')).toBeInTheDocument();
     expect(screen.getByText('当前累计流量: 180 GB')).toBeInTheDocument();
     expect(screen.getByText('当前实时速率: 22.5 Mbps')).toBeInTheDocument();
 

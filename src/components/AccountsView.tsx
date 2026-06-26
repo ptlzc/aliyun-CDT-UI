@@ -1,14 +1,64 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { CloudAccount } from '../types';
-import { Search, Filter, RefreshCw, Plus, Edit, Trash2, KeyRound, ArrowLeft, ShieldAlert, Copy, Eye, EyeOff, MapPin, Calendar, User, History, Check, ShieldCheck, ChevronLeft, ChevronRight, FileCode, Server } from 'lucide-react';
+import { Search, Filter, RefreshCw, Plus, Edit, Trash2, KeyRound, ArrowLeft, ShieldAlert, Copy, Eye, EyeOff, MapPin, Calendar, User, History, Check, ShieldCheck, ChevronLeft, ChevronRight, FileCode, Server, AlertTriangle, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useSaveAccountMutation } from '../features/runtime/hooks';
+import { useSaveAccountMutation, useCdtPermissionQuery, useValidateAccountMutation } from '../features/runtime/hooks';
 
 interface AccountsViewProps {
   accounts: CloudAccount[];
   selectedAccount: CloudAccount | null;
   setSelectedAccount: (acc: CloudAccount | null) => void;
 }
+
+const accountPolicyJson = {
+  Version: '1',
+  Statement: [
+    {
+      Effect: 'Allow',
+      Action: [
+        // ECS — 实例生命周期与查询
+        'ecs:DescribeInstances',
+        'ecs:RunInstances',
+        'ecs:StartInstance',
+        'ecs:StopInstance',
+        'ecs:DeleteInstance',
+        'ecs:DescribeInstanceVncUrl',
+        'ecs:DescribeImages',
+        'ecs:ImportImage',
+        'ecs:DescribeTasks',
+        'ecs:DescribeRegions',
+        // ECS — 安全组
+        'ecs:DescribeSecurityGroups',
+        'ecs:CreateSecurityGroup',
+        'ecs:AuthorizeSecurityGroup',
+        'ecs:RevokeSecurityGroup',
+        // VPC — 网络与弹性公网 IP
+        'vpc:DescribeVpcs',
+        'vpc:CreateVpc',
+        'vpc:DescribeVSwitches',
+        'vpc:CreateVSwitch',
+        'vpc:DescribeEipAddresses',
+        'vpc:AllocateEipAddress',
+        'vpc:AssociateEipAddress',
+        'vpc:UnassociateEipAddress',
+        'vpc:DescribeEipMonitorData',
+        // 云监控 — 流量速率指标（API 名 DescribeMetricLast，RAM action 为 QueryMetricLast）
+        'cms:QueryMetricLast',
+        // CDT — 累计互联网流量查询
+        'cdt:ListCdtInternetTraffic',
+        // BSS OpenAPI — 账单与 CDT 免费额度查询（RAM action 为 bss:DescribeBillList，覆盖 QueryBill/QueryBillDetail 等）
+        'bss:DescribeBillList',
+        // OSS — 镜像导入上传与存储桶管理
+        'oss:ListBuckets',
+        'oss:PutBucket',
+        'oss:PutObject',
+        'oss:GetObject',
+        'oss:DeleteObject',
+      ],
+      Resource: '*',
+    },
+  ],
+};
 
 export default function AccountsView({ accounts, selectedAccount, setSelectedAccount }: AccountsViewProps) {
   const saveAccountMutation = useSaveAccountMutation();
@@ -30,9 +80,22 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
   // Track if we are creating a brand new account
   const [isCreating, setIsCreating] = useState(false);
 
+  // CDT permission check for existing accounts
+  const cdtPermissionQuery = useCdtPermissionQuery(selectedAccount && !isCreating ? selectedAccount.id : null);
+  const validateMutation = useValidateAccountMutation();
+  const [testResult, setTestResult] = useState<{status: 'idle' | 'testing' | 'success' | 'error'; message?: string}>({status: 'idle'});
+
+  // Reset test result when switching accounts
+  useEffect(() => {
+    setTestResult({status: 'idle'});
+  }, [selectedAccount?.id, isCreating]);
+
   // Log audit history modal or list preview trigger
   const [showAudits, setShowAudits] = useState(false);
   const [selectedAuditLog, setSelectedAuditLog] = useState<string[] | null>(null);
+
+  // Account permission authorization modal
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Simulated copy helper
   const handleCopy = (text: string, label: string) => {
@@ -126,6 +189,27 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
       setSelectedAccount(null);
     } catch (error) {
       alert(error instanceof Error ? error.message : '保存失败');
+    }
+  };
+
+  const handleTestConnection = async () => {
+    if (!selectedAccount || isCreating) return;
+    setTestResult({status: 'testing'});
+    try {
+      const result = await validateMutation.mutateAsync(selectedAccount.id);
+      if (result.valid && !result.warning) {
+        setTestResult({status: 'success', message: '连接测试成功，凭据有效，所有权限正常'});
+      } else if (result.valid && result.warning) {
+        if (result.errorType === 'network') {
+          setTestResult({status: 'success', message: `凭据有效，但部分接口出现网络错误（非权限问题）:\n${result.warning}\n\n请检查服务器到阿里云 API 的网络连通性（防火墙、DNS、跨境网络等），无需修改 RAM 策略。`});
+        } else {
+          setTestResult({status: 'success', message: `凭据有效，但部分权限不足：\n${result.warning}\n\n请点击「查看授权」获取所需 RAM 策略，并在阿里云 RAM 控制台添加。`});
+        }
+      } else {
+        setTestResult({status: 'error', message: result.error || '凭据验证失败，请检查 AccessKey ID 和 Secret 是否正确'});
+      }
+    } catch (error) {
+      setTestResult({status: 'error', message: error instanceof Error ? error.message : '连接测试失败'});
     }
   };
 
@@ -349,7 +433,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
               <ShieldAlert className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
               <div>
                 <h4 className="text-xs font-bold text-primary-ink">
-                  多云资源安全编排隔离隔离准则 (Account Syncing Rules)
+                  多云资源安全编排隔离准则
                 </h4>
                 <p className="text-[11px] text-secondary-ink mt-1 leading-relaxed max-w-4xl">
                   此平台采用高强度 KMS 加密层对 AccessKeySecret 进行本地加密封存。数据中心每 15 分钟会轮询各云厂商 API 探测可用性。部分地域（例如 Aliyun China East 2）如果触发 Auth Failed 故障，请优先确认对应的 RAM Policy ARN 所扮演的角色权限已分配。
@@ -407,7 +491,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                 {!isCreating && (
                   <section className="bg-surface-white border border-hairline-divider rounded-lg p-5 shadow-xs">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xs font-bold uppercase tracking-wider text-outline">托管资源摘要 (Resource Metrics)</h2>
+                      <h2 className="text-xs font-bold uppercase tracking-wider text-outline">托管资源摘要</h2>
                       <span className="text-[11px] text-secondary font-semibold font-mono">
                         VPC 通道连接就绪
                       </span>
@@ -441,12 +525,70 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                   </section>
                 )}
 
+                {/* Account Permission Status */}
+                {!isCreating && (
+                  <section className={`border rounded-lg p-4 shadow-xs ${cdtPermissionQuery.data?.permitted ? 'bg-surface-white border-hairline-divider' : cdtPermissionQuery.data?.errorType === 'credential' ? 'bg-[#FFEBEE] border-recovery-red/30' : cdtPermissionQuery.data?.errorType === 'network' ? 'bg-[#E3F2FD] border-primary/30' : 'bg-[#FFF8E1] border-signal-amber/30'}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {cdtPermissionQuery.isLoading ? (
+                          <RefreshCw className="w-4 h-4 text-secondary-ink animate-spin" />
+                        ) : cdtPermissionQuery.data?.permitted ? (
+                          <ShieldCheck className="w-4 h-4 text-healthy-green" />
+                        ) : cdtPermissionQuery.data?.errorType === 'credential' ? (
+                          <AlertTriangle className="w-4 h-4 text-recovery-red" />
+                        ) : cdtPermissionQuery.data?.errorType === 'network' ? (
+                          <AlertTriangle className="w-4 h-4 text-primary" />
+                        ) : (
+                          <AlertTriangle className="w-4 h-4 text-signal-amber" />
+                        )}
+                        <h2 className="text-xs font-bold uppercase tracking-wider text-outline">
+                          账号权限
+                        </h2>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setShowAuthModal(true)}
+                          className="text-[11px] font-medium text-primary border border-primary/40 hover:bg-primary hover:text-white px-2.5 py-0.5 rounded transition-colors cursor-pointer"
+                        >
+                          查看授权
+                        </button>
+                        <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded ${cdtPermissionQuery.data?.permitted ? 'bg-healthy-green/10 text-healthy-green' : cdtPermissionQuery.data?.errorType === 'credential' ? 'bg-recovery-red/10 text-recovery-red' : cdtPermissionQuery.data?.errorType === 'network' ? 'bg-primary/10 text-primary' : 'bg-signal-amber/10 text-signal-amber'}`}>
+                          {cdtPermissionQuery.isLoading ? '检测中…' : cdtPermissionQuery.data?.permitted ? '已授权' : cdtPermissionQuery.data?.errorType === 'credential' ? '凭据错误' : cdtPermissionQuery.data?.errorType === 'network' ? '网络异常' : '未授权'}
+                        </span>
+                      </div>
+                    </div>
+                    {!cdtPermissionQuery.isLoading && !cdtPermissionQuery.data?.permitted && (
+                      <div className="mt-3 text-[11px] text-secondary-ink leading-relaxed">
+                        {cdtPermissionQuery.data?.errorType === 'credential' ? (
+                          <>
+                            <p className="font-medium text-recovery-red">AccessKey 凭据验证失败，请检查 AccessKey Secret 是否正确。</p>
+                            <p className="mt-1">签名验证失败意味着密钥不正确或已被掩码覆盖，请在下方重新输入完整的 AccessKey Secret 后保存。</p>
+                          </>
+                        ) : cdtPermissionQuery.data?.errorType === 'network' ? (
+                          <>
+                            <p className="font-medium text-primary">CDT 接口出现网络错误，非权限问题。</p>
+                            <p className="mt-1">服务器无法连通阿里云 CDT API（<code className="font-mono bg-primary/10 px-1 rounded">cdt.aliyuncs.com</code>），请检查网络连通性（防火墙、DNS、跨境网络等），无需修改 RAM 策略。</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="font-medium text-signal-amber">该账号缺少 <code className="font-mono bg-signal-amber/10 px-1 rounded">cdt:ListCdtInternetTraffic</code> 权限，ECS 卡片无法显示累计流量。</p>
+                            <p className="mt-1">请在阿里云 RAM 控制台为该子用户添加 CDT 只读权限策略（例如 <code className="font-mono bg-signal-amber/10 px-1 rounded">AliyunCDTReadOnlyAccess</code>），或点击「查看授权」获取完整 RAM 策略 JSON。</p>
+                          </>
+                        )}
+                        {cdtPermissionQuery.data?.error && (
+                          <p className="mt-1 text-[10px] text-secondary-ink/70 font-mono break-all">错误详情: {cdtPermissionQuery.data.error}</p>
+                        )}
+                      </div>
+                    )}
+                  </section>
+                )}
+
                 {/* Form fields settings card */}
                 <section className="bg-surface-white border border-hairline-divider rounded-lg shadow-xs flex flex-col overflow-hidden">
                   <header className="px-5 py-3.5 border-b border-hairline-divider bg-[#FAFBFD] flex items-center justify-between">
                     <h2 className="text-xs font-bold uppercase tracking-wider text-outline flex items-center gap-2">
                       <KeyRound className="w-4 h-4 text-primary" />
-                      API Credentials & Role ARN Access Policy
+                      API 凭据与角色授权策略
                     </h2>
                     {selectedAccount.status === 'Auth Failed' && (
                       <span className="bg-[#FFEBEE] border border-recovery-red/30 text-recovery-red px-2.5 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1">
@@ -458,7 +600,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                   <div className="p-5 flex flex-col gap-4">
                     {/* Account Title block */}
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider">账户配置名称 (Account Target ID) *</label>
+                      <label className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider">账户配置名称 *</label>
                       <input
                         type="text"
                         value={name}
@@ -528,7 +670,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                     {/* Assume Role ARN */}
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider flex items-center justify-between">
-                        <span>假定角色 ARN (Assume Role ARN - 可选)</span>
+                        <span>假定角色 ARN（可选）</span>
                         <span className="text-[9px] font-mono lowercase text-outline">acs:ram::[uid]:role/[rolename]</span>
                       </label>
                       <input
@@ -543,7 +685,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                     {/* Managed Regions */}
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider flex items-center justify-between">
-                        <span>管理地域限制 (Managed Cloud Regions)</span>
+                        <span>管理地域限制</span>
                         <span className="text-[9px] text-[#0058bc]">可选多个，逗号分割</span>
                       </label>
                       <div className="relative">
@@ -567,7 +709,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                     {isCreating && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1 bg-section-layer/50 p-4 border rounded-md">
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-[11px] font-bold text-secondary-ink uppercase">责任人 (Main Owner)</label>
+                          <label className="text-[11px] font-bold text-secondary-ink uppercase">责任人</label>
                           <input
                             type="email"
                             value={owner}
@@ -588,21 +730,39 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                     )}
 
                     {/* Footer operations */}
-                    <div className="flex justify-end gap-2.5 mt-5 pt-5 border-t border-hairline-divider">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedAccount(null)}
-                        className="px-5 py-2 border border-hairline-divider text-primary-ink bg-white font-medium hover:bg-emphasis-layer rounded text-xs transition-colors cursor-pointer"
-                      >
-                        取消
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleSave}
-                        className="px-5 py-2 bg-primary hover:bg-primary-container font-semibold font-space text-white rounded text-xs transition-colors cursor-pointer shadow-xs active:scale-98"
-                      >
-                        保存凭据并测试重连
-                      </button>
+                    <div className="flex flex-col gap-3 mt-5 pt-5 border-t border-hairline-divider">
+                      {testResult.status !== 'idle' && testResult.status !== 'testing' && (
+                        <div className={`text-[11px] px-3 py-2 rounded border whitespace-pre-wrap ${testResult.status === 'success' ? 'bg-healthy-green/5 border-healthy-green/30 text-healthy-green' : 'bg-recovery-red/5 border-recovery-red/30 text-recovery-red'}`}>
+                          {testResult.message}
+                        </div>
+                      )}
+                      <div className="flex justify-end gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAccount(null)}
+                          className="px-5 py-2 border border-hairline-divider text-primary-ink bg-white font-medium hover:bg-emphasis-layer rounded text-xs transition-colors cursor-pointer"
+                        >
+                          取消
+                        </button>
+                        {!isCreating && (
+                          <button
+                            type="button"
+                            onClick={handleTestConnection}
+                            disabled={testResult.status === 'testing'}
+                            className="flex items-center gap-1.5 px-5 py-2 border border-primary/40 text-primary bg-white font-medium hover:bg-primary hover:text-white rounded text-xs transition-colors cursor-pointer disabled:opacity-50"
+                          >
+                            {testResult.status === 'testing' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+                            测试连接
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={handleSave}
+                          className="px-5 py-2 bg-primary hover:bg-primary-container font-semibold font-space text-white rounded text-xs transition-colors cursor-pointer shadow-xs active:scale-98"
+                        >
+                          保存
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </section>
@@ -612,7 +772,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
               <div className="lg:col-span-4 flex flex-col gap-6">
                 <section className="bg-surface-white border border-hairline-divider rounded-lg p-5 shadow-xs flex flex-col gap-5">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-outline border-b pb-3 border-hairline-divider/50">
-                    账户元数据 (Metadata Console)
+                    账户元数据
                   </h3>
 
                   <div className="flex flex-col gap-4 text-xs font-sans">
@@ -630,13 +790,13 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                           <span className={`w-1.5 h-1.5 rounded-full ${
                             selectedAccount.status === 'Active' ? 'bg-healthy-green' : selectedAccount.status === 'Sync Delayed' ? 'bg-signal-amber' : selectedAccount.status === 'Auth Failed' ? 'bg-recovery-red' : 'bg-outline'
                           }`} />
-                          {selectedAccount.status === 'Active' ? '运行中 (Active)' : selectedAccount.status === 'Auth Failed' ? '认证失效 (Failed)' : selectedAccount.status}
+                          {selectedAccount.status === 'Active' ? '运行中' : selectedAccount.status === 'Auth Failed' ? '认证失效' : selectedAccount.status}
                         </span>
                       </div>
                     </div>
 
                     <div>
-                      <span className="text-[11px] text-secondary-ink font-semibold uppercase tracking-wider">注册主拓扑宿地域 (Billing Zone)</span>
+                      <span className="text-[11px] text-secondary-ink font-semibold uppercase tracking-wider">注册主拓扑宿地域</span>
                       <div className="text-primary-ink mt-1 flex items-center gap-2 font-medium">
                         <MapPin className="w-3.5 h-3.5 text-outline" />
                         {isCreating ? mainRegion : selectedAccount.mainRegion}
@@ -675,7 +835,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                         className="w-full flex items-center justify-center gap-2 py-2 text-on-surface-variant hover:text-primary-ink hover:bg-emphasis-layer border border-hairline-divider bg-white rounded text-xs transition-colors cursor-pointer font-medium"
                       >
                         <History className="w-4 h-4 text-outline" />
-                        查看操作日志 (API Logs)
+                        查看操作日志
                       </button>
                     </div>
                   )}
@@ -693,7 +853,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
             <header className="px-4 py-3 bg-[#161b22] border-b border-[#30363d] flex justify-between items-center text-white">
               <span className="text-xs font-bold font-mono text-[#c9d1d9] flex items-center gap-2">
                 <FileCode className="w-4 h-4 text-primary" />
-                API Audit Operations Log - {selectedAccount?.name}
+                API 操作审计日志 — {selectedAccount?.name}
               </span>
               <button 
                 onClick={() => {
@@ -712,6 +872,99 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                   <span className="text-[#58a6ff]">{log.substring(27)}</span>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Account Authorization Modal */}
+      {showAuthModal && selectedAccount && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary-ink/45 backdrop-blur-xs font-sans">
+          <div className="bg-surface-white border border-hairline-divider w-full max-w-2xl rounded-lg overflow-hidden shadow-xl flex flex-col">
+            <header className="px-5 py-3.5 border-b border-hairline-divider bg-[#FAFBFD] flex justify-between items-center">
+              <span className="text-xs font-bold text-primary-ink flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-primary" />
+                账号 RAM 授权策略 — {selectedAccount.name}
+              </span>
+              <button
+                onClick={() => setShowAuthModal(false)}
+                className="text-xs text-secondary-ink hover:text-primary-ink cursor-pointer px-2 py-0.5 rounded hover:bg-emphasis-layer"
+              >
+                关闭
+              </button>
+            </header>
+
+            <div className="p-5 flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
+              {/* Status summary */}
+              <div className={`rounded-md border p-3 text-[11px] leading-relaxed ${cdtPermissionQuery.data?.permitted ? 'border-healthy-green/30 bg-healthy-green/[0.04] text-healthy-green' : cdtPermissionQuery.data?.errorType === 'network' ? 'border-primary/30 bg-primary/[0.04] text-primary' : 'border-signal-amber/30 bg-signal-amber/[0.04] text-signal-amber'}`}>
+                {cdtPermissionQuery.data?.permitted ? (
+                  <span className="font-medium">✓ 该账号已拥有所需权限，无需额外操作。</span>
+                ) : cdtPermissionQuery.data?.errorType === 'network' ? (
+                  <>
+                    <p className="font-medium">CDT 接口出现网络错误，非权限问题。</p>
+                    <p className="mt-1">请检查服务器到阿里云 API 的网络连通性（防火墙、DNS、跨境网络等），无需修改 RAM 策略。</p>
+                    {cdtPermissionQuery.data?.error && (
+                      <p className="mt-1 text-[10px] font-mono break-all opacity-80">错误详情: {cdtPermissionQuery.data.error}</p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="font-medium">该账号缺少 <code className="font-mono bg-signal-amber/10 px-1 rounded">cdt:ListCdtInternetTraffic</code> 权限。</p>
+                    {cdtPermissionQuery.data?.error && (
+                      <p className="mt-1 text-[10px] font-mono break-all opacity-80">错误详情: {cdtPermissionQuery.data.error}</p>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Authorization JSON */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider">完整账号授权策略 JSON（含 ECS/VPC/EIP/CDT/BSS/OSS 全部权限）</span>
+                  <button
+                    onClick={() => {
+                      const json = JSON.stringify(accountPolicyJson, null, 2);
+                      navigator.clipboard.writeText(json);
+                      setCopiedField('cdt-json');
+                      setTimeout(() => setCopiedField(null), 2000);
+                    }}
+                    className="text-[11px] font-medium text-primary hover:bg-primary/10 px-2 py-0.5 rounded transition-colors cursor-pointer flex items-center gap-1"
+                  >
+                    {copiedField === 'cdt-json' ? <><Check className="w-3 h-3 text-healthy-green" /> 已复制</> : <><Copy className="w-3 h-3" /> 复制 JSON</>}
+                  </button>
+                </div>
+                <pre className="bg-[#0d1117] text-[#c9d1d9] font-mono text-[11px] p-4 rounded border border-[#30363d] overflow-x-auto leading-relaxed">
+{JSON.stringify(accountPolicyJson, null, 2)}
+                </pre>
+                <p className="text-[10px] text-secondary-ink leading-relaxed">
+                  以上 JSON 包含本平台所需的全部 RAM 权限（ECS 实例管理、VPC 网络、EIP、云监控、CDT 流量查询、BSS 账单、OSS 镜像上传）。在 RAM 控制台创建为自定义授权策略并附加到该子用户即可。如仅需补充 CDT 权限，也可直接附加系统策略 <code className="font-mono bg-emphasis-layer px-1 rounded">AliyunCDTReadOnlyAccess</code>。
+                </p>
+                <div className="mt-1 rounded-md border border-primary/20 bg-primary/[0.03] p-2.5 text-[10px] text-secondary-ink leading-relaxed">
+                  <p className="font-medium text-primary">提示：如果已配置以上 JSON 仍然报错</p>
+                  <p className="mt-1">请留意错误信息中是否包含 <code className="font-mono bg-emphasis-layer px-1 rounded">EOF</code>、<code className="font-mono bg-emphasis-layer px-1 rounded">TLS handshake timeout</code>、<code className="font-mono bg-emphasis-layer px-1 rounded">connection refused</code> 等关键词。这些是<strong>网络连通性问题</strong>，不是权限不足——RAM 策略无法解决，需要检查服务器到阿里云 API 端点的网络（防火墙、DNS、跨境链路等）。</p>
+                </div>
+              </div>
+
+              {/* RAM console link */}
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider">快速跳转</span>
+                <a
+                  href={selectedAccount.providerRegion === 'Aliyun Domestic'
+                    ? 'https://ram.console.aliyun.com/users'
+                    : 'https://ram.console.alibabacloud.com/users'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between border border-primary/30 hover:border-primary hover:bg-primary/5 rounded-md px-4 py-2.5 text-xs font-medium text-primary transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    前往{selectedAccount.providerRegion === 'Aliyun Domestic' ? '阿里云国内' : '阿里云国际'} RAM 控制台
+                  </span>
+                  <span className="text-[10px] text-secondary-ink font-mono">
+                    {selectedAccount.providerRegion === 'Aliyun Domestic' ? 'ram.console.aliyun.com' : 'ram.console.alibabacloud.com'}
+                  </span>
+                </a>
+              </div>
             </div>
           </div>
         </div>

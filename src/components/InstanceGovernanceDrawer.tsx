@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react';
 
 import {useSaveInstanceGovernanceMutation, useSaveTrafficPolicyMutation} from '../features/runtime/hooks';
 import type {ECSInstance} from '../types';
+import {ACTION_OPTIONS} from '../utils/actionLabels';
 
 interface InstanceGovernanceDrawerProps {
   instance: ECSInstance | null;
@@ -50,8 +51,8 @@ export default function InstanceGovernanceDrawer({instance, onClose}: InstanceGo
         </div>
 
         <section className="mt-6 rounded-lg border border-hairline-divider p-5">
-          <h3 className="text-base font-semibold text-primary-ink">Traffic Governance</h3>
-          <p className="mt-1 text-xs text-secondary-ink">GB 阈值仅针对累计流量。留空表示继续继承账号默认值。</p>
+          <h3 className="text-base font-semibold text-primary-ink">流量治理</h3>
+          <p className="mt-1 text-xs text-secondary-ink">阈值仅针对累计流量。留空表示继续继承账号默认值。</p>
           <div className="mt-3 rounded bg-emphasis-layer/50 p-3 text-xs text-secondary-ink">
             <div>当前累计流量: {instance.trafficUsage === null ? '不可用' : `${instance.trafficUsage} ${instance.trafficUsageUnit}`}</div>
             <div>当前实时速率: {instance.trafficRate === null ? '不可用' : `${instance.trafficRate} ${instance.trafficRateUnit}`}</div>
@@ -70,8 +71,9 @@ export default function InstanceGovernanceDrawer({instance, onClose}: InstanceGo
             <label className="flex flex-col gap-2 text-sm">
               <span className="font-medium text-primary-ink">溢出动作</span>
               <select value={overflowAction} onChange={(event) => setOverflowAction(event.target.value)} className="rounded border border-hairline-divider px-3 py-2">
-                <option value="notify">notify</option>
-                <option value="keepalive-job">keepalive-job</option>
+                {ACTION_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
             </label>
             <label className="flex items-center gap-3 text-sm text-primary-ink">
@@ -99,7 +101,7 @@ export default function InstanceGovernanceDrawer({instance, onClose}: InstanceGo
         </section>
 
         <section className="mt-6 rounded-lg border border-hairline-divider p-5">
-          <h3 className="text-base font-semibold text-primary-ink">Traffic Policy / Keepalive</h3>
+          <h3 className="text-base font-semibold text-primary-ink">流量策略 / 保活</h3>
           <div className="mt-4 grid gap-4">
             <label className="flex items-center gap-3 text-sm text-primary-ink">
               <input type="checkbox" checked={policyEnabled} onChange={(event) => setPolicyEnabled(event.target.checked)} />
@@ -112,8 +114,9 @@ export default function InstanceGovernanceDrawer({instance, onClose}: InstanceGo
             <label className="flex flex-col gap-2 text-sm">
               <span className="font-medium text-primary-ink">动作</span>
               <select value={policyAction} onChange={(event) => setPolicyAction(event.target.value)} className="rounded border border-hairline-divider px-3 py-2">
-                <option value="keepalive-job">keepalive-job</option>
-                <option value="notify">notify</option>
+                {ACTION_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
             </label>
             <label className="flex flex-col gap-2 text-sm">

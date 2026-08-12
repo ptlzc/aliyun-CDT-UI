@@ -50,7 +50,7 @@ export default function SettingsView({defaults}: SettingsViewProps) {
         payload: {
           id: original.id,
           name: payload.name,
-          siteType: payload.siteType,
+          siteType: payload.siteType as ApiRegionGroup['siteType'],
           regionPatterns: payload.regionPatterns,
           createdAt: original.createdAt,
           updatedAt: original.updatedAt,
@@ -59,7 +59,7 @@ export default function SettingsView({defaults}: SettingsViewProps) {
     } else {
       createRegionGroupMutation.mutate({
         name: payload.name,
-        siteType: payload.siteType,
+        siteType: payload.siteType as ApiRegionGroup['siteType'],
         regionPatterns: payload.regionPatterns,
       });
     }

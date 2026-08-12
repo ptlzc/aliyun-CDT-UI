@@ -4,13 +4,13 @@ import {
   listAccounts as listAccountsRequest,
   updateAccount as updateAccountRequest,
 } from './generated/accounts/sdk.gen';
-import type {Account, AccountListResponse, CreateAccountRequest, UpdateAccountRequest} from './generated/accounts/types.gen';
+import type {Account, AccountBody, AccountListResponse, CreateAccountRequest} from './generated/accounts/types.gen';
 import {client as graphClient} from './generated/graph/client.gen';
 import {discoverTopology as discoverTopologyRequest, getGraph as getGraphRequest} from './generated/graph/sdk.gen';
 import type {ResourceGraph} from './generated/graph/types.gen';
 import {client as importClient} from './generated/import/client.gen';
 import {importImage as importImageRequest} from './generated/import/sdk.gen';
-import type {ImportImageRequest, ImportImageResponse2} from './generated/import/types.gen';
+import type {ImportImageBody, ImportImageResponse2} from './generated/import/types.gen';
 import {client as instancesClient} from './generated/instances/client.gen';
 import {
   getEcsTrafficGovernance as getEcsTrafficGovernanceRequest,
@@ -21,13 +21,13 @@ import {
   startEcsInstance as startEcsInstanceRequest,
   stopEcsInstance as stopEcsInstanceRequest,
 } from './generated/instances/sdk.gen';
-import type {ActionAudit, EcsMetricsSnapshot, EcsTrafficGovernance, EcsTrafficGovernanceOverride, ECSInstanceStateResponse, ECSVncUrlResponse} from './generated/instances/types.gen';
+import type {ActionAudit, EcsInstanceStateResponse, EcsMetricsSnapshot, EcsTrafficGovernance, EcsTrafficGovernanceOverride, EcsVncUrlResponse} from './generated/instances/types.gen';
 import {client as jobsClient} from './generated/jobs/client.gen';
 import {getCdtFreeQuota as getCdtFreeQuotaRequest, listJobs as listJobsRequest, listTrafficPolicies as listTrafficPoliciesRequest, saveTrafficPolicy as saveTrafficPolicyRequest} from './generated/jobs/sdk.gen';
 import type {Job, JobListResponse, TrafficPolicy, TrafficPolicyListResponse, TrafficPolicyRequest} from './generated/jobs/types.gen';
 import {client as provisionClient} from './generated/provision/client.gen';
 import {provision as provisionRequest} from './generated/provision/sdk.gen';
-import type {ProvisionRequest, ProvisionResponse2} from './generated/provision/types.gen';
+import type {ProvisionBody, ProvisionResponse2} from './generated/provision/types.gen';
 import {client as settingsClient} from './generated/settings/client.gen';
 import {
   applyPlatformTrafficGovernanceDefaultsToAccounts as applyPlatformTrafficGovernanceDefaultsToAccountsRequest,
@@ -58,7 +58,7 @@ import type {
 const API_BASE_URL = (
   import.meta.env.NEXT_PUBLIC_API_BASE_URL ||
   import.meta.env.VITE_API_BASE_URL ||
-  'http://localhost:8080/api'
+  'http://localhost:8080'
 ).replace(/\/$/, '');
 
 for (const client of [accountsClient, graphClient, importClient, instancesClient, jobsClient, provisionClient, settingsClient]) {
@@ -79,7 +79,7 @@ function unwrapData<T>(result: GeneratedResult<T>): T {
 
 export type ApiAccount = Account;
 export type ApiActionAudit = ActionAudit;
-export type ApiCreateAccountRequest = CreateAccountRequest | UpdateAccountRequest;
+export type ApiCreateAccountRequest = CreateAccountRequest | AccountBody;
 export type ApiECSTrafficGovernance = EcsTrafficGovernance;
 export type ApiECSTrafficGovernanceOverride = EcsTrafficGovernanceOverride;
 export type ApiECSMetricsSnapshot = EcsMetricsSnapshot;
@@ -87,7 +87,7 @@ export type ApiEffectiveTrafficGovernance = EffectiveTrafficGovernance;
 export type ApiJob = Job;
 export type ApiPlatformTrafficGovernance = PlatformTrafficGovernance;
 export type ApiPlatformTrafficGovernanceRolloutResult = PlatformTrafficGovernanceRolloutResult;
-export type ApiProvisionRequest = ProvisionRequest;
+export type ApiProvisionRequest = ProvisionBody;
 export type ApiRegionGroup = RegionGroup;
 export type ApiRegionGroupListResponse = RegionGroupListResponse;
 export type ApiRegionGroupTrafficRule = RegionGroupTrafficRule;
@@ -121,7 +121,7 @@ export type RuntimeEvent = {
 };
 
 export function runtimeWebSocketUrl(filters?: {accountId?: string; jobId?: string}): string {
-  const httpUrl = new URL(`${API_BASE_URL}/runtime/ws`);
+  const httpUrl = new URL(`${API_BASE_URL}/api/runtime/ws`);
   httpUrl.protocol = httpUrl.protocol === 'https:' ? 'wss:' : 'ws:';
   if (filters?.accountId) {
     httpUrl.searchParams.set('accountId', filters.accountId);
@@ -144,7 +144,7 @@ export async function createAccount(payload: ApiCreateAccountRequest): Promise<A
 export async function updateAccount(accountId: string, payload: ApiCreateAccountRequest): Promise<ApiAccount> {
   return unwrapData((await updateAccountRequest({
     path: {accountId},
-    body: payload as UpdateAccountRequest,
+    body: payload as AccountBody,
   })) as GeneratedResult<ApiAccount>);
 }
 
@@ -202,10 +202,7 @@ export async function saveECSTrafficGovernance(
 ): Promise<ApiECSTrafficGovernance> {
   return unwrapData((await saveEcsTrafficGovernanceOverrideRequest({
     path: {accountId, instanceId},
-    body: {
-      instanceId,
-      ...payload,
-    },
+    body: payload,
   })) as GeneratedResult<ApiECSTrafficGovernance>);
 }
 
@@ -218,12 +215,12 @@ export async function stopECSInstance(accountId: string, instanceId: string): Pr
 }
 
 export async function getECSInstanceState(accountId: string, instanceId: string): Promise<string> {
-  const response = unwrapData((await getEcsInstanceStateRequest({path: {accountId, instanceId}})) as GeneratedResult<ECSInstanceStateResponse>);
+  const response = unwrapData((await getEcsInstanceStateRequest({path: {accountId, instanceId}})) as GeneratedResult<EcsInstanceStateResponse>);
   return response.state;
 }
 
 export async function getECSVncUrl(accountId: string, instanceId: string): Promise<string> {
-  const response = unwrapData((await getEcsVncUrlRequest({path: {accountId, instanceId}})) as GeneratedResult<ECSVncUrlResponse>);
+  const response = unwrapData((await getEcsVncUrlRequest({path: {accountId, instanceId}})) as GeneratedResult<EcsVncUrlResponse>);
   return response.vncUrl;
 }
 
@@ -231,7 +228,7 @@ export async function getECSMetrics(accountId: string, instanceId: string): Prom
   return unwrapData((await getEcsMetricsRequest({path: {accountId, instanceId}})) as GeneratedResult<EcsMetricsSnapshot>);
 }
 
-export async function importImage(accountId: string, payload: ImportImageRequest): Promise<ImportImageResponse2> {
+export async function importImage(accountId: string, payload: ImportImageBody): Promise<ImportImageResponse2> {
   return unwrapData((await importImageRequest({
     path: {accountId},
     body: payload,
@@ -304,7 +301,7 @@ export interface CdtPermissionResult {
 }
 
 export async function checkCdtPermission(accountId: string): Promise<CdtPermissionResult> {
-  const response = await fetch(`${API_BASE_URL}/accounts/${accountId}/cdt-permission`);
+  const response = await fetch(`${API_BASE_URL}/api/accounts/${accountId}/cdt-permission`);
   if (!response.ok) {
     return {permitted: false, error: `HTTP ${response.status}`};
   }
@@ -319,7 +316,7 @@ export interface ValidateAccountResult {
 }
 
 export async function validateAccount(accountId: string): Promise<ValidateAccountResult> {
-  const response = await fetch(`${API_BASE_URL}/accounts/${accountId}/validate`, {method: 'POST'});
+  const response = await fetch(`${API_BASE_URL}/api/accounts/${accountId}/validate`, {method: 'POST'});
   if (!response.ok) {
     const text = await response.text();
     return {valid: false, errorType: 'credential', error: text};

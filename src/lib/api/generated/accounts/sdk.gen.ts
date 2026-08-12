@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CheckCdtPermissionData, CheckCdtPermissionResponses, CreateAccountData, CreateAccountResponses, GetAccountData, GetAccountResponses, ListAccountsData, ListAccountsResponses, ListRegionsData, ListRegionsForAccountData, ListRegionsForAccountResponses, ListRegionsResponses, UpdateAccountData, UpdateAccountResponses, ValidateAccountData, ValidateAccountResponses } from './types.gen';
+import type { CheckCdtPermissionData, CheckCdtPermissionErrors, CheckCdtPermissionResponses, CreateAccountData, CreateAccountErrors, CreateAccountResponses, GetAccountData, GetAccountErrors, GetAccountResponses, ListAccountsData, ListAccountsErrors, ListAccountsResponses, ListRegionsData, ListRegionsErrors, ListRegionsForAccountData, ListRegionsForAccountErrors, ListRegionsForAccountResponses, ListRegionsResponses, UpdateAccountData, UpdateAccountErrors, UpdateAccountResponses, ValidateAccountData, ValidateAccountErrors, ValidateAccountResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -18,10 +18,10 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
 
-export const listAccounts = <ThrowOnError extends boolean = false>(options?: Options<ListAccountsData, ThrowOnError>): RequestResult<ListAccountsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListAccountsResponses, unknown, ThrowOnError>({ url: '/accounts', ...options });
+export const listAccounts = <ThrowOnError extends boolean = false>(options?: Options<ListAccountsData, ThrowOnError>): RequestResult<ListAccountsResponses, ListAccountsErrors, ThrowOnError> => (options?.client ?? client).get<ListAccountsResponses, ListAccountsErrors, ThrowOnError>({ url: '/api/accounts', ...options });
 
-export const createAccount = <ThrowOnError extends boolean = false>(options: Options<CreateAccountData, ThrowOnError>): RequestResult<CreateAccountResponses, unknown, ThrowOnError> => (options.client ?? client).post<CreateAccountResponses, unknown, ThrowOnError>({
-    url: '/accounts',
+export const createAccount = <ThrowOnError extends boolean = false>(options: Options<CreateAccountData, ThrowOnError>): RequestResult<CreateAccountResponses, CreateAccountErrors, ThrowOnError> => (options.client ?? client).post<CreateAccountResponses, CreateAccountErrors, ThrowOnError>({
+    url: '/api/accounts',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -29,8 +29,8 @@ export const createAccount = <ThrowOnError extends boolean = false>(options: Opt
     }
 });
 
-export const listRegions = <ThrowOnError extends boolean = false>(options: Options<ListRegionsData, ThrowOnError>): RequestResult<ListRegionsResponses, unknown, ThrowOnError> => (options.client ?? client).post<ListRegionsResponses, unknown, ThrowOnError>({
-    url: '/accounts/regions',
+export const listRegions = <ThrowOnError extends boolean = false>(options: Options<ListRegionsData, ThrowOnError>): RequestResult<ListRegionsResponses, ListRegionsErrors, ThrowOnError> => (options.client ?? client).post<ListRegionsResponses, ListRegionsErrors, ThrowOnError>({
+    url: '/api/accounts/regions',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -38,8 +38,8 @@ export const listRegions = <ThrowOnError extends boolean = false>(options: Optio
     }
 });
 
-export const validateAccount = <ThrowOnError extends boolean = false>(options: Options<ValidateAccountData, ThrowOnError>): RequestResult<ValidateAccountResponses, unknown, ThrowOnError> => (options.client ?? client).post<ValidateAccountResponses, unknown, ThrowOnError>({
-    url: '/accounts/validate',
+export const validateAccount = <ThrowOnError extends boolean = false>(options: Options<ValidateAccountData, ThrowOnError>): RequestResult<ValidateAccountResponses, ValidateAccountErrors, ThrowOnError> => (options.client ?? client).post<ValidateAccountResponses, ValidateAccountErrors, ThrowOnError>({
+    url: '/api/accounts/validate',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -47,10 +47,10 @@ export const validateAccount = <ThrowOnError extends boolean = false>(options: O
     }
 });
 
-export const getAccount = <ThrowOnError extends boolean = false>(options: Options<GetAccountData, ThrowOnError>): RequestResult<GetAccountResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetAccountResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}', ...options });
+export const getAccount = <ThrowOnError extends boolean = false>(options: Options<GetAccountData, ThrowOnError>): RequestResult<GetAccountResponses, GetAccountErrors, ThrowOnError> => (options.client ?? client).get<GetAccountResponses, GetAccountErrors, ThrowOnError>({ url: '/api/accounts/{accountId}', ...options });
 
-export const updateAccount = <ThrowOnError extends boolean = false>(options: Options<UpdateAccountData, ThrowOnError>): RequestResult<UpdateAccountResponses, unknown, ThrowOnError> => (options.client ?? client).put<UpdateAccountResponses, unknown, ThrowOnError>({
-    url: '/accounts/{accountId}',
+export const updateAccount = <ThrowOnError extends boolean = false>(options: Options<UpdateAccountData, ThrowOnError>): RequestResult<UpdateAccountResponses, UpdateAccountErrors, ThrowOnError> => (options.client ?? client).put<UpdateAccountResponses, UpdateAccountErrors, ThrowOnError>({
+    url: '/api/accounts/{accountId}',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -58,6 +58,6 @@ export const updateAccount = <ThrowOnError extends boolean = false>(options: Opt
     }
 });
 
-export const checkCdtPermission = <ThrowOnError extends boolean = false>(options: Options<CheckCdtPermissionData, ThrowOnError>): RequestResult<CheckCdtPermissionResponses, unknown, ThrowOnError> => (options.client ?? client).get<CheckCdtPermissionResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/cdt-permission', ...options });
+export const checkCdtPermission = <ThrowOnError extends boolean = false>(options: Options<CheckCdtPermissionData, ThrowOnError>): RequestResult<CheckCdtPermissionResponses, CheckCdtPermissionErrors, ThrowOnError> => (options.client ?? client).get<CheckCdtPermissionResponses, CheckCdtPermissionErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/cdt-permission', ...options });
 
-export const listRegionsForAccount = <ThrowOnError extends boolean = false>(options: Options<ListRegionsForAccountData, ThrowOnError>): RequestResult<ListRegionsForAccountResponses, unknown, ThrowOnError> => (options.client ?? client).get<ListRegionsForAccountResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/regions', ...options });
+export const listRegionsForAccount = <ThrowOnError extends boolean = false>(options: Options<ListRegionsForAccountData, ThrowOnError>): RequestResult<ListRegionsForAccountResponses, ListRegionsForAccountErrors, ThrowOnError> => (options.client ?? client).get<ListRegionsForAccountResponses, ListRegionsForAccountErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/regions', ...options });

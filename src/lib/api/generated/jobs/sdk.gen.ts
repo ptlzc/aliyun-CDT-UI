@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { EvaluateTrafficPoliciesData, EvaluateTrafficPoliciesResponses, GetCdtFreeQuotaData, GetCdtFreeQuotaResponses, GetCdtTotalTrafficData, GetCdtTotalTrafficResponses, ListJobsData, ListJobsResponses, ListTrafficAuditsData, ListTrafficAuditsResponses, ListTrafficEvaluationsData, ListTrafficEvaluationsResponses, ListTrafficPoliciesData, ListTrafficPoliciesResponses, SaveTrafficPolicyData, SaveTrafficPolicyResponses } from './types.gen';
+import type { EvaluateTrafficPoliciesData, EvaluateTrafficPoliciesErrors, EvaluateTrafficPoliciesResponses, GetCdtFreeQuotaData, GetCdtFreeQuotaErrors, GetCdtFreeQuotaResponses, GetCdtTotalTrafficData, GetCdtTotalTrafficErrors, GetCdtTotalTrafficResponses, ListJobsData, ListJobsErrors, ListJobsResponses, ListTrafficAuditsData, ListTrafficAuditsErrors, ListTrafficAuditsResponses, ListTrafficEvaluationsData, ListTrafficEvaluationsErrors, ListTrafficEvaluationsResponses, ListTrafficPoliciesData, ListTrafficPoliciesErrors, ListTrafficPoliciesResponses, SaveTrafficPolicyData, SaveTrafficPolicyErrors, SaveTrafficPolicyResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -18,20 +18,20 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
 
-export const getCdtFreeQuota = <ThrowOnError extends boolean = false>(options: Options<GetCdtFreeQuotaData, ThrowOnError>): RequestResult<GetCdtFreeQuotaResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetCdtFreeQuotaResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/cdt-free-quota', ...options });
+export const getCdtFreeQuota = <ThrowOnError extends boolean = false>(options: Options<GetCdtFreeQuotaData, ThrowOnError>): RequestResult<GetCdtFreeQuotaResponses, GetCdtFreeQuotaErrors, ThrowOnError> => (options.client ?? client).get<GetCdtFreeQuotaResponses, GetCdtFreeQuotaErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/cdt-free-quota', ...options });
 
-export const getCdtTotalTraffic = <ThrowOnError extends boolean = false>(options: Options<GetCdtTotalTrafficData, ThrowOnError>): RequestResult<GetCdtTotalTrafficResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetCdtTotalTrafficResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/cdt-traffic', ...options });
+export const getCdtTotalTraffic = <ThrowOnError extends boolean = false>(options: Options<GetCdtTotalTrafficData, ThrowOnError>): RequestResult<GetCdtTotalTrafficResponses, GetCdtTotalTrafficErrors, ThrowOnError> => (options.client ?? client).get<GetCdtTotalTrafficResponses, GetCdtTotalTrafficErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/cdt-traffic', ...options });
 
-export const listTrafficAudits = <ThrowOnError extends boolean = false>(options: Options<ListTrafficAuditsData, ThrowOnError>): RequestResult<ListTrafficAuditsResponses, unknown, ThrowOnError> => (options.client ?? client).get<ListTrafficAuditsResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/traffic-audits', ...options });
+export const listTrafficAudits = <ThrowOnError extends boolean = false>(options: Options<ListTrafficAuditsData, ThrowOnError>): RequestResult<ListTrafficAuditsResponses, ListTrafficAuditsErrors, ThrowOnError> => (options.client ?? client).get<ListTrafficAuditsResponses, ListTrafficAuditsErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/traffic-audits', ...options });
 
-export const listTrafficEvaluations = <ThrowOnError extends boolean = false>(options: Options<ListTrafficEvaluationsData, ThrowOnError>): RequestResult<ListTrafficEvaluationsResponses, unknown, ThrowOnError> => (options.client ?? client).get<ListTrafficEvaluationsResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/traffic-evaluations', ...options });
+export const listTrafficEvaluations = <ThrowOnError extends boolean = false>(options: Options<ListTrafficEvaluationsData, ThrowOnError>): RequestResult<ListTrafficEvaluationsResponses, ListTrafficEvaluationsErrors, ThrowOnError> => (options.client ?? client).get<ListTrafficEvaluationsResponses, ListTrafficEvaluationsErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/traffic-evaluations', ...options });
 
-export const evaluateTrafficPolicies = <ThrowOnError extends boolean = false>(options: Options<EvaluateTrafficPoliciesData, ThrowOnError>): RequestResult<EvaluateTrafficPoliciesResponses, unknown, ThrowOnError> => (options.client ?? client).post<EvaluateTrafficPoliciesResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/traffic-evaluations', ...options });
+export const evaluateTrafficPolicies = <ThrowOnError extends boolean = false>(options: Options<EvaluateTrafficPoliciesData, ThrowOnError>): RequestResult<EvaluateTrafficPoliciesResponses, EvaluateTrafficPoliciesErrors, ThrowOnError> => (options.client ?? client).post<EvaluateTrafficPoliciesResponses, EvaluateTrafficPoliciesErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/traffic-evaluations', ...options });
 
-export const listTrafficPolicies = <ThrowOnError extends boolean = false>(options: Options<ListTrafficPoliciesData, ThrowOnError>): RequestResult<ListTrafficPoliciesResponses, unknown, ThrowOnError> => (options.client ?? client).get<ListTrafficPoliciesResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/traffic-policies', ...options });
+export const listTrafficPolicies = <ThrowOnError extends boolean = false>(options: Options<ListTrafficPoliciesData, ThrowOnError>): RequestResult<ListTrafficPoliciesResponses, ListTrafficPoliciesErrors, ThrowOnError> => (options.client ?? client).get<ListTrafficPoliciesResponses, ListTrafficPoliciesErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/traffic-policies', ...options });
 
-export const saveTrafficPolicy = <ThrowOnError extends boolean = false>(options: Options<SaveTrafficPolicyData, ThrowOnError>): RequestResult<SaveTrafficPolicyResponses, unknown, ThrowOnError> => (options.client ?? client).post<SaveTrafficPolicyResponses, unknown, ThrowOnError>({
-    url: '/accounts/{accountId}/traffic-policies',
+export const saveTrafficPolicy = <ThrowOnError extends boolean = false>(options: Options<SaveTrafficPolicyData, ThrowOnError>): RequestResult<SaveTrafficPolicyResponses, SaveTrafficPolicyErrors, ThrowOnError> => (options.client ?? client).post<SaveTrafficPolicyResponses, SaveTrafficPolicyErrors, ThrowOnError>({
+    url: '/api/accounts/{accountId}/traffic-policies',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -39,4 +39,4 @@ export const saveTrafficPolicy = <ThrowOnError extends boolean = false>(options:
     }
 });
 
-export const listJobs = <ThrowOnError extends boolean = false>(options?: Options<ListJobsData, ThrowOnError>): RequestResult<ListJobsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListJobsResponses, unknown, ThrowOnError>({ url: '/jobs', ...options });
+export const listJobs = <ThrowOnError extends boolean = false>(options?: Options<ListJobsData, ThrowOnError>): RequestResult<ListJobsResponses, ListJobsErrors, ThrowOnError> => (options?.client ?? client).get<ListJobsResponses, ListJobsErrors, ThrowOnError>({ url: '/api/jobs', ...options });

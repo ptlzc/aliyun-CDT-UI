@@ -2,6 +2,7 @@
   "components": {
     "schemas": {
       "AccessMetadata": {
+        "additionalProperties": false,
         "properties": {
           "firewallReady": {
             "type": "boolean"
@@ -34,7 +35,10 @@
             "items": {
               "type": "string"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           },
           "securityGroupId": {
             "type": "string"
@@ -44,22 +48,26 @@
           }
         },
         "required": [
-          "firewallReady",
-          "host",
           "instanceId",
           "instanceName",
+          "host",
           "port",
-          "username"
+          "username",
+          "firewallReady"
         ],
         "type": "object"
       },
       "AccessMetadataListResponse": {
+        "additionalProperties": false,
         "properties": {
           "items": {
             "items": {
               "$ref": "#/components/schemas/AccessMetadata"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           }
         },
         "required": [
@@ -68,6 +76,7 @@
         "type": "object"
       },
       "Account": {
+        "additionalProperties": false,
         "properties": {
           "accessKeyId": {
             "type": "string"
@@ -101,7 +110,10 @@
             "items": {
               "type": "string"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           },
           "siteType": {
             "enum": [
@@ -111,27 +123,7 @@
             "type": "string"
           },
           "trafficGovernanceDefaults": {
-            "properties": {
-              "maximumTrafficGb": {
-                "type": "number"
-              },
-              "monitoringEnabled": {
-                "type": "boolean"
-              },
-              "overflowAction": {
-                "type": "string"
-              },
-              "underflowAction": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "maximumTrafficGb",
-              "monitoringEnabled",
-              "overflowAction",
-              "underflowAction"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/TrafficGovernanceDefaults"
           },
           "updatedAt": {
             "format": "date-time",
@@ -142,36 +134,23 @@
           }
         },
         "required": [
-          "accessKeyId",
-          "createdAt",
-          "defaultImageKey",
           "id",
           "name",
+          "siteType",
+          "accessKeyId",
+          "regions",
+          "regionId",
+          "zoneId",
           "ossBucket",
           "ossEndpoint",
-          "regionId",
-          "regions",
-          "siteType",
-          "updatedAt",
-          "zoneId"
+          "defaultImageKey",
+          "createdAt",
+          "updatedAt"
         ],
         "type": "object"
       },
-      "AccountListResponse": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/Account"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "items"
-        ],
-        "type": "object"
-      },
-      "AccountProbeRequest": {
+      "AccountBody": {
+        "additionalProperties": false,
         "properties": {
           "accessKeyId": {
             "type": "string"
@@ -201,7 +180,10 @@
             "items": {
               "type": "string"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           },
           "siteType": {
             "enum": [
@@ -214,13 +196,28 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "AccountListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Account"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
         "required": [
-          "accessKeyId",
-          "siteType"
+          "items"
         ],
         "type": "object"
       },
       "AccountRegion": {
+        "additionalProperties": false,
         "properties": {
           "localName": {
             "type": "string"
@@ -235,12 +232,16 @@
         "type": "object"
       },
       "AccountRegionListResponse": {
+        "additionalProperties": false,
         "properties": {
           "items": {
             "items": {
               "$ref": "#/components/schemas/AccountRegion"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           }
         },
         "required": [
@@ -249,6 +250,7 @@
         "type": "object"
       },
       "ActionAudit": {
+        "additionalProperties": false,
         "properties": {
           "accountId": {
             "type": "string"
@@ -284,22 +286,26 @@
           }
         },
         "required": [
+          "id",
           "accountId",
           "action",
-          "id",
           "status",
-          "triggeredAt",
-          "triggeredBy"
+          "triggeredBy",
+          "triggeredAt"
         ],
         "type": "object"
       },
       "ActionAuditListResponse": {
+        "additionalProperties": false,
         "properties": {
           "items": {
             "items": {
               "$ref": "#/components/schemas/ActionAudit"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           }
         },
         "required": [
@@ -307,7 +313,8 @@
         ],
         "type": "object"
       },
-      "BootstrapNetworkRequest": {
+      "BootstrapNetworkBody": {
+        "additionalProperties": false,
         "properties": {
           "openAllIngress": {
             "type": "boolean"
@@ -325,16 +332,10 @@
             "type": "string"
           }
         },
-        "required": [
-          "openAllIngress",
-          "securityGroupName",
-          "vpcName",
-          "vswitchName",
-          "zoneId"
-        ],
         "type": "object"
       },
       "BootstrapProfileRequest": {
+        "additionalProperties": false,
         "properties": {
           "cloudInit": {
             "type": "string"
@@ -343,7 +344,10 @@
             "items": {
               "type": "string"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           },
           "strategy": {
             "type": "string"
@@ -355,6 +359,7 @@
         "type": "object"
       },
       "BootstrapStatus": {
+        "additionalProperties": false,
         "properties": {
           "attempted": {
             "type": "boolean"
@@ -374,13 +379,14 @@
           }
         },
         "required": [
-          "attempted",
+          "strategy",
           "state",
-          "strategy"
+          "attempted"
         ],
         "type": "object"
       },
       "CdtPermissionResult": {
+        "additionalProperties": false,
         "properties": {
           "error": {
             "type": "string"
@@ -403,6 +409,7 @@
         "type": "object"
       },
       "CreateAccountRequest": {
+        "additionalProperties": false,
         "properties": {
           "accessKeyId": {
             "type": "string"
@@ -432,7 +439,10 @@
             "items": {
               "type": "string"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           },
           "siteType": {
             "enum": [
@@ -446,14 +456,15 @@
           }
         },
         "required": [
+          "siteType",
           "accessKeyId",
           "accessKeySecret",
-          "regions",
-          "siteType"
+          "regions"
         ],
         "type": "object"
       },
       "ECSInstanceStateResponse": {
+        "additionalProperties": false,
         "properties": {
           "state": {
             "type": "string"
@@ -465,6 +476,7 @@
         "type": "object"
       },
       "ECSMetricPoint": {
+        "additionalProperties": false,
         "properties": {
           "collectedAt": {
             "type": "string"
@@ -479,19 +491,21 @@
             "type": "string"
           },
           "value": {
+            "format": "double",
             "type": "number"
           }
         },
         "required": [
-          "collectedAt",
-          "displayName",
           "metricName",
+          "displayName",
+          "value",
           "unit",
-          "value"
+          "collectedAt"
         ],
         "type": "object"
       },
       "ECSMetricsSnapshot": {
+        "additionalProperties": false,
         "properties": {
           "collectedAt": {
             "type": "string"
@@ -501,131 +515,70 @@
           },
           "metrics": {
             "items": {
-              "properties": {
-                "collectedAt": {
-                  "type": "string"
-                },
-                "displayName": {
-                  "type": "string"
-                },
-                "metricName": {
-                  "type": "string"
-                },
-                "unit": {
-                  "type": "string"
-                },
-                "value": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "collectedAt",
-                "displayName",
-                "metricName",
-                "unit",
-                "value"
-              ],
-              "type": "object"
+              "$ref": "#/components/schemas/ECSMetricPoint"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           },
           "state": {
             "type": "string"
           }
         },
         "required": [
-          "collectedAt",
           "instanceId",
+          "state",
           "metrics",
-          "state"
+          "collectedAt"
         ],
         "type": "object"
       },
       "ECSTrafficGovernance": {
+        "additionalProperties": false,
         "properties": {
           "effective": {
-            "properties": {
-              "maximumTrafficGb": {
-                "type": "number"
-              },
-              "monitoringEnabled": {
-                "type": "boolean"
-              },
-              "overflowAction": {
-                "type": "string"
-              },
-              "underflowAction": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "maximumTrafficGb",
-              "monitoringEnabled",
-              "overflowAction",
-              "underflowAction"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/TrafficGovernanceDefaults"
           },
           "instanceId": {
             "type": "string"
           },
           "override": {
-            "properties": {
-              "maximumTrafficGb": {
-                "type": "number"
-              },
-              "monitoringEnabled": {
-                "type": "boolean"
-              },
-              "overflowAction": {
-                "type": "string"
-              }
-            },
-            "type": "object"
+            "$ref": "#/components/schemas/ECSTrafficGovernanceOverride"
           }
         },
         "required": [
-          "effective",
           "instanceId",
-          "override"
+          "override",
+          "effective"
         ],
         "type": "object"
       },
       "ECSTrafficGovernanceOverride": {
+        "additionalProperties": false,
         "properties": {
           "maximumTrafficGb": {
+            "format": "double",
             "type": "number"
           },
           "monitoringEnabled": {
             "type": "boolean"
           },
           "overflowAction": {
+            "enum": [
+              "notify",
+              "stop-instance",
+              "start-instance",
+              "detach-eip",
+              "release-instance"
+            ],
             "type": "string"
           }
         },
-        "type": "object"
-      },
-      "ECSTrafficGovernanceOverrideRequest": {
-        "properties": {
-          "instanceId": {
-            "type": "string"
-          },
-          "maximumTrafficGb": {
-            "type": "number"
-          },
-          "monitoringEnabled": {
-            "type": "boolean"
-          },
-          "overflowAction": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "instanceId"
-        ],
         "type": "object"
       },
       "ECSVncUrlResponse": {
+        "additionalProperties": false,
         "properties": {
           "vncUrl": {
             "type": "string"
@@ -636,34 +589,74 @@
         ],
         "type": "object"
       },
-      "EffectiveTrafficGovernance": {
+      "EcsGovernanceOverrideBody": {
+        "additionalProperties": false,
         "properties": {
           "maximumTrafficGb": {
+            "format": "double",
             "type": "number"
           },
           "monitoringEnabled": {
             "type": "boolean"
           },
           "overflowAction": {
+            "enum": [
+              "notify",
+              "stop-instance",
+              "start-instance",
+              "detach-eip",
+              "release-instance"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "EffectiveTrafficGovernance": {
+        "additionalProperties": false,
+        "properties": {
+          "maximumTrafficGb": {
+            "format": "double",
+            "type": "number"
+          },
+          "monitoringEnabled": {
+            "type": "boolean"
+          },
+          "overflowAction": {
+            "enum": [
+              "notify",
+              "stop-instance",
+              "start-instance",
+              "detach-eip",
+              "release-instance"
+            ],
             "type": "string"
           },
           "sourceLayer": {
             "type": "string"
           },
           "underflowAction": {
+            "enum": [
+              "notify",
+              "stop-instance",
+              "start-instance",
+              "detach-eip",
+              "release-instance"
+            ],
             "type": "string"
           }
         },
         "required": [
           "maximumTrafficGb",
-          "monitoringEnabled",
           "overflowAction",
-          "sourceLayer",
-          "underflowAction"
+          "underflowAction",
+          "monitoringEnabled",
+          "sourceLayer"
         ],
         "type": "object"
       },
       "ErrorResponse": {
+        "additionalProperties": false,
         "properties": {
           "error": {
             "type": "string"
@@ -675,6 +668,7 @@
         "type": "object"
       },
       "FirewallOperation": {
+        "additionalProperties": false,
         "properties": {
           "accountId": {
             "type": "string"
@@ -700,34 +694,7 @@
             "type": "string"
           },
           "rule": {
-            "properties": {
-              "cidr": {
-                "type": "string"
-              },
-              "description": {
-                "type": "string"
-              },
-              "direction": {
-                "type": "string"
-              },
-              "policy": {
-                "type": "string"
-              },
-              "portRange": {
-                "type": "string"
-              },
-              "protocol": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "cidr",
-              "direction",
-              "policy",
-              "portRange",
-              "protocol"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/FirewallRuleSpec"
           },
           "ruleId": {
             "type": "string"
@@ -743,25 +710,29 @@
           }
         },
         "required": [
-          "accountId",
-          "action",
-          "broadExposure",
-          "createdAt",
           "id",
-          "rule",
+          "accountId",
           "securityGroupId",
+          "action",
+          "template",
+          "broadExposure",
           "status",
-          "template"
+          "rule",
+          "createdAt"
         ],
         "type": "object"
       },
       "FirewallOperationListResponse": {
+        "additionalProperties": false,
         "properties": {
           "items": {
             "items": {
               "$ref": "#/components/schemas/FirewallOperation"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           }
         },
         "required": [
@@ -770,39 +741,13 @@
         "type": "object"
       },
       "FirewallRequest": {
+        "additionalProperties": false,
         "properties": {
           "action": {
             "type": "string"
           },
           "customRule": {
-            "properties": {
-              "cidr": {
-                "type": "string"
-              },
-              "description": {
-                "type": "string"
-              },
-              "direction": {
-                "type": "string"
-              },
-              "policy": {
-                "type": "string"
-              },
-              "portRange": {
-                "type": "string"
-              },
-              "protocol": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "cidr",
-              "direction",
-              "policy",
-              "portRange",
-              "protocol"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/FirewallRuleSpec"
           },
           "securityGroupId": {
             "type": "string"
@@ -812,13 +757,14 @@
           }
         },
         "required": [
-          "action",
           "securityGroupId",
+          "action",
           "template"
         ],
         "type": "object"
       },
       "FirewallRuleSpec": {
+        "additionalProperties": false,
         "properties": {
           "cidr": {
             "type": "string"
@@ -840,46 +786,54 @@
           }
         },
         "required": [
-          "cidr",
           "direction",
-          "policy",
+          "protocol",
           "portRange",
-          "protocol"
+          "cidr",
+          "policy"
         ],
         "type": "object"
       },
       "GraphSummary": {
+        "additionalProperties": false,
         "properties": {
           "ecsCount": {
+            "format": "int64",
             "type": "integer"
           },
           "eipCount": {
+            "format": "int64",
             "type": "integer"
           },
           "imageCount": {
+            "format": "int64",
             "type": "integer"
           },
           "securityGroupCount": {
+            "format": "int64",
             "type": "integer"
           },
           "vpcCount": {
+            "format": "int64",
             "type": "integer"
           },
           "vswitchCount": {
+            "format": "int64",
             "type": "integer"
           }
         },
         "required": [
           "ecsCount",
           "eipCount",
-          "imageCount",
-          "securityGroupCount",
           "vpcCount",
-          "vswitchCount"
+          "vswitchCount",
+          "securityGroupCount",
+          "imageCount"
         ],
         "type": "object"
       },
       "HealthResponse": {
+        "additionalProperties": false,
         "properties": {
           "status": {
             "type": "string"
@@ -890,7 +844,8 @@
         ],
         "type": "object"
       },
-      "ImportImageRequest": {
+      "ImportImageBody": {
+        "additionalProperties": false,
         "properties": {
           "architecture": {
             "type": "string"
@@ -923,26 +878,23 @@
             "type": "string"
           },
           "systemDiskSize": {
+            "format": "int64",
             "type": "integer"
           }
         },
-        "required": [
-          "architecture",
-          "imageName",
-          "objectKey",
-          "platform",
-          "skipImageCheck",
-          "systemDiskSize"
-        ],
         "type": "object"
       },
       "ImportImageResponse": {
+        "additionalProperties": false,
         "properties": {
           "job": {
             "$ref": "#/components/schemas/Job"
           },
           "result": {
-            "$ref": "#/components/schemas/StringMap"
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
           }
         },
         "required": [
@@ -952,35 +904,13 @@
         "type": "object"
       },
       "Job": {
+        "additionalProperties": false,
         "properties": {
           "accountId": {
             "type": "string"
           },
           "bootstrap": {
-            "properties": {
-              "attempted": {
-                "type": "boolean"
-              },
-              "message": {
-                "type": "string"
-              },
-              "state": {
-                "type": "string"
-              },
-              "strategy": {
-                "type": "string"
-              },
-              "updatedAt": {
-                "format": "date-time",
-                "type": "string"
-              }
-            },
-            "required": [
-              "attempted",
-              "state",
-              "strategy"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/BootstrapStatus"
           },
           "correlationIds": {
             "additionalProperties": {
@@ -1000,25 +930,12 @@
           },
           "logs": {
             "items": {
-              "properties": {
-                "level": {
-                  "type": "string"
-                },
-                "message": {
-                  "type": "string"
-                },
-                "timestamp": {
-                  "format": "date-time",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "message",
-                "timestamp"
-              ],
-              "type": "object"
+              "$ref": "#/components/schemas/RuntimeLogEntry"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           },
           "message": {
             "type": "string"
@@ -1033,38 +950,7 @@
             "type": "string"
           },
           "providerTask": {
-            "properties": {
-              "finishedAt": {
-                "format": "date-time",
-                "type": "string"
-              },
-              "hint": {
-                "type": "string"
-              },
-              "id": {
-                "type": "string"
-              },
-              "kind": {
-                "type": "string"
-              },
-              "progress": {
-                "type": "string"
-              },
-              "resourceId": {
-                "type": "string"
-              },
-              "status": {
-                "type": "string"
-              },
-              "updatedAt": {
-                "format": "date-time",
-                "type": "string"
-              }
-            },
-            "required": [
-              "id"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/ProviderTaskRef"
           },
           "result": {
             "additionalProperties": {
@@ -1081,29 +967,12 @@
           },
           "steps": {
             "items": {
-              "properties": {
-                "message": {
-                  "type": "string"
-                },
-                "status": {
-                  "type": "string"
-                },
-                "timestamp": {
-                  "format": "date-time",
-                  "type": "string"
-                },
-                "title": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "status",
-                "timestamp",
-                "title"
-              ],
-              "type": "object"
+              "$ref": "#/components/schemas/JobStep"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           },
           "type": {
             "type": "string"
@@ -1114,23 +983,27 @@
           }
         },
         "required": [
-          "accountId",
           "id",
-          "startedAt",
+          "accountId",
+          "type",
           "status",
           "steps",
-          "type",
+          "startedAt",
           "updatedAt"
         ],
         "type": "object"
       },
       "JobListResponse": {
+        "additionalProperties": false,
         "properties": {
           "items": {
             "items": {
               "$ref": "#/components/schemas/Job"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           }
         },
         "required": [
@@ -1139,6 +1012,7 @@
         "type": "object"
       },
       "JobStep": {
+        "additionalProperties": false,
         "properties": {
           "message": {
             "type": "string"
@@ -1155,13 +1029,14 @@
           }
         },
         "required": [
+          "title",
           "status",
-          "timestamp",
-          "title"
+          "timestamp"
         ],
         "type": "object"
       },
       "MessageResponse": {
+        "additionalProperties": false,
         "properties": {
           "message": {
             "type": "string"
@@ -1173,59 +1048,19 @@
         "type": "object"
       },
       "PlatformTrafficGovernance": {
+        "additionalProperties": false,
         "properties": {
           "defaults": {
-            "properties": {
-              "maximumTrafficGb": {
-                "type": "number"
-              },
-              "monitoringEnabled": {
-                "type": "boolean"
-              },
-              "overflowAction": {
-                "type": "string"
-              },
-              "underflowAction": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "maximumTrafficGb",
-              "monitoringEnabled",
-              "overflowAction",
-              "underflowAction"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/TrafficGovernanceDefaults"
           },
           "regionGroups": {
             "items": {
-              "properties": {
-                "maximumTrafficGb": {
-                  "type": "number"
-                },
-                "monitoringEnabled": {
-                  "type": "boolean"
-                },
-                "overflowAction": {
-                  "type": "string"
-                },
-                "regionGroupId": {
-                  "type": "string"
-                },
-                "underflowAction": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "maximumTrafficGb",
-                "monitoringEnabled",
-                "overflowAction",
-                "regionGroupId",
-                "underflowAction"
-              ],
-              "type": "object"
+              "$ref": "#/components/schemas/RegionGroupTrafficRule"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           },
           "updatedAt": {
             "format": "date-time",
@@ -1238,28 +1073,34 @@
         "type": "object"
       },
       "PlatformTrafficGovernanceRolloutResult": {
+        "additionalProperties": false,
         "properties": {
           "accountIds": {
             "items": {
               "type": "string"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           },
           "appliedAt": {
             "format": "date-time",
             "type": "string"
           },
           "updatedCount": {
+            "format": "int64",
             "type": "integer"
           }
         },
         "required": [
-          "appliedAt",
-          "updatedCount"
+          "updatedCount",
+          "appliedAt"
         ],
         "type": "object"
       },
       "ProviderTaskRef": {
+        "additionalProperties": false,
         "properties": {
           "finishedAt": {
             "format": "date-time",
@@ -1293,35 +1134,20 @@
         ],
         "type": "object"
       },
-      "ProvisionRequest": {
+      "ProvisionBody": {
+        "additionalProperties": false,
         "properties": {
           "allocateEip": {
             "type": "boolean"
           },
           "bootstrapProfile": {
-            "properties": {
-              "cloudInit": {
-                "type": "string"
-              },
-              "commands": {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              "strategy": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "strategy"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/BootstrapProfileRequest"
           },
           "chargeNetworkByCdt": {
             "type": "boolean"
           },
           "eipBandwidth": {
+            "format": "int64",
             "type": "integer"
           },
           "eipIsp": {
@@ -1352,6 +1178,7 @@
             "type": "string"
           },
           "systemDiskSize": {
+            "format": "int64",
             "type": "integer"
           },
           "vswitchId": {
@@ -1361,30 +1188,19 @@
             "type": "string"
           }
         },
-        "required": [
-          "allocateEip",
-          "chargeNetworkByCdt",
-          "eipBandwidth",
-          "eipIsp",
-          "instanceName",
-          "instanceType",
-          "securityGroupId",
-          "spotInterruptionMode",
-          "spotStrategy",
-          "systemDiskCategory",
-          "systemDiskSize",
-          "vswitchId",
-          "zoneId"
-        ],
         "type": "object"
       },
       "ProvisionResponse": {
+        "additionalProperties": false,
         "properties": {
           "job": {
             "$ref": "#/components/schemas/Job"
           },
           "result": {
-            "$ref": "#/components/schemas/StringMap"
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
           }
         },
         "required": [
@@ -1394,6 +1210,7 @@
         "type": "object"
       },
       "RegionGroup": {
+        "additionalProperties": false,
         "properties": {
           "createdAt": {
             "format": "date-time",
@@ -1409,9 +1226,16 @@
             "items": {
               "type": "string"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           },
           "siteType": {
+            "enum": [
+              "domestic",
+              "international"
+            ],
             "type": "string"
           },
           "updatedAt": {
@@ -1420,22 +1244,23 @@
           }
         },
         "required": [
-          "createdAt",
-          "id",
           "name",
-          "regionPatterns",
           "siteType",
-          "updatedAt"
+          "regionPatterns"
         ],
         "type": "object"
       },
       "RegionGroupListResponse": {
+        "additionalProperties": false,
         "properties": {
           "items": {
             "items": {
               "$ref": "#/components/schemas/RegionGroup"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           }
         },
         "required": [
@@ -1444,33 +1269,49 @@
         "type": "object"
       },
       "RegionGroupTrafficRule": {
+        "additionalProperties": false,
         "properties": {
           "maximumTrafficGb": {
+            "format": "double",
             "type": "number"
           },
           "monitoringEnabled": {
             "type": "boolean"
           },
           "overflowAction": {
+            "enum": [
+              "notify",
+              "stop-instance",
+              "start-instance",
+              "detach-eip",
+              "release-instance"
+            ],
             "type": "string"
           },
           "regionGroupId": {
             "type": "string"
           },
           "underflowAction": {
+            "enum": [
+              "notify",
+              "stop-instance",
+              "start-instance",
+              "detach-eip",
+              "release-instance"
+            ],
             "type": "string"
           }
         },
         "required": [
           "maximumTrafficGb",
-          "monitoringEnabled",
           "overflowAction",
-          "regionGroupId",
-          "underflowAction"
+          "underflowAction",
+          "monitoringEnabled"
         ],
         "type": "object"
       },
       "ResourceEdge": {
+        "additionalProperties": false,
         "properties": {
           "from": {
             "type": "string"
@@ -1490,299 +1331,47 @@
         "type": "object"
       },
       "ResourceGraph": {
+        "additionalProperties": false,
         "properties": {
           "accountId": {
             "type": "string"
           },
           "edges": {
             "items": {
-              "properties": {
-                "from": {
-                  "type": "string"
-                },
-                "to": {
-                  "type": "string"
-                },
-                "type": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "from",
-                "to",
-                "type"
-              ],
-              "type": "object"
+              "$ref": "#/components/schemas/ResourceEdge"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           },
           "nodes": {
             "items": {
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "kind": {
-                  "type": "string"
-                },
-                "metadata": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "regionId": {
-                  "type": "string"
-                },
-                "status": {
-                  "type": "string"
-                },
-                "trafficRate": {
-                  "properties": {
-                    "available": {
-                      "type": "boolean"
-                    },
-                    "capacity": {
-                      "type": "number"
-                    },
-                    "collectedAt": {
-                      "format": "date-time",
-                      "type": "string"
-                    },
-                    "errorReason": {
-                      "type": "string"
-                    },
-                    "freshnessSec": {
-                      "type": "integer"
-                    },
-                    "metricName": {
-                      "type": "string"
-                    },
-                    "quotaSnapshot": {
-                      "properties": {
-                        "billingMonth": {
-                          "type": "string"
-                        },
-                        "collectedAt": {
-                          "format": "date-time",
-                          "type": "string"
-                        },
-                        "dataDelayHours": {
-                          "type": "number"
-                        },
-                        "domesticCapacityGb": {
-                          "type": "number"
-                        },
-                        "domesticRemainingGb": {
-                          "type": "number"
-                        },
-                        "domesticUsedGb": {
-                          "type": "number"
-                        },
-                        "internationalCapacityGb": {
-                          "type": "number"
-                        },
-                        "internationalRemainingGb": {
-                          "type": "number"
-                        },
-                        "internationalUsedGb": {
-                          "type": "number"
-                        }
-                      },
-                      "required": [
-                        "billingMonth",
-                        "collectedAt",
-                        "dataDelayHours",
-                        "domesticCapacityGb",
-                        "domesticRemainingGb",
-                        "domesticUsedGb",
-                        "internationalCapacityGb",
-                        "internationalRemainingGb",
-                        "internationalUsedGb"
-                      ],
-                      "type": "object"
-                    },
-                    "scopeId": {
-                      "type": "string"
-                    },
-                    "scopeType": {
-                      "type": "string"
-                    },
-                    "source": {
-                      "type": "string"
-                    },
-                    "unit": {
-                      "type": "string"
-                    },
-                    "value": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "available",
-                    "collectedAt",
-                    "metricName",
-                    "scopeId",
-                    "scopeType",
-                    "unit",
-                    "value"
-                  ],
-                  "type": "object"
-                },
-                "trafficUsage": {
-                  "properties": {
-                    "available": {
-                      "type": "boolean"
-                    },
-                    "capacity": {
-                      "type": "number"
-                    },
-                    "collectedAt": {
-                      "format": "date-time",
-                      "type": "string"
-                    },
-                    "errorReason": {
-                      "type": "string"
-                    },
-                    "freshnessSec": {
-                      "type": "integer"
-                    },
-                    "metricName": {
-                      "type": "string"
-                    },
-                    "quotaSnapshot": {
-                      "properties": {
-                        "billingMonth": {
-                          "type": "string"
-                        },
-                        "collectedAt": {
-                          "format": "date-time",
-                          "type": "string"
-                        },
-                        "dataDelayHours": {
-                          "type": "number"
-                        },
-                        "domesticCapacityGb": {
-                          "type": "number"
-                        },
-                        "domesticRemainingGb": {
-                          "type": "number"
-                        },
-                        "domesticUsedGb": {
-                          "type": "number"
-                        },
-                        "internationalCapacityGb": {
-                          "type": "number"
-                        },
-                        "internationalRemainingGb": {
-                          "type": "number"
-                        },
-                        "internationalUsedGb": {
-                          "type": "number"
-                        }
-                      },
-                      "required": [
-                        "billingMonth",
-                        "collectedAt",
-                        "dataDelayHours",
-                        "domesticCapacityGb",
-                        "domesticRemainingGb",
-                        "domesticUsedGb",
-                        "internationalCapacityGb",
-                        "internationalRemainingGb",
-                        "internationalUsedGb"
-                      ],
-                      "type": "object"
-                    },
-                    "scopeId": {
-                      "type": "string"
-                    },
-                    "scopeType": {
-                      "type": "string"
-                    },
-                    "source": {
-                      "type": "string"
-                    },
-                    "unit": {
-                      "type": "string"
-                    },
-                    "value": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "available",
-                    "collectedAt",
-                    "metricName",
-                    "scopeId",
-                    "scopeType",
-                    "unit",
-                    "value"
-                  ],
-                  "type": "object"
-                },
-                "zoneId": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "id",
-                "kind",
-                "name",
-                "status"
-              ],
-              "type": "object"
+              "$ref": "#/components/schemas/ResourceNode"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           },
           "refreshedAt": {
             "format": "date-time",
             "type": "string"
           },
           "summary": {
-            "properties": {
-              "ecsCount": {
-                "type": "integer"
-              },
-              "eipCount": {
-                "type": "integer"
-              },
-              "imageCount": {
-                "type": "integer"
-              },
-              "securityGroupCount": {
-                "type": "integer"
-              },
-              "vpcCount": {
-                "type": "integer"
-              },
-              "vswitchCount": {
-                "type": "integer"
-              }
-            },
-            "required": [
-              "ecsCount",
-              "eipCount",
-              "imageCount",
-              "securityGroupCount",
-              "vpcCount",
-              "vswitchCount"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/GraphSummary"
           }
         },
         "required": [
           "accountId",
-          "edges",
           "nodes",
+          "edges",
           "summary"
         ],
         "type": "object"
       },
       "ResourceNode": {
+        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string"
@@ -1806,188 +1395,10 @@
             "type": "string"
           },
           "trafficRate": {
-            "properties": {
-              "available": {
-                "type": "boolean"
-              },
-              "capacity": {
-                "type": "number"
-              },
-              "collectedAt": {
-                "format": "date-time",
-                "type": "string"
-              },
-              "errorReason": {
-                "type": "string"
-              },
-              "freshnessSec": {
-                "type": "integer"
-              },
-              "metricName": {
-                "type": "string"
-              },
-              "quotaSnapshot": {
-                "properties": {
-                  "billingMonth": {
-                    "type": "string"
-                  },
-                  "collectedAt": {
-                    "format": "date-time",
-                    "type": "string"
-                  },
-                  "dataDelayHours": {
-                    "type": "number"
-                  },
-                  "domesticCapacityGb": {
-                    "type": "number"
-                  },
-                  "domesticRemainingGb": {
-                    "type": "number"
-                  },
-                  "domesticUsedGb": {
-                    "type": "number"
-                  },
-                  "internationalCapacityGb": {
-                    "type": "number"
-                  },
-                  "internationalRemainingGb": {
-                    "type": "number"
-                  },
-                  "internationalUsedGb": {
-                    "type": "number"
-                  }
-                },
-                "required": [
-                  "billingMonth",
-                  "collectedAt",
-                  "dataDelayHours",
-                  "domesticCapacityGb",
-                  "domesticRemainingGb",
-                  "domesticUsedGb",
-                  "internationalCapacityGb",
-                  "internationalRemainingGb",
-                  "internationalUsedGb"
-                ],
-                "type": "object"
-              },
-              "scopeId": {
-                "type": "string"
-              },
-              "scopeType": {
-                "type": "string"
-              },
-              "source": {
-                "type": "string"
-              },
-              "unit": {
-                "type": "string"
-              },
-              "value": {
-                "type": "number"
-              }
-            },
-            "required": [
-              "available",
-              "collectedAt",
-              "metricName",
-              "scopeId",
-              "scopeType",
-              "unit",
-              "value"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/TrafficMeasurement"
           },
           "trafficUsage": {
-            "properties": {
-              "available": {
-                "type": "boolean"
-              },
-              "capacity": {
-                "type": "number"
-              },
-              "collectedAt": {
-                "format": "date-time",
-                "type": "string"
-              },
-              "errorReason": {
-                "type": "string"
-              },
-              "freshnessSec": {
-                "type": "integer"
-              },
-              "metricName": {
-                "type": "string"
-              },
-              "quotaSnapshot": {
-                "properties": {
-                  "billingMonth": {
-                    "type": "string"
-                  },
-                  "collectedAt": {
-                    "format": "date-time",
-                    "type": "string"
-                  },
-                  "dataDelayHours": {
-                    "type": "number"
-                  },
-                  "domesticCapacityGb": {
-                    "type": "number"
-                  },
-                  "domesticRemainingGb": {
-                    "type": "number"
-                  },
-                  "domesticUsedGb": {
-                    "type": "number"
-                  },
-                  "internationalCapacityGb": {
-                    "type": "number"
-                  },
-                  "internationalRemainingGb": {
-                    "type": "number"
-                  },
-                  "internationalUsedGb": {
-                    "type": "number"
-                  }
-                },
-                "required": [
-                  "billingMonth",
-                  "collectedAt",
-                  "dataDelayHours",
-                  "domesticCapacityGb",
-                  "domesticRemainingGb",
-                  "domesticUsedGb",
-                  "internationalCapacityGb",
-                  "internationalRemainingGb",
-                  "internationalUsedGb"
-                ],
-                "type": "object"
-              },
-              "scopeId": {
-                "type": "string"
-              },
-              "scopeType": {
-                "type": "string"
-              },
-              "source": {
-                "type": "string"
-              },
-              "unit": {
-                "type": "string"
-              },
-              "value": {
-                "type": "number"
-              }
-            },
-            "required": [
-              "available",
-              "collectedAt",
-              "metricName",
-              "scopeId",
-              "scopeType",
-              "unit",
-              "value"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/TrafficMeasurement"
           },
           "zoneId": {
             "type": "string"
@@ -2001,13 +1412,28 @@
         ],
         "type": "object"
       },
-      "StringMap": {
-        "additionalProperties": {
-          "type": "string"
+      "RuntimeLogEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "level": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          }
         },
+        "required": [
+          "message",
+          "timestamp"
+        ],
         "type": "object"
       },
       "TrafficEvaluation": {
+        "additionalProperties": false,
         "properties": {
           "accountId": {
             "type": "string"
@@ -2026,96 +1452,7 @@
             "type": "boolean"
           },
           "measurement": {
-            "properties": {
-              "available": {
-                "type": "boolean"
-              },
-              "capacity": {
-                "type": "number"
-              },
-              "collectedAt": {
-                "format": "date-time",
-                "type": "string"
-              },
-              "errorReason": {
-                "type": "string"
-              },
-              "freshnessSec": {
-                "type": "integer"
-              },
-              "metricName": {
-                "type": "string"
-              },
-              "quotaSnapshot": {
-                "properties": {
-                  "billingMonth": {
-                    "type": "string"
-                  },
-                  "collectedAt": {
-                    "format": "date-time",
-                    "type": "string"
-                  },
-                  "dataDelayHours": {
-                    "type": "number"
-                  },
-                  "domesticCapacityGb": {
-                    "type": "number"
-                  },
-                  "domesticRemainingGb": {
-                    "type": "number"
-                  },
-                  "domesticUsedGb": {
-                    "type": "number"
-                  },
-                  "internationalCapacityGb": {
-                    "type": "number"
-                  },
-                  "internationalRemainingGb": {
-                    "type": "number"
-                  },
-                  "internationalUsedGb": {
-                    "type": "number"
-                  }
-                },
-                "required": [
-                  "billingMonth",
-                  "collectedAt",
-                  "dataDelayHours",
-                  "domesticCapacityGb",
-                  "domesticRemainingGb",
-                  "domesticUsedGb",
-                  "internationalCapacityGb",
-                  "internationalRemainingGb",
-                  "internationalUsedGb"
-                ],
-                "type": "object"
-              },
-              "scopeId": {
-                "type": "string"
-              },
-              "scopeType": {
-                "type": "string"
-              },
-              "source": {
-                "type": "string"
-              },
-              "unit": {
-                "type": "string"
-              },
-              "value": {
-                "type": "number"
-              }
-            },
-            "required": [
-              "available",
-              "collectedAt",
-              "metricName",
-              "scopeId",
-              "scopeType",
-              "unit",
-              "value"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/TrafficMeasurement"
           },
           "policyId": {
             "type": "string"
@@ -2128,24 +1465,28 @@
           }
         },
         "required": [
-          "accountId",
-          "action",
-          "createdAt",
           "id",
-          "matched",
-          "measurement",
           "policyId",
-          "suppressed"
+          "accountId",
+          "measurement",
+          "matched",
+          "suppressed",
+          "action",
+          "createdAt"
         ],
         "type": "object"
       },
       "TrafficEvaluationListResponse": {
+        "additionalProperties": false,
         "properties": {
           "items": {
             "items": {
               "$ref": "#/components/schemas/TrafficEvaluation"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           }
         },
         "required": [
@@ -2154,8 +1495,10 @@
         "type": "object"
       },
       "TrafficGovernanceDefaults": {
+        "additionalProperties": false,
         "properties": {
           "maximumTrafficGb": {
+            "format": "double",
             "type": "number"
           },
           "monitoringEnabled": {
@@ -2184,15 +1527,17 @@
         },
         "required": [
           "maximumTrafficGb",
-          "monitoringEnabled",
           "overflowAction",
-          "underflowAction"
+          "underflowAction",
+          "monitoringEnabled"
         ],
         "type": "object"
       },
       "TrafficGovernanceDefaultsRequest": {
+        "additionalProperties": false,
         "properties": {
           "maximumTrafficGb": {
+            "format": "double",
             "type": "number"
           },
           "monitoringEnabled": {
@@ -2226,11 +1571,13 @@
         "type": "object"
       },
       "TrafficMeasurement": {
+        "additionalProperties": false,
         "properties": {
           "available": {
             "type": "boolean"
           },
           "capacity": {
+            "format": "double",
             "type": "number"
           },
           "collectedAt": {
@@ -2241,54 +1588,14 @@
             "type": "string"
           },
           "freshnessSec": {
+            "format": "int64",
             "type": "integer"
           },
           "metricName": {
             "type": "string"
           },
           "quotaSnapshot": {
-            "properties": {
-              "billingMonth": {
-                "type": "string"
-              },
-              "collectedAt": {
-                "format": "date-time",
-                "type": "string"
-              },
-              "dataDelayHours": {
-                "type": "number"
-              },
-              "domesticCapacityGb": {
-                "type": "number"
-              },
-              "domesticRemainingGb": {
-                "type": "number"
-              },
-              "domesticUsedGb": {
-                "type": "number"
-              },
-              "internationalCapacityGb": {
-                "type": "number"
-              },
-              "internationalRemainingGb": {
-                "type": "number"
-              },
-              "internationalUsedGb": {
-                "type": "number"
-              }
-            },
-            "required": [
-              "billingMonth",
-              "collectedAt",
-              "dataDelayHours",
-              "domesticCapacityGb",
-              "domesticRemainingGb",
-              "domesticUsedGb",
-              "internationalCapacityGb",
-              "internationalRemainingGb",
-              "internationalUsedGb"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/TrafficQuotaSnapshot"
           },
           "scopeId": {
             "type": "string"
@@ -2303,21 +1610,23 @@
             "type": "string"
           },
           "value": {
+            "format": "double",
             "type": "number"
           }
         },
         "required": [
-          "available",
-          "collectedAt",
-          "metricName",
-          "scopeId",
           "scopeType",
+          "scopeId",
+          "metricName",
+          "value",
           "unit",
-          "value"
+          "available",
+          "collectedAt"
         ],
         "type": "object"
       },
       "TrafficPolicy": {
+        "additionalProperties": false,
         "properties": {
           "accountId": {
             "type": "string"
@@ -2326,6 +1635,7 @@
             "type": "string"
           },
           "cooldownMinutes": {
+            "format": "int64",
             "type": "integer"
           },
           "enabled": {
@@ -2358,31 +1668,36 @@
             "type": "string"
           },
           "thresholdValue": {
+            "format": "double",
             "type": "number"
           }
         },
         "required": [
+          "id",
           "accountId",
+          "name",
+          "scopeType",
+          "scopeId",
+          "metricName",
+          "thresholdType",
+          "thresholdValue",
           "action",
           "cooldownMinutes",
-          "enabled",
-          "id",
-          "metricName",
-          "name",
-          "scopeId",
-          "scopeType",
-          "thresholdType",
-          "thresholdValue"
+          "enabled"
         ],
         "type": "object"
       },
       "TrafficPolicyListResponse": {
+        "additionalProperties": false,
         "properties": {
           "items": {
             "items": {
               "$ref": "#/components/schemas/TrafficPolicy"
             },
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           }
         },
         "required": [
@@ -2391,11 +1706,13 @@
         "type": "object"
       },
       "TrafficPolicyRequest": {
+        "additionalProperties": false,
         "properties": {
           "action": {
             "type": "string"
           },
           "cooldownMinutes": {
+            "format": "int64",
             "type": "integer"
           },
           "enabled": {
@@ -2420,23 +1737,25 @@
             "type": "string"
           },
           "thresholdValue": {
+            "format": "double",
             "type": "number"
           }
         },
         "required": [
+          "name",
+          "scopeType",
+          "scopeId",
+          "metricName",
+          "thresholdType",
+          "thresholdValue",
           "action",
           "cooldownMinutes",
-          "enabled",
-          "metricName",
-          "name",
-          "scopeId",
-          "scopeType",
-          "thresholdType",
-          "thresholdValue"
+          "enabled"
         ],
         "type": "object"
       },
       "TrafficQuotaSnapshot": {
+        "additionalProperties": false,
         "properties": {
           "billingMonth": {
             "type": "string"
@@ -2446,87 +1765,44 @@
             "type": "string"
           },
           "dataDelayHours": {
+            "format": "double",
             "type": "number"
           },
           "domesticCapacityGb": {
+            "format": "double",
             "type": "number"
           },
           "domesticRemainingGb": {
+            "format": "double",
             "type": "number"
           },
           "domesticUsedGb": {
+            "format": "double",
             "type": "number"
           },
           "internationalCapacityGb": {
+            "format": "double",
             "type": "number"
           },
           "internationalRemainingGb": {
+            "format": "double",
             "type": "number"
           },
           "internationalUsedGb": {
+            "format": "double",
             "type": "number"
           }
         },
         "required": [
-          "billingMonth",
-          "collectedAt",
-          "dataDelayHours",
+          "domesticUsedGb",
           "domesticCapacityGb",
           "domesticRemainingGb",
-          "domesticUsedGb",
+          "internationalUsedGb",
           "internationalCapacityGb",
           "internationalRemainingGb",
-          "internationalUsedGb"
-        ],
-        "type": "object"
-      },
-      "UpdateAccountRequest": {
-        "properties": {
-          "accessKeyId": {
-            "type": "string"
-          },
-          "accessKeySecret": {
-            "type": "string"
-          },
-          "defaultImageKey": {
-            "type": "string"
-          },
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "ossBucket": {
-            "type": "string"
-          },
-          "ossEndpoint": {
-            "type": "string"
-          },
-          "regionId": {
-            "type": "string"
-          },
-          "regions": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "siteType": {
-            "enum": [
-              "domestic",
-              "international"
-            ],
-            "type": "string"
-          },
-          "zoneId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "accessKeyId",
-          "regions",
-          "siteType"
+          "billingMonth",
+          "dataDelayHours",
+          "collectedAt"
         ],
         "type": "object"
       }
@@ -2538,9 +1814,19 @@
   },
   "openapi": "3.1.0",
   "paths": {
-    "/accounts/{accountId}/effective-traffic-governance": {
+    "/api/accounts/{accountId}/effective-traffic-governance": {
       "get": {
         "operationId": "getEffectiveTrafficGovernance",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -2550,27 +1836,37 @@
                 }
               }
             },
-            "description": "success"
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
           }
         },
         "tags": [
           "settings"
         ]
-      },
-      "parameters": [
-        {
-          "in": "path",
-          "name": "accountId",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ]
+      }
     },
-    "/accounts/{accountId}/traffic-governance": {
+    "/api/accounts/{accountId}/traffic-governance": {
       "get": {
         "operationId": "getTrafficGovernanceDefaults",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -2580,25 +1876,35 @@
                 }
               }
             },
-            "description": "success"
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
           }
         },
         "tags": [
           "settings"
         ]
       },
-      "parameters": [
-        {
-          "in": "path",
-          "name": "accountId",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
       "put": {
         "operationId": "saveTrafficGovernanceDefaults",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -2618,7 +1924,17 @@
                 }
               }
             },
-            "description": "success"
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
           }
         },
         "tags": [
@@ -2626,7 +1942,7 @@
         ]
       }
     },
-    "/region-groups": {
+    "/api/region-groups": {
       "get": {
         "operationId": "listRegionGroups",
         "responses": {
@@ -2638,7 +1954,17 @@
                 }
               }
             },
-            "description": "success"
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
           }
         },
         "tags": [
@@ -2666,7 +1992,17 @@
                 }
               }
             },
-            "description": "success"
+            "description": "Created"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
           }
         },
         "tags": [
@@ -2674,12 +2010,32 @@
         ]
       }
     },
-    "/region-groups/{regionGroupId}": {
+    "/api/region-groups/{regionGroupId}": {
       "delete": {
         "operationId": "deleteRegionGroup",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "regionGroupId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "204": {
-            "description": "no content"
+            "description": "No Content"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
           }
         },
         "tags": [
@@ -2688,6 +2044,16 @@
       },
       "get": {
         "operationId": "getRegionGroup",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "regionGroupId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -2697,25 +2063,35 @@
                 }
               }
             },
-            "description": "success"
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
           }
         },
         "tags": [
           "settings"
         ]
       },
-      "parameters": [
-        {
-          "in": "path",
-          "name": "regionGroupId",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
       "put": {
         "operationId": "updateRegionGroup",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "regionGroupId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -2735,7 +2111,17 @@
                 }
               }
             },
-            "description": "success"
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
           }
         },
         "tags": [
@@ -2743,12 +2129,32 @@
         ]
       }
     },
-    "/region-groups/{regionGroupId}/traffic-rule": {
+    "/api/region-groups/{regionGroupId}/traffic-rule": {
       "delete": {
         "operationId": "deleteRegionGroupTrafficRule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "regionGroupId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "204": {
-            "description": "no content"
+            "description": "No Content"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
           }
         },
         "tags": [
@@ -2757,6 +2163,16 @@
       },
       "get": {
         "operationId": "getRegionGroupTrafficRule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "regionGroupId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -2766,25 +2182,35 @@
                 }
               }
             },
-            "description": "success"
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
           }
         },
         "tags": [
           "settings"
         ]
       },
-      "parameters": [
-        {
-          "in": "path",
-          "name": "regionGroupId",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
       "put": {
         "operationId": "saveRegionGroupTrafficRule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "regionGroupId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -2804,7 +2230,17 @@
                 }
               }
             },
-            "description": "success"
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
           }
         },
         "tags": [
@@ -2812,7 +2248,7 @@
         ]
       }
     },
-    "/settings/traffic-governance": {
+    "/api/settings/traffic-governance": {
       "get": {
         "operationId": "getPlatformTrafficGovernanceDefaults",
         "responses": {
@@ -2824,7 +2260,17 @@
                 }
               }
             },
-            "description": "success"
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
           }
         },
         "tags": [
@@ -2852,7 +2298,17 @@
                 }
               }
             },
-            "description": "success"
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
           }
         },
         "tags": [
@@ -2860,7 +2316,7 @@
         ]
       }
     },
-    "/settings/traffic-governance/apply-to-accounts": {
+    "/api/settings/traffic-governance/apply-to-accounts": {
       "post": {
         "operationId": "applyPlatformTrafficGovernanceDefaultsToAccounts",
         "responses": {
@@ -2872,7 +2328,17 @@
                 }
               }
             },
-            "description": "success"
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
           }
         },
         "tags": [
@@ -2883,7 +2349,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:8080/api"
+      "url": "http://127.0.0.1:8080"
     }
   ]
 }

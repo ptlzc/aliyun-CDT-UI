@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetEcsInstanceStateData, GetEcsInstanceStateResponses, GetEcsMetricsData, GetEcsMetricsResponses, GetEcsTrafficGovernanceData, GetEcsTrafficGovernanceResponses, GetEcsVncUrlData, GetEcsVncUrlResponses, ListAccessMetadataData, ListAccessMetadataResponses, SaveEcsTrafficGovernanceOverrideData, SaveEcsTrafficGovernanceOverrideResponses, StartEcsInstanceData, StartEcsInstanceResponses, StopEcsInstanceData, StopEcsInstanceResponses } from './types.gen';
+import type { GetEcsInstanceStateData, GetEcsInstanceStateErrors, GetEcsInstanceStateResponses, GetEcsMetricsData, GetEcsMetricsErrors, GetEcsMetricsResponses, GetEcsTrafficGovernanceData, GetEcsTrafficGovernanceErrors, GetEcsTrafficGovernanceResponses, GetEcsVncUrlData, GetEcsVncUrlErrors, GetEcsVncUrlResponses, ListAccessMetadataData, ListAccessMetadataErrors, ListAccessMetadataResponses, SaveEcsTrafficGovernanceOverrideData, SaveEcsTrafficGovernanceOverrideErrors, SaveEcsTrafficGovernanceOverrideResponses, StartEcsInstanceData, StartEcsInstanceErrors, StartEcsInstanceResponses, StopEcsInstanceData, StopEcsInstanceErrors, StopEcsInstanceResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -18,20 +18,20 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
 
-export const listAccessMetadata = <ThrowOnError extends boolean = false>(options: Options<ListAccessMetadataData, ThrowOnError>): RequestResult<ListAccessMetadataResponses, unknown, ThrowOnError> => (options.client ?? client).get<ListAccessMetadataResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/access', ...options });
+export const listAccessMetadata = <ThrowOnError extends boolean = false>(options: Options<ListAccessMetadataData, ThrowOnError>): RequestResult<ListAccessMetadataResponses, ListAccessMetadataErrors, ThrowOnError> => (options.client ?? client).get<ListAccessMetadataResponses, ListAccessMetadataErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/access', ...options });
 
-export const getEcsMetrics = <ThrowOnError extends boolean = false>(options: Options<GetEcsMetricsData, ThrowOnError>): RequestResult<GetEcsMetricsResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetEcsMetricsResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/ecs/{instanceId}/metrics', ...options });
+export const getEcsMetrics = <ThrowOnError extends boolean = false>(options: Options<GetEcsMetricsData, ThrowOnError>): RequestResult<GetEcsMetricsResponses, GetEcsMetricsErrors, ThrowOnError> => (options.client ?? client).get<GetEcsMetricsResponses, GetEcsMetricsErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/ecs/{instanceId}/metrics', ...options });
 
-export const startEcsInstance = <ThrowOnError extends boolean = false>(options: Options<StartEcsInstanceData, ThrowOnError>): RequestResult<StartEcsInstanceResponses, unknown, ThrowOnError> => (options.client ?? client).post<StartEcsInstanceResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/ecs/{instanceId}/start', ...options });
+export const startEcsInstance = <ThrowOnError extends boolean = false>(options: Options<StartEcsInstanceData, ThrowOnError>): RequestResult<StartEcsInstanceResponses, StartEcsInstanceErrors, ThrowOnError> => (options.client ?? client).post<StartEcsInstanceResponses, StartEcsInstanceErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/ecs/{instanceId}/start', ...options });
 
-export const getEcsInstanceState = <ThrowOnError extends boolean = false>(options: Options<GetEcsInstanceStateData, ThrowOnError>): RequestResult<GetEcsInstanceStateResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetEcsInstanceStateResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/ecs/{instanceId}/state', ...options });
+export const getEcsInstanceState = <ThrowOnError extends boolean = false>(options: Options<GetEcsInstanceStateData, ThrowOnError>): RequestResult<GetEcsInstanceStateResponses, GetEcsInstanceStateErrors, ThrowOnError> => (options.client ?? client).get<GetEcsInstanceStateResponses, GetEcsInstanceStateErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/ecs/{instanceId}/state', ...options });
 
-export const stopEcsInstance = <ThrowOnError extends boolean = false>(options: Options<StopEcsInstanceData, ThrowOnError>): RequestResult<StopEcsInstanceResponses, unknown, ThrowOnError> => (options.client ?? client).post<StopEcsInstanceResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/ecs/{instanceId}/stop', ...options });
+export const stopEcsInstance = <ThrowOnError extends boolean = false>(options: Options<StopEcsInstanceData, ThrowOnError>): RequestResult<StopEcsInstanceResponses, StopEcsInstanceErrors, ThrowOnError> => (options.client ?? client).post<StopEcsInstanceResponses, StopEcsInstanceErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/ecs/{instanceId}/stop', ...options });
 
-export const getEcsTrafficGovernance = <ThrowOnError extends boolean = false>(options: Options<GetEcsTrafficGovernanceData, ThrowOnError>): RequestResult<GetEcsTrafficGovernanceResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetEcsTrafficGovernanceResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/ecs/{instanceId}/traffic-governance', ...options });
+export const getEcsTrafficGovernance = <ThrowOnError extends boolean = false>(options: Options<GetEcsTrafficGovernanceData, ThrowOnError>): RequestResult<GetEcsTrafficGovernanceResponses, GetEcsTrafficGovernanceErrors, ThrowOnError> => (options.client ?? client).get<GetEcsTrafficGovernanceResponses, GetEcsTrafficGovernanceErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/ecs/{instanceId}/traffic-governance', ...options });
 
-export const saveEcsTrafficGovernanceOverride = <ThrowOnError extends boolean = false>(options: Options<SaveEcsTrafficGovernanceOverrideData, ThrowOnError>): RequestResult<SaveEcsTrafficGovernanceOverrideResponses, unknown, ThrowOnError> => (options.client ?? client).put<SaveEcsTrafficGovernanceOverrideResponses, unknown, ThrowOnError>({
-    url: '/accounts/{accountId}/ecs/{instanceId}/traffic-governance',
+export const saveEcsTrafficGovernanceOverride = <ThrowOnError extends boolean = false>(options: Options<SaveEcsTrafficGovernanceOverrideData, ThrowOnError>): RequestResult<SaveEcsTrafficGovernanceOverrideResponses, SaveEcsTrafficGovernanceOverrideErrors, ThrowOnError> => (options.client ?? client).put<SaveEcsTrafficGovernanceOverrideResponses, SaveEcsTrafficGovernanceOverrideErrors, ThrowOnError>({
+    url: '/api/accounts/{accountId}/ecs/{instanceId}/traffic-governance',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -39,4 +39,4 @@ export const saveEcsTrafficGovernanceOverride = <ThrowOnError extends boolean = 
     }
 });
 
-export const getEcsVncUrl = <ThrowOnError extends boolean = false>(options: Options<GetEcsVncUrlData, ThrowOnError>): RequestResult<GetEcsVncUrlResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetEcsVncUrlResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/ecs/{instanceId}/vnc', ...options });
+export const getEcsVncUrl = <ThrowOnError extends boolean = false>(options: Options<GetEcsVncUrlData, ThrowOnError>): RequestResult<GetEcsVncUrlResponses, GetEcsVncUrlErrors, ThrowOnError> => (options.client ?? client).get<GetEcsVncUrlResponses, GetEcsVncUrlErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/ecs/{instanceId}/vnc', ...options });

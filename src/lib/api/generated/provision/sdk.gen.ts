@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { BootstrapNetworkData, BootstrapNetworkResponses, EnsureFirewallRuleData, EnsureFirewallRuleResponses, ListFirewallOperationsData, ListFirewallOperationsResponses, ProvisionData, ProvisionResponses } from './types.gen';
+import type { BootstrapNetworkData, BootstrapNetworkErrors, BootstrapNetworkResponses, EnsureFirewallRuleData, EnsureFirewallRuleErrors, EnsureFirewallRuleResponses, ListFirewallOperationsData, ListFirewallOperationsErrors, ListFirewallOperationsResponses, ProvisionData, ProvisionErrors, ProvisionResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -18,8 +18,8 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
 
-export const bootstrapNetwork = <ThrowOnError extends boolean = false>(options: Options<BootstrapNetworkData, ThrowOnError>): RequestResult<BootstrapNetworkResponses, unknown, ThrowOnError> => (options.client ?? client).post<BootstrapNetworkResponses, unknown, ThrowOnError>({
-    url: '/accounts/{accountId}/bootstrap-network',
+export const bootstrapNetwork = <ThrowOnError extends boolean = false>(options: Options<BootstrapNetworkData, ThrowOnError>): RequestResult<BootstrapNetworkResponses, BootstrapNetworkErrors, ThrowOnError> => (options.client ?? client).post<BootstrapNetworkResponses, BootstrapNetworkErrors, ThrowOnError>({
+    url: '/api/accounts/{accountId}/bootstrap-network',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -27,10 +27,10 @@ export const bootstrapNetwork = <ThrowOnError extends boolean = false>(options: 
     }
 });
 
-export const listFirewallOperations = <ThrowOnError extends boolean = false>(options: Options<ListFirewallOperationsData, ThrowOnError>): RequestResult<ListFirewallOperationsResponses, unknown, ThrowOnError> => (options.client ?? client).get<ListFirewallOperationsResponses, unknown, ThrowOnError>({ url: '/accounts/{accountId}/firewall', ...options });
+export const listFirewallOperations = <ThrowOnError extends boolean = false>(options: Options<ListFirewallOperationsData, ThrowOnError>): RequestResult<ListFirewallOperationsResponses, ListFirewallOperationsErrors, ThrowOnError> => (options.client ?? client).get<ListFirewallOperationsResponses, ListFirewallOperationsErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/firewall', ...options });
 
-export const ensureFirewallRule = <ThrowOnError extends boolean = false>(options: Options<EnsureFirewallRuleData, ThrowOnError>): RequestResult<EnsureFirewallRuleResponses, unknown, ThrowOnError> => (options.client ?? client).post<EnsureFirewallRuleResponses, unknown, ThrowOnError>({
-    url: '/accounts/{accountId}/firewall',
+export const ensureFirewallRule = <ThrowOnError extends boolean = false>(options: Options<EnsureFirewallRuleData, ThrowOnError>): RequestResult<EnsureFirewallRuleResponses, EnsureFirewallRuleErrors, ThrowOnError> => (options.client ?? client).post<EnsureFirewallRuleResponses, EnsureFirewallRuleErrors, ThrowOnError>({
+    url: '/api/accounts/{accountId}/firewall',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -38,8 +38,8 @@ export const ensureFirewallRule = <ThrowOnError extends boolean = false>(options
     }
 });
 
-export const provision = <ThrowOnError extends boolean = false>(options: Options<ProvisionData, ThrowOnError>): RequestResult<ProvisionResponses, unknown, ThrowOnError> => (options.client ?? client).post<ProvisionResponses, unknown, ThrowOnError>({
-    url: '/accounts/{accountId}/provision',
+export const provision = <ThrowOnError extends boolean = false>(options: Options<ProvisionData, ThrowOnError>): RequestResult<ProvisionResponses, ProvisionErrors, ThrowOnError> => (options.client ?? client).post<ProvisionResponses, ProvisionErrors, ThrowOnError>({
+    url: '/api/accounts/{accountId}/provision',
     ...options,
     headers: {
         'Content-Type': 'application/json',

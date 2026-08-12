@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { HealthzData, HealthzResponses } from './types.gen';
+import type { HealthzData, HealthzErrors, HealthzResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -18,4 +18,4 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
 
-export const healthz = <ThrowOnError extends boolean = false>(options?: Options<HealthzData, ThrowOnError>): RequestResult<HealthzResponses, unknown, ThrowOnError> => (options?.client ?? client).get<HealthzResponses, unknown, ThrowOnError>({ url: '/healthz', ...options });
+export const healthz = <ThrowOnError extends boolean = false>(options?: Options<HealthzData, ThrowOnError>): RequestResult<HealthzResponses, HealthzErrors, ThrowOnError> => (options?.client ?? client).get<HealthzResponses, HealthzErrors, ThrowOnError>({ url: '/api/healthz', ...options });

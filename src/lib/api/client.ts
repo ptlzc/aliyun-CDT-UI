@@ -1,5 +1,6 @@
 import {client as accountsClient} from './generated/accounts/client.gen';
 import {
+  checkCdtPermission as checkCdtPermissionRequest,
   createAccount as createAccountRequest,
   listAccounts as listAccountsRequest,
   updateAccount as updateAccountRequest,
@@ -301,11 +302,7 @@ export interface CdtPermissionResult {
 }
 
 export async function checkCdtPermission(accountId: string): Promise<CdtPermissionResult> {
-  const response = await fetch(`${API_BASE_URL}/api/accounts/${accountId}/cdt-permission`);
-  if (!response.ok) {
-    return {permitted: false, error: `HTTP ${response.status}`};
-  }
-  return response.json() as Promise<CdtPermissionResult>;
+  return unwrapData((await checkCdtPermissionRequest({path: {accountId}})) as GeneratedResult<CdtPermissionResult>);
 }
 
 export interface ValidateAccountResult {

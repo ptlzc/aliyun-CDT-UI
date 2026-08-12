@@ -80,6 +80,11 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
   // Track if we are creating a brand new account
   const [isCreating, setIsCreating] = useState(false);
 
+  // Local draft for the create flow. The parent (App.tsx) re-derives
+  // selectedAccount from the backend accounts list by id, so a synthetic
+  // draft id would never resolve — the create form must own its draft.
+  const [createDraft, setCreateDraft] = useState<CloudAccount | null>(null);
+
   // CDT permission check for existing accounts
   const cdtPermissionQuery = useCdtPermissionQuery(selectedAccount && !isCreating ? selectedAccount.id : null);
   const validateMutation = useValidateAccountMutation();
@@ -139,7 +144,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
 
   const handleCreateClick = () => {
     setIsCreating(true);
-    setSelectedAccount({
+    setCreateDraft({
       id: `ali-${Math.random().toString(36).substr(2, 4)}-${Math.floor(100000 + Math.random() * 900000)}`,
       name: '',
       status: 'Active',
@@ -185,11 +190,18 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
         ossBucket: '',
         ossEndpoint: mainRegion.includes('cn-') ? 'oss-cn-hangzhou.aliyuncs.com' : 'oss-cn-hongkong.aliyuncs.com',
       });
-      setIsCreating(false);
-      setSelectedAccount(null);
+      handleCloseDetails();
     } catch (error) {
       alert(error instanceof Error ? error.message : '保存失败');
     }
+  };
+
+  // Exit the details/create view back to the listing. Clears both the
+  // parent-selected account and the local create draft.
+  const handleCloseDetails = () => {
+    setIsCreating(false);
+    setCreateDraft(null);
+    setSelectedAccount(null);
   };
 
   const handleTestConnection = async () => {
@@ -213,6 +225,11 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
     }
   };
 
+  // The account driving the details view: the create draft while creating,
+  // otherwise the parent-selected account (App re-derives it from the
+  // backend list by id, so synthetic drafts never reach the prop).
+  const displayAccount = isCreating ? createDraft : selectedAccount;
+
   // Get status color styling helper
   const getStatusStyle = (status: CloudAccount['status']) => {
     switch (status) {
@@ -232,7 +249,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
   return (
     <div className="font-sans flex flex-col gap-6">
       <AnimatePresence mode="wait">
-        {!selectedAccount ? (
+        {!displayAccount ? (
           /* ================== TAB LISTING VIEW ================== */
           <motion.div
             key="list"
@@ -455,7 +472,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setSelectedAccount(null)}
+                  onClick={handleCloseDetails}
                   className="p-1.5 border border-hairline-divider bg-surface-white hover:bg-emphasis-layer rounded transition-colors text-on-surface-variant cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -465,7 +482,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                   <h1 className="text-lg font-bold text-primary-ink font-space flex items-center gap-2">
                     {isCreating ? '添加托管云授权凭证' : '凭据配置详情'}
                     <span className="text-xs font-mono font-normal bg-emphasis-layer px-2 py-0.5 rounded text-secondary border border-primary-fixed">
-                      {selectedAccount.id}
+                      {displayAccount.id}
                     </span>
                   </h1>
                   <p className="text-[11px] text-secondary-ink mt-0.5">
@@ -590,7 +607,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                       <KeyRound className="w-4 h-4 text-primary" />
                       API 凭据与角色授权策略
                     </h2>
-                    {selectedAccount.status === 'Auth Failed' && (
+                    {displayAccount.status === 'Auth Failed' && (
                       <span className="bg-[#FFEBEE] border border-recovery-red/30 text-recovery-red px-2.5 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1">
                         🔑 密匙检测失效，请输入正确密钥重连
                       </span>
@@ -739,7 +756,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                       <div className="flex justify-end gap-2.5">
                         <button
                           type="button"
-                          onClick={() => setSelectedAccount(null)}
+                          onClick={handleCloseDetails}
                           className="px-5 py-2 border border-hairline-divider text-primary-ink bg-white font-medium hover:bg-emphasis-layer rounded text-xs transition-colors cursor-pointer"
                         >
                           取消
@@ -779,18 +796,18 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                     <div>
                       <span className="text-[11px] text-secondary-ink font-semibold uppercase tracking-wider">云账户物理名称</span>
                       <div className="font-bold text-primary-ink mt-1 font-space">
-                        {isCreating ? name || 'Pending Name' : selectedAccount.name}
+                        {isCreating ? name || 'Pending Name' : displayAccount.name}
                       </div>
                     </div>
 
                     <div>
                       <span className="text-[11px] text-secondary-ink font-semibold uppercase tracking-wider">数据同步状态</span>
                       <div className="mt-1.5">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-bold border ${getStatusStyle(selectedAccount.status)}`}>
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-bold border ${getStatusStyle(displayAccount.status)}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${
-                            selectedAccount.status === 'Active' ? 'bg-healthy-green' : selectedAccount.status === 'Sync Delayed' ? 'bg-signal-amber' : selectedAccount.status === 'Auth Failed' ? 'bg-recovery-red' : 'bg-outline'
+                            displayAccount.status === 'Active' ? 'bg-healthy-green' : displayAccount.status === 'Sync Delayed' ? 'bg-signal-amber' : displayAccount.status === 'Auth Failed' ? 'bg-recovery-red' : 'bg-outline'
                           }`} />
-                          {selectedAccount.status === 'Active' ? '运行中' : selectedAccount.status === 'Auth Failed' ? '认证失效' : selectedAccount.status}
+                          {displayAccount.status === 'Active' ? '运行中' : displayAccount.status === 'Auth Failed' ? '认证失效' : displayAccount.status}
                         </span>
                       </div>
                     </div>
@@ -799,7 +816,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                       <span className="text-[11px] text-secondary-ink font-semibold uppercase tracking-wider">注册主拓扑宿地域</span>
                       <div className="text-primary-ink mt-1 flex items-center gap-2 font-medium">
                         <MapPin className="w-3.5 h-3.5 text-outline" />
-                        {isCreating ? mainRegion : selectedAccount.mainRegion}
+                        {isCreating ? mainRegion : displayAccount.mainRegion}
                       </div>
                     </div>
 
@@ -807,7 +824,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                       <span className="text-[11px] text-secondary-ink font-semibold uppercase tracking-wider">关联导入日期</span>
                       <div className="text-primary-ink mt-1 flex items-center gap-2 font-mono font-medium">
                         <Calendar className="w-3.5 h-3.5 text-outline" />
-                        {selectedAccount.creationDate}
+                        {displayAccount.creationDate}
                       </div>
                     </div>
 
@@ -815,7 +832,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                       <span className="text-[11px] text-secondary-ink font-semibold uppercase tracking-wider">项目安全所有者</span>
                       <div className="text-primary-ink mt-1 flex items-center gap-2 font-medium">
                         <User className="w-3.5 h-3.5 text-outline" />
-                        {isCreating ? owner : selectedAccount.owner}
+                        {isCreating ? owner : displayAccount.owner}
                       </div>
                     </div>
                   </div>

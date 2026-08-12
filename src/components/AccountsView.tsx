@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { CloudAccount } from '../types';
 import { Search, Filter, RefreshCw, Plus, Edit, Trash2, KeyRound, ArrowLeft, ShieldAlert, Copy, Eye, EyeOff, MapPin, Calendar, User, History, Check, ShieldCheck, ChevronLeft, ChevronRight, FileCode, Server, AlertTriangle, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { listRegions, type ApiAccountRegion } from '../lib/api/client';
 import { useSaveAccountMutation, useCdtPermissionQuery, useValidateAccountMutation } from '../features/runtime/hooks';
 
 interface AccountsViewProps {
@@ -73,9 +74,15 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
   const [accessKeyId, setAccessKeyId] = useState('');
   const [accessKeySecret, setAccessKeySecret] = useState('');
   const [roleArn, setRoleArn] = useState('');
-  const [managedRegions, setManagedRegions] = useState('');
+  const [managedRegions, setManagedRegions] = useState<string[]>([]);
   const [mainRegion, setMainRegion] = useState('');
-  const [owner, setOwner] = useState('');
+  const [siteType, setSiteType] = useState<'domestic' | 'international'>('domestic');
+
+  // Regions fetched from the accounts SDK (POST /api/accounts/regions) with
+  // the entered credentials + siteType — never hardcoded.
+  const [regions, setRegions] = useState<ApiAccountRegion[]>([]);
+  const [regionsLoading, setRegionsLoading] = useState(false);
+  const [regionsError, setRegionsError] = useState<string | null>(null);
 
   // Track if we are creating a brand new account
   const [isCreating, setIsCreating] = useState(false);
@@ -130,6 +137,19 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
     return filteredAccounts.slice(startIndex, startIndex + pageSize);
   }, [filteredAccounts, currentPage]);
 
+  // Switching the site type invalidates every fetched region option (domestic
+  // and international accounts expose disjoint region sets). Reset is done on
+  // user change only — programmatic backfill (handleEditClick/handleCreateClick)
+  // must not be wiped by an effect.
+  const changeSiteType = (value: 'domestic' | 'international') => {
+    if (value === siteType) return;
+    setSiteType(value);
+    setRegions([]);
+    setRegionsError(null);
+    setMainRegion('');
+    setManagedRegions([]);
+  };
+
   const handleEditClick = (acc: CloudAccount) => {
     setSelectedAccount(acc);
     setIsCreating(false);
@@ -137,9 +157,9 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
     setAccessKeyId(acc.accessKeyId);
     setAccessKeySecret(acc.accessKeySecret);
     setRoleArn(acc.roleArn || '');
-    setManagedRegions(acc.managedRegions);
+    setManagedRegions(acc.managedRegions.split(',').map((item) => item.trim()).filter(Boolean));
     setMainRegion(acc.mainRegion);
-    setOwner(acc.owner);
+    setSiteType(acc.providerRegion === 'Aliyun International' ? 'international' : 'domestic');
   };
 
   const handleCreateClick = () => {
@@ -167,9 +187,54 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
     setAccessKeyId('');
     setAccessKeySecret('');
     setRoleArn('');
-    setManagedRegions('cn-hangzhou, cn-beijing, cn-shanghai');
-    setMainRegion('cn-hangzhou (华东 1)');
-    setOwner('sysadmin@aliyun.com');
+    setManagedRegions([]);
+    setMainRegion('');
+    setSiteType('domestic');
+    setRegions([]);
+    setRegionsError(null);
+  };
+
+  // Option list for the main-region select and the managed-region checkboxes:
+  // SDK-fetched regions first, then any currently-selected value (edit flow
+  // keeps its stored region visible until the user re-fetches with the SDK).
+  const regionOptions = useMemo(() => {
+    const options = [...regions];
+    for (const value of [mainRegion, ...managedRegions]) {
+      if (value && !options.some((option) => option.regionId === value)) {
+        options.push({regionId: value});
+      }
+    }
+    return options;
+  }, [regions, mainRegion, managedRegions]);
+
+  /**
+   * Fetch available regions for the entered credentials + siteType via the
+   * generated SDK (POST /api/accounts/regions). Failures surface the backend
+   * {"error"} message inline — never a silent empty list.
+   *
+   * @when 用户在账号表单填写 AK/Secret 并选择站点类型后点击「获取可用地域」时触发
+   */
+  const fetchRegions = async () => {
+    if (!accessKeyId || !accessKeySecret) {
+      setRegionsError('请先填写 Access Key ID 和 Access Key Secret');
+      return;
+    }
+    setRegionsLoading(true);
+    setRegionsError(null);
+    try {
+      const items = await listRegions({accessKeyId, accessKeySecret, siteType});
+      setRegions(items);
+    } catch (error) {
+      setRegionsError(error instanceof Error ? error.message : '获取可用地域失败');
+    } finally {
+      setRegionsLoading(false);
+    }
+  };
+
+  const toggleManagedRegion = (regionId: string) => {
+    setManagedRegions((prev) =>
+      prev.includes(regionId) ? prev.filter((item) => item !== regionId) : [...prev, regionId],
+    );
   };
 
   const handleSave = async () => {
@@ -181,14 +246,14 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
       await saveAccountMutation.mutateAsync({
         id: isCreating ? undefined : selectedAccount?.id,
         name,
-        siteType: mainRegion.includes('cn-') ? 'domestic' : 'international',
+        siteType,
         accessKeyId,
         accessKeySecret,
-        regions: managedRegions.split(',').map((item) => item.trim()).filter(Boolean),
-        regionId: managedRegions.split(',')[0]?.trim() || mainRegion,
+        regions: managedRegions,
+        regionId: managedRegions[0] || mainRegion,
         zoneId: mainRegion,
         ossBucket: '',
-        ossEndpoint: mainRegion.includes('cn-') ? 'oss-cn-hangzhou.aliyuncs.com' : 'oss-cn-hongkong.aliyuncs.com',
+        ossEndpoint: siteType === 'domestic' ? 'oss-cn-hangzhou.aliyuncs.com' : 'oss-cn-hongkong.aliyuncs.com',
       });
       handleCloseDetails();
     } catch (error) {
@@ -699,52 +764,97 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                       />
                     </div>
 
+                    {/* Site type + region options (SDK-driven) */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider">站点类型</label>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-1.5 text-xs text-primary-ink cursor-pointer">
+                          <input
+                            type="radio"
+                            name="siteType"
+                            checked={siteType === 'domestic'}
+                            onChange={() => changeSiteType('domestic')}
+                            className="accent-primary"
+                          />
+                          国内 (domestic)
+                        </label>
+                        <label className="flex items-center gap-1.5 text-xs text-primary-ink cursor-pointer">
+                          <input
+                            type="radio"
+                            name="siteType"
+                            checked={siteType === 'international'}
+                            onChange={() => changeSiteType('international')}
+                            className="accent-primary"
+                          />
+                          国际 (international)
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={fetchRegions}
+                        disabled={regionsLoading || !accessKeyId || !accessKeySecret}
+                        className="flex items-center gap-1.5 px-4 py-2 border border-primary/40 text-primary bg-white font-medium hover:bg-primary hover:text-white rounded text-xs transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        {regionsLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <MapPin className="w-3.5 h-3.5" />}
+                        获取可用地域
+                      </button>
+                      {regionsError && (
+                        <span className="text-recovery-red text-[11px]">{regionsError}</span>
+                      )}
+                      {!regionsError && !regionsLoading && regions.length > 0 && (
+                        <span className="text-healthy-green text-[11px]">已加载 {regions.length} 个可用地域</span>
+                      )}
+                    </div>
+
+                    {/* Main region select */}
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="mainRegion-select" className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider">主注册地域</label>
+                      <select
+                        id="mainRegion-select"
+                        value={mainRegion}
+                        onChange={(e) => setMainRegion(e.target.value)}
+                        className="w-full px-3.5 py-2 border border-hairline-divider rounded text-xs bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-primary-ink font-medium"
+                      >
+                        {regionOptions.length === 0 && (
+                          <option value="">请先填写 Access Key 并点击「获取可用地域」</option>
+                        )}
+                        {regionOptions.map((option) => (
+                          <option key={option.regionId} value={option.regionId}>
+                            {option.localName ? `${option.regionId} (${option.localName})` : option.regionId}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                     {/* Managed Regions */}
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider flex items-center justify-between">
                         <span>管理地域限制</span>
-                        <span className="text-[9px] text-[#0058bc]">可选多个，逗号分割</span>
+                        <span className="text-[9px] text-[#0058bc]">可选多个</span>
                       </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={managedRegions}
-                          onChange={(e) => setManagedRegions(e.target.value)}
-                          placeholder="例如: cn-hangzhou, cn-beijing, cn-shanghai"
-                          className="w-full pl-3.5 pr-10 py-2 border border-hairline-divider rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-primary-ink font-medium"
-                        />
-                        <span className="absolute right-3 top-2.5 text-outline">
-                          <MapPin className="w-4 h-4" />
-                        </span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
+                        {regionOptions.length === 0 && (
+                          <p className="text-[10px] text-secondary-ink col-span-2">请先填写 Access Key 并点击「获取可用地域」加载可选地域</p>
+                        )}
+                        {regionOptions.map((option) => (
+                          <label key={option.regionId} className="flex items-center gap-2 text-xs text-primary-ink cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={managedRegions.includes(option.regionId)}
+                              onChange={() => toggleManagedRegion(option.regionId)}
+                              className="accent-primary"
+                            />
+                            {option.localName ? `${option.regionId} (${option.localName})` : option.regionId}
+                          </label>
+                        ))}
                       </div>
                       <p className="text-[10px] text-secondary-ink mt-0.5 leading-normal">
                         锁定此云账户拉取实例的白名单。仅同步并在拓扑分析器中显示以上限定的地域资源。
                       </p>
                     </div>
-
-                    {/* Additional fields if creating */}
-                    {isCreating && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1 bg-section-layer/50 p-4 border rounded-md">
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-[11px] font-bold text-secondary-ink uppercase">责任人</label>
-                          <input
-                            type="email"
-                            value={owner}
-                            onChange={(e) => setOwner(e.target.value)}
-                            className="w-full px-3 py-1.5 border border-hairline-divider rounded text-xs bg-white text-primary-ink"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-[11px] font-bold text-secondary-ink uppercase">主注册地域</label>
-                          <input
-                            type="text"
-                            value={mainRegion}
-                            onChange={(e) => setMainRegion(e.target.value)}
-                            className="w-full px-3 py-1.5 border border-hairline-divider rounded text-xs bg-white text-primary-ink"
-                          />
-                        </div>
-                      </div>
-                    )}
 
                     {/* Footer operations */}
                     <div className="flex flex-col gap-3 mt-5 pt-5 border-t border-hairline-divider">
@@ -832,7 +942,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                       <span className="text-[11px] text-secondary-ink font-semibold uppercase tracking-wider">项目安全所有者</span>
                       <div className="text-primary-ink mt-1 flex items-center gap-2 font-medium">
                         <User className="w-3.5 h-3.5 text-outline" />
-                        {isCreating ? owner : displayAccount.owner}
+                        {displayAccount.owner}
                       </div>
                     </div>
                   </div>

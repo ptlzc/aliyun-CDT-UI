@@ -3,10 +3,18 @@ import {
   checkCdtPermission as checkCdtPermissionRequest,
   createAccount as createAccountRequest,
   listAccounts as listAccountsRequest,
+  listRegions as listRegionsRequest,
   updateAccount as updateAccountRequest,
   validateAccountById as validateAccountByIdRequest,
 } from './generated/accounts/sdk.gen';
-import type {Account, AccountBody, AccountListResponse, CreateAccountRequest} from './generated/accounts/types.gen';
+import type {
+  Account,
+  AccountBody,
+  AccountListResponse,
+  AccountRegion,
+  AccountRegionListResponse,
+  CreateAccountRequest,
+} from './generated/accounts/types.gen';
 import {client as graphClient} from './generated/graph/client.gen';
 import {discoverTopology as discoverTopologyRequest, getGraph as getGraphRequest} from './generated/graph/sdk.gen';
 import type {ResourceGraph} from './generated/graph/types.gen';
@@ -80,6 +88,7 @@ function unwrapData<T>(result: GeneratedResult<T>): T {
 }
 
 export type ApiAccount = Account;
+export type ApiAccountRegion = AccountRegion;
 export type ApiActionAudit = ActionAudit;
 export type ApiCreateAccountRequest = CreateAccountRequest | AccountBody;
 export type ApiECSTrafficGovernance = EcsTrafficGovernance;
@@ -137,6 +146,31 @@ export function runtimeWebSocketUrl(filters?: {accountId?: string; jobId?: strin
 export async function listAccounts(): Promise<ApiAccount[]> {
   const response = unwrapData((await listAccountsRequest()) as GeneratedResult<AccountListResponse>);
   return response.items;
+}
+
+export interface ListRegionsRequest {
+  accessKeyId: string;
+  accessKeySecret: string;
+  siteType: 'domestic' | 'international';
+}
+
+export async function listRegions(payload: ListRegionsRequest): Promise<ApiAccountRegion[]> {
+  try {
+    const response = unwrapData(
+      (await listRegionsRequest({
+        body: payload as AccountBody,
+        throwOnError: true,
+      })) as GeneratedResult<AccountRegionListResponse>,
+    );
+    return response.items ?? [];
+  } catch (error) {
+    // The generated client throws the parsed huma error body ({error: string});
+    // normalize to a real Error so callers can rely on error.message.
+    if (error && typeof error === 'object' && 'error' in error && typeof error.error === 'string') {
+      throw new Error(error.error);
+    }
+    throw error;
+  }
 }
 
 export async function createAccount(payload: ApiCreateAccountRequest): Promise<ApiAccount> {

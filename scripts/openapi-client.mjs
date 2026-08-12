@@ -96,12 +96,6 @@ export async function generateOpenApiClient() {
     await runOpenapiTs(inputPath, outputPath);
     await writeModuleEntry(tag);
   }
-
-  await writeFile(
-    path.join(apiDir, 'index.ts'),
-    Object.keys(modules).map((tag) => `export * from './${tag}';`).join('\n') + '\n',
-    'utf8',
-  );
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

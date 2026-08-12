@@ -68,6 +68,13 @@ export type AccountRegionListResponse = {
     items: Array<AccountRegion> | null;
 };
 
+export type AccountValidationResult = {
+    error?: string;
+    errorType?: 'permission' | 'credential' | 'network';
+    valid: boolean;
+    warning?: string;
+};
+
 export type ActionAudit = {
     accountId: string;
     action: string;

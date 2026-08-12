@@ -68,6 +68,13 @@ export type AccountRegionListResponse = {
     items: Array<AccountRegion> | null;
 };
 
+export type AccountValidationResult = {
+    error?: string;
+    errorType?: 'permission' | 'credential' | 'network';
+    valid: boolean;
+    warning?: string;
+};
+
 export type ActionAudit = {
     accountId: string;
     action: string;
@@ -691,3 +698,30 @@ export type ListRegionsForAccountResponses = {
 };
 
 export type ListRegionsForAccountResponse = ListRegionsForAccountResponses[keyof ListRegionsForAccountResponses];
+
+export type ValidateAccountByIdData = {
+    body?: never;
+    path: {
+        accountId: string;
+    };
+    query?: never;
+    url: '/api/accounts/{accountId}/validate';
+};
+
+export type ValidateAccountByIdErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ValidateAccountByIdError = ValidateAccountByIdErrors[keyof ValidateAccountByIdErrors];
+
+export type ValidateAccountByIdResponses = {
+    /**
+     * OK
+     */
+    200: AccountValidationResult;
+};
+
+export type ValidateAccountByIdResponse = ValidateAccountByIdResponses[keyof ValidateAccountByIdResponses];

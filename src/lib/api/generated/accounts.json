@@ -249,6 +249,32 @@
         ],
         "type": "object"
       },
+      "AccountValidationResult": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "errorType": {
+            "enum": [
+              "permission",
+              "credential",
+              "network"
+            ],
+            "type": "string"
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "warning": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "valid"
+        ],
+        "type": "object"
+      },
       "ActionAudit": {
         "additionalProperties": false,
         "properties": {
@@ -2109,6 +2135,46 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AccountRegionListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "tags": [
+          "accounts"
+        ]
+      }
+    },
+    "/api/accounts/{accountId}/validate": {
+      "post": {
+        "operationId": "validateAccountById",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountValidationResult"
                 }
               }
             },

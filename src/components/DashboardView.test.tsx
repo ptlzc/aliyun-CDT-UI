@@ -41,6 +41,7 @@ describe('DashboardView', () => {
             status: 'Attention',
             type: 'ecs.g6.large',
             zone: 'cn-hangzhou-i',
+            regionId: 'cn-hangzhou-i',
             publicIp: '1.1.1.1',
             privateIp: '10.0.0.1',
             trafficUsage: 180,

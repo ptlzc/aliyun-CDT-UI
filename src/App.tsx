@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Bell, Cloud, Cpu, KeyRound, LayoutDashboard, Menu, RefreshCw, Server, X } from 'lucide-react';
+import { Bell, Cloud, Cpu, KeyRound, LayoutDashboard, Menu, RefreshCw, Server, Settings, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
 import Sidebar from './components/Sidebar';

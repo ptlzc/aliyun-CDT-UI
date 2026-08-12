@@ -4,6 +4,7 @@ import {
   createAccount as createAccountRequest,
   listAccounts as listAccountsRequest,
   updateAccount as updateAccountRequest,
+  validateAccountById as validateAccountByIdRequest,
 } from './generated/accounts/sdk.gen';
 import type {Account, AccountBody, AccountListResponse, CreateAccountRequest} from './generated/accounts/types.gen';
 import {client as graphClient} from './generated/graph/client.gen';
@@ -313,10 +314,5 @@ export interface ValidateAccountResult {
 }
 
 export async function validateAccount(accountId: string): Promise<ValidateAccountResult> {
-  const response = await fetch(`${API_BASE_URL}/api/accounts/${accountId}/validate`, {method: 'POST'});
-  if (!response.ok) {
-    const text = await response.text();
-    return {valid: false, errorType: 'credential', error: text};
-  }
-  return response.json() as Promise<ValidateAccountResult>;
+  return unwrapData((await validateAccountByIdRequest({path: {accountId}})) as GeneratedResult<ValidateAccountResult>);
 }

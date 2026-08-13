@@ -272,7 +272,10 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
   };
 
   const handleSave = async () => {
-    if (!name || !accessKeyId || !accessKeySecret) {
+    // Trim before the emptiness check: whitespace-pasted or autofilled fields
+    // must not pass as "filled", and the browser may fill the DOM without
+    // firing React onChange (autoComplete="off"/"new-password" blocks that).
+    if (!name.trim() || !accessKeyId.trim() || !accessKeySecret.trim()) {
       alert('请输入必填字段：账户名称、Access Key ID、Access Key Secret');
       return;
     }
@@ -731,6 +734,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
+                        autoComplete="off"
                         placeholder="例如: 生产账号、预发账号..."
                         className="w-full px-3.5 py-2 border border-hairline-divider rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-outline-variant font-medium text-primary-ink"
                       />
@@ -746,6 +750,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                             type="text"
                             value={accessKeyId}
                             onChange={(e) => setAccessKeyId(e.target.value)}
+                            autoComplete="off"
                             placeholder="LTAI5t7..."
                             className="w-full pl-3.5 pr-10 py-2 border border-hairline-divider rounded font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-primary-ink"
                           />
@@ -768,6 +773,9 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                             type={showSecret ? 'text' : 'password'}
                             value={accessKeySecret}
                             onChange={(e) => setAccessKeySecret(e.target.value)}
+                            // new-password stops the password manager from filling
+                            // the field without firing React onChange
+                            autoComplete="new-password"
                             placeholder="************************"
                             className="w-full pl-3.5 pr-16 py-2 border border-hairline-divider rounded font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-primary-ink"
                           />

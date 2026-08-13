@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import AccountsView from './AccountsView';
 import type {CloudAccount} from '../types';
@@ -156,6 +156,71 @@ describe('AccountsView create flow', () => {
     await user.click(screen.getByRole('button', {name: '取消'}));
 
     expect(await screen.findByRole('heading', {name: /账户管理/})).toBeInTheDocument();
+    expect(mocks.saveMutate).not.toHaveBeenCalled();
+  });
+});
+
+describe('AccountsView required-field validation', () => {
+  // Opens the create form only; fields are filled per-test so each case
+  // controls exactly what state the save handler sees.
+  async function openCreateForm() {
+    const user = userEvent.setup();
+    render(<AccountsHarness accounts={[accountA]} />);
+    await user.click(screen.getByRole('button', {name: /添加账号凭证/}));
+    await screen.findByRole('heading', {name: /添加托管云授权凭证/});
+    return user;
+  }
+
+  beforeEach(() => {
+    mocks.saveMutate.mockReset();
+    mocks.listRegions.mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('never shows the required-field alert when all three fields are filled', async () => {
+    // Regression: browser autofill fills the DOM without firing React
+    // onChange, so the save handler must not trust visually filled inputs;
+    // state-backed values typed via userEvent must save without the alert.
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    mocks.saveMutate.mockResolvedValue({id: 'acc-2'});
+    const user = await openCreateForm();
+
+    await user.type(screen.getByPlaceholderText(/生产账号/), 'Test Account');
+    await user.type(screen.getByPlaceholderText(/LTAI5t7/), 'LTAI5t7TEST');
+    await user.type(screen.getByPlaceholderText('************************'), 'secret123');
+    await user.click(screen.getByRole('button', {name: '保存'}));
+
+    expect(alertSpy).not.toHaveBeenCalled();
+    expect(mocks.saveMutate).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the required-field alert when only part of the fields are filled', async () => {
+    // Existing behavior guard: partial input must keep blocking the save.
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const user = await openCreateForm();
+
+    await user.type(screen.getByPlaceholderText(/生产账号/), 'Test Account');
+    await user.click(screen.getByRole('button', {name: '保存'}));
+
+    expect(alertSpy).toHaveBeenCalledWith('请输入必填字段：账户名称、Access Key ID、Access Key Secret');
+    expect(mocks.saveMutate).not.toHaveBeenCalled();
+  });
+
+  it('rejects whitespace-only values with the required-field alert', async () => {
+    // Trim hardening: all-blank/whitespace-pasted input must count as empty
+    // and must not reach the backend.
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const user = await openCreateForm();
+
+    await user.type(screen.getByPlaceholderText(/生产账号/), '   ');
+    await user.type(screen.getByPlaceholderText(/LTAI5t7/), '   ');
+    await user.type(screen.getByPlaceholderText('************************'), '   ');
+    await user.click(screen.getByRole('button', {name: '保存'}));
+
+    expect(alertSpy).toHaveBeenCalledWith('请输入必填字段：账户名称、Access Key ID、Access Key Secret');
     expect(mocks.saveMutate).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,5 @@
 import {render, screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {describe, expect, it, vi} from 'vitest';
 
 import type {ECSInstance} from '../../../types';
@@ -10,7 +11,7 @@ import InstanceCard from '../components/InstanceCard';
  *
  * @when InstanceCard 累计流量监测分支测试
  */
-function renderCard(overrides: Partial<ECSInstance> = {}) {
+function renderCard(overrides: Partial<ECSInstance> = {}, onViewPolicy: (instance: ECSInstance) => void = vi.fn()) {
   const instance: ECSInstance = {
     id: 'i-1',
     accountId: 'acc-1',
@@ -43,8 +44,10 @@ function renderCard(overrides: Partial<ECSInstance> = {}) {
       onOpenVnc={vi.fn()}
       onToggleStateModal={vi.fn()}
       onManageInstance={vi.fn()}
+      onViewPolicy={onViewPolicy}
     />,
   );
+  return onViewPolicy;
 }
 
 describe('InstanceCard bss-* cumulative traffic usage branches', () => {
@@ -54,10 +57,26 @@ describe('InstanceCard bss-* cumulative traffic usage branches', () => {
     expect(screen.getByText('该实例本月暂无 CDT 出账明细（出账有小时级延迟）')).toBeInTheDocument();
   });
 
-  it('mentions the bss:DescribeBillList permission for bss-permission-error', () => {
+  it('mentions the bss:QueryInstanceBill permission for bss-permission-error', () => {
     renderCard({trafficUsageSource: 'bss-permission-error'});
 
-    expect(screen.getByText(/bss:DescribeBillList/)).toBeInTheDocument();
+    expect(screen.getByText(/bss:QueryInstanceBill/)).toBeInTheDocument();
+  });
+
+  it('renders the bss-permission-error notice in recovery-red with a click-to-view hint', () => {
+    renderCard({trafficUsageSource: 'bss-permission-error'});
+
+    const notice = screen.getByRole('button', {name: /点击查看授权脚本/});
+    expect(notice.className).toContain('recovery-red');
+  });
+
+  it('invokes onViewPolicy with the instance when the permission notice is clicked', async () => {
+    const user = userEvent.setup();
+    const onViewPolicy = renderCard({trafficUsageSource: 'bss-permission-error'});
+
+    await user.click(screen.getByRole('button', {name: /点击查看授权脚本/}));
+
+    expect(onViewPolicy).toHaveBeenCalledWith(expect.objectContaining({id: 'i-1', accountId: 'acc-1'}));
   });
 
   it('reuses the credential error copy for bss-credential-error', () => {
@@ -103,5 +122,12 @@ describe('InstanceCard legacy cdt-* compatibility', () => {
     renderCard({trafficUsageSource: 'cdt-permission-error'});
 
     expect(screen.getByText(/cdt:ListCdtInternetTraffic/)).toBeInTheDocument();
+  });
+
+  it('renders the cdt-permission-error notice in recovery-red with a click-to-view hint', () => {
+    renderCard({trafficUsageSource: 'cdt-permission-error'});
+
+    const notice = screen.getByRole('button', {name: /点击查看授权脚本/});
+    expect(notice.className).toContain('recovery-red');
   });
 });

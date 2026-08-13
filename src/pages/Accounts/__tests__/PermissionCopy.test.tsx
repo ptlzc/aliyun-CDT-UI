@@ -42,19 +42,19 @@ function getMissingPermissionParagraph(): HTMLElement {
 }
 
 describe('missing-permission copy mentions CDT and BSS actions', () => {
-  it('PermissionStatusCard names cdt:ListCdtInternetTraffic and bss:DescribeBillList in one sentence', () => {
+  it('PermissionStatusCard names cdt:ListCdtInternetTraffic and bss:QueryInstanceBill in one sentence', () => {
     render(<PermissionStatusCard cdtPermission={notPermitted} isLoading={false} onOpenAuthModal={vi.fn()} />);
 
     const paragraph = getMissingPermissionParagraph();
     expect(within(paragraph).getByText('cdt:ListCdtInternetTraffic')).toBeInTheDocument();
-    expect(within(paragraph).getByText('bss:DescribeBillList')).toBeInTheDocument();
+    expect(within(paragraph).getByText('bss:QueryInstanceBill')).toBeInTheDocument();
   });
 
-  it('AuthPolicyModal names cdt:ListCdtInternetTraffic and bss:DescribeBillList in one sentence', () => {
+  it('AuthPolicyModal names cdt:ListCdtInternetTraffic and bss:QueryInstanceBill in one sentence', () => {
     render(<AuthPolicyModal account={account} cdtPermission={notPermitted} onClose={vi.fn()} />);
 
     const paragraph = getMissingPermissionParagraph();
     expect(within(paragraph).getByText('cdt:ListCdtInternetTraffic')).toBeInTheDocument();
-    expect(within(paragraph).getByText('bss:DescribeBillList')).toBeInTheDocument();
+    expect(within(paragraph).getByText('bss:QueryInstanceBill')).toBeInTheDocument();
   });
 });

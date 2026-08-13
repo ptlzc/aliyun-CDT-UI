@@ -1,5 +1,6 @@
 import {createMemoryRouter, Outlet, RouterProvider} from 'react-router-dom';
 import {render, screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {describe, expect, it, vi} from 'vitest';
 
 import InstancesPage from '../index';
@@ -7,6 +8,7 @@ import CdtFreeQuotaCard from '../components/CdtFreeQuotaCard';
 import {INSTANCE_STATUS_LABELS, SOURCE_LAYER_LABELS, sourceLayerBadgeClass} from '../components/instanceLabels';
 
 let instancesData: any[] = [];
+let rawAccountsData: any[] = [];
 let cdtData: any = null;
 let governanceData: any = null;
 
@@ -14,7 +16,7 @@ vi.mock('../../../features/runtime/hooks', () => ({
   useRuntimeDashboard: () => ({
     isLoading: false,
     accounts: [],
-    rawAccounts: [],
+    rawAccounts: rawAccountsData,
     graphs: [],
     instances: instancesData,
     workflows: [],
@@ -28,6 +30,23 @@ vi.mock('../../../features/runtime/hooks', () => ({
     },
     platformDefaults: null,
     policiesByAccount: {},
+  }),
+  mapAccountToViewModel: (account: any) => ({
+    id: account.id,
+    name: account.name,
+    providerRegion: account.siteType === 'domestic' ? 'Aliyun Domestic' : 'Aliyun International',
+    mainRegion: account.regionId,
+    lastSynced: 'Just now',
+    creationDate: '2026-06-17',
+    accessKeyId: account.accessKeyId,
+    accessKeySecret: account.accessKeySecret ?? '************************',
+    managedRegions: (account.regions || []).join(', '),
+    roleArn: '',
+    trafficDefaults: account.trafficGovernanceDefaults ?? {
+      maximumTrafficGb: 200,
+      overflowAction: 'notify',
+      monitoringEnabled: true,
+    },
   }),
   useStartECSInstanceMutation: () => ({mutateAsync: vi.fn(), mutate: vi.fn(), isPending: false}),
   useStopECSInstanceMutation: () => ({mutateAsync: vi.fn(), mutate: vi.fn(), isPending: false}),
@@ -135,6 +154,64 @@ describe('InstancesPage', () => {
     expect(screen.getByRole('button', {name: '停止'})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /连接 VNC/})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: '状态'})).toBeInTheDocument();
+  });
+
+  it('opens the shared auth policy modal when a permission notice is clicked', async () => {
+    const user = userEvent.setup();
+    cdtData = null;
+    governanceData = null;
+    rawAccountsData = [
+      {
+        id: 'acc-1',
+        name: 'Account A',
+        siteType: 'domestic',
+        regionId: 'cn-hangzhou',
+        accessKeyId: 'ak',
+        accessKeySecret: 'secret',
+        regions: ['cn-hangzhou'],
+        createdAt: '2026-06-17T00:00:00Z',
+        updatedAt: '2026-06-17T00:00:00Z',
+        defaultImageKey: 'img-1',
+        ossBucket: 'bucket',
+        ossEndpoint: 'oss-cn-hangzhou.aliyuncs.com',
+        zoneId: 'cn-hangzhou-i',
+      },
+    ];
+    instancesData = [
+      {
+        id: 'i-1',
+        accountId: 'acc-1',
+        accountName: 'Account A',
+        name: 'ecs-a',
+        status: 'Running',
+        type: 'ecs.g6.large',
+        zone: 'cn-hangzhou-i',
+        regionId: 'cn-hangzhou-i',
+        publicIp: '1.1.1.1',
+        privateIp: '10.0.0.1',
+        trafficUsage: null,
+        trafficUsageUnit: 'GB',
+        trafficRate: 22.5,
+        trafficRateUnit: 'Mbps',
+        trafficLimit: 200,
+        trafficUsageSource: 'bss-permission-error',
+        monitoringEnabled: true,
+        overflowAction: 'notify',
+        inherited: true,
+        alerts: [],
+      },
+    ];
+
+    renderInstances();
+
+    await user.click(screen.getByRole('button', {name: /点击查看授权脚本/}));
+
+    // Shared auth policy modal opens with the resolved account and the full
+    // RAM policy JSON (paragraph + <pre> both contain the action names).
+    expect(screen.getByText(/账号 RAM 授权策略/)).toBeInTheDocument();
+    expect(screen.getAllByText(/cdt:ListCdtInternetTraffic/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/bss:QueryInstanceBill/).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', {name: '关闭'})).toBeInTheDocument();
   });
 });
 

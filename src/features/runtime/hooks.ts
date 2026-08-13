@@ -74,16 +74,16 @@ function relativeTimeLabel(value?: string): string {
   const diffMs = Date.now() - parsed.getTime();
   const diffMinutes = Math.max(0, Math.round(diffMs / 60_000));
   if (diffMinutes < 1) {
-    return 'Just now';
+    return '刚刚';
   }
   if (diffMinutes < 60) {
-    return `${diffMinutes} mins ago`;
+    return `${diffMinutes} 分钟前`;
   }
   const diffHours = Math.round(diffMinutes / 60);
   if (diffHours < 24) {
-    return `${diffHours} hours ago`;
+    return `${diffHours} 小时前`;
   }
-  return `${Math.round(diffHours / 24)} days ago`;
+  return `${Math.round(diffHours / 24)} 天前`;
 }
 
 function mapAccountToViewModel(account: ApiAccount): CloudAccount {
@@ -187,13 +187,13 @@ function mapGraphToInstances(graphs: ApiResourceGraph[], accounts: ApiAccount[],
         const currentTraffic = usage?.available ? usage.value : 0;
         const alerts: string[] = [];
         if (maximumTraffic > 0 && currentTraffic / maximumTraffic >= 0.8) {
-          alerts.push(`Cumulative traffic usage at ${Math.round((currentTraffic / maximumTraffic) * 100)}% of the configured limit.`);
+          alerts.push(`累计流量使用已达配置上限的 ${Math.round((currentTraffic / maximumTraffic) * 100)}%。`);
         }
         if (!usage?.available) {
-          alerts.push('Cumulative traffic usage is currently unavailable for this instance.');
+          alerts.push('该实例的累计流量数据当前不可用。');
         }
         if (metadata.trafficMonitoringEnabled === 'false') {
-          alerts.push('Monitoring disabled for this instance.');
+          alerts.push('该实例的监控已关闭。');
         }
         return {
           id: node.id,

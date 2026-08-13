@@ -1,7 +1,23 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Check, CheckCircle2, Download, Layers, Loader2, RefreshCw, Terminal } from 'lucide-react';
 
-import { WorkflowRun } from '../types';
+import { WorkflowRun, WorkflowTask } from '../types';
+
+// 状态枚举 → 中文展示映射（后端枚举值不翻译，仅显示层映射）
+const WORKFLOW_STATUS_LABELS: Record<WorkflowRun['status'], string> = {
+  'Running': '运行中',
+  'Success': '成功',
+  'Failed': '失败',
+  'Idle': '空闲',
+};
+
+const TASK_STATUS_LABELS: Record<WorkflowTask['status'], string> = {
+  'Completed': '已完成',
+  'In Progress': '进行中',
+  'Pending': '待执行',
+  'Success': '成功',
+  'Failed': '失败',
+};
 
 interface WorkflowsViewProps {
   workflows: WorkflowRun[];
@@ -117,7 +133,7 @@ export default function WorkflowsView({ workflows }: WorkflowsViewProps) {
 
           <span className="text-xs text-secondary-ink flex items-center gap-1.5 bg-workspace-canvas px-3 py-1.5 border rounded-full">
             <span className={`w-2 h-2 rounded-full ${activeWorkflow.status === 'Running' ? 'bg-signal-amber animate-pulse' : activeWorkflow.status === 'Success' ? 'bg-healthy-green' : activeWorkflow.status === 'Failed' ? 'bg-recovery-red' : 'bg-outline'}`} />
-            <span>状态: {activeWorkflow.status}</span>
+            <span>状态: {WORKFLOW_STATUS_LABELS[activeWorkflow.status]}</span>
             <span className="font-mono text-primary font-bold pl-1">更新: {activeWorkflow.duration}</span>
           </span>
         </div>
@@ -127,7 +143,7 @@ export default function WorkflowsView({ workflows }: WorkflowsViewProps) {
             <header className="px-4 py-3 bg-[#EEF2F6] border-b border-hairline-divider flex items-center justify-between">
               <span className="text-xs font-bold text-primary-ink">任务步骤</span>
               <span className={`px-2 py-0.5 rounded text-[10px] border font-bold uppercase font-space ${activeWorkflow.status === 'Running' ? 'bg-[#FFF8E1] text-[#F57F17] border-[#FFECB3]' : activeWorkflow.status === 'Success' ? 'bg-green-50 text-[#1B5E20] border-[#c3e6cb]' : 'bg-red-50 text-[#b42318] border-[#fecdca]'}`}>
-                {activeWorkflow.status}
+                {WORKFLOW_STATUS_LABELS[activeWorkflow.status]}
               </span>
             </header>
 
@@ -155,7 +171,7 @@ export default function WorkflowsView({ workflows }: WorkflowsViewProps) {
                           进行中
                         </span>
                       ) : (
-                        <span className="text-[10px] text-outline font-medium">{task.status}</span>
+                        <span className="text-[10px] text-outline font-medium">{TASK_STATUS_LABELS[task.status]}</span>
                       )}
                     </div>
                     <p className="text-[11px] text-[#667085] leading-relaxed">{task.description}</p>
@@ -211,7 +227,7 @@ export default function WorkflowsView({ workflows }: WorkflowsViewProps) {
               )}
               {activeWorkflow.status === 'Running' && (
                 <div className="flex items-center gap-2 mt-2 font-semibold">
-                  <span className="text-[#c9d1d9]">$ runtime stream connected ...</span>
+                  <span className="text-[#c9d1d9]">$ 运行时事件流已连接 ...</span>
                   <span className="bg-[#c9d1d9] w-1.5 h-3.5 inline-block animate-pulse shrink-0" />
                 </div>
               )}

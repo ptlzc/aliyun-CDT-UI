@@ -170,7 +170,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
       status: 'Active',
       providerRegion: 'Aliyun China East 1',
       mainRegion: 'cn-hangzhou (华东 1)',
-      lastSynced: 'Just now',
+      lastSynced: '刚刚',
       creationDate: new Date().toISOString().substring(0, 10) + ' 12:00 UTC',
       owner: 'sysadmin@aliyun.com',
       accessKeyId: '',
@@ -295,6 +295,16 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
   // backend list by id, so synthetic drafts never reach the prop).
   const displayAccount = isCreating ? createDraft : selectedAccount;
 
+  // Status enum → 中文展示映射（后端枚举值不翻译，仅显示层映射）
+  const ACCOUNT_STATUS_LABELS: Record<CloudAccount['status'], string> = {
+    'Active': '运行中',
+    'Sync Delayed': '同步延迟',
+    'Auth Failed': '认证失败',
+    'Inactive': '已停用',
+  };
+
+  const statusLabel = (status: CloudAccount['status']): string => ACCOUNT_STATUS_LABELS[status];
+
   // Get status color styling helper
   const getStatusStyle = (status: CloudAccount['status']) => {
     switch (status) {
@@ -345,14 +355,14 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                   className="px-4 py-2 bg-surface-white border border-hairline-divider text-primary-ink text-xs rounded hover:bg-emphasis-layer transition-colors flex items-center gap-2 cursor-pointer"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  <span>同步全部 accounts</span>
+                  <span>同步全部账户</span>
                 </button>
                 <button
                   onClick={handleCreateClick}
                   className="px-4 py-2 bg-primary text-white text-xs rounded hover:bg-primary-container font-medium transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>添加账号 Credential</span>
+                  <span>添加账号凭证</span>
                 </button>
               </div>
             </div>
@@ -391,7 +401,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                             : 'text-on-surface-variant hover:bg-emphasis-layer'
                         }`}
                       >
-                        {st === 'ALL' ? '全部' : st}
+                        {st === 'ALL' ? '全部' : statusLabel(st as CloudAccount['status'])}
                       </button>
                     ))}
                   </div>
@@ -403,9 +413,9 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                 <table className="w-full text-left whitespace-nowrap text-xs">
                   <thead className="bg-[#FAFBFD] border-b border-hairline-divider text-secondary-ink font-semibold uppercase tracking-wider text-[10px]">
                     <tr>
-                      <th className="px-5 py-3.5">账户名称 / Account Name</th>
-                      <th className="px-5 py-3.5">Account ID</th>
-                      <th className="px-5 py-3.5">受托管主地域 / Region</th>
+                      <th className="px-5 py-3.5">账户名称</th>
+                      <th className="px-5 py-3.5">账户 ID</th>
+                      <th className="px-5 py-3.5">受托管主地域</th>
                       <th className="px-5 py-3.5">探测同步状态</th>
                       <th className="px-5 py-3.5">上次同步检测</th>
                       <th className="px-5 py-3.5 text-right w-24">操作指令</th>
@@ -441,7 +451,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                               <span className={`w-1.5 h-1.5 rounded-full ${
                                 acc.status === 'Active' ? 'bg-healthy-green' : acc.status === 'Sync Delayed' ? 'bg-signal-amber' : acc.status === 'Auth Failed' ? 'bg-recovery-red animate-pulse' : 'bg-outline'
                               }`} />
-                              {acc.status}
+                              {statusLabel(acc.status)}
                             </span>
                           </td>
                           <td className="px-5 py-3.5 text-secondary-ink font-mono">
@@ -497,7 +507,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                     >
                       <ChevronLeft className="w-3.5 h-3.5" />
                     </button>
-                    <span className="px-3 font-mono">Page {currentPage} of {totalPages}</span>
+                    <span className="px-3 font-mono">第 {currentPage} 页 / 共 {totalPages} 页</span>
                     <button
                       disabled={currentPage === totalPages}
                       onClick={() => setCurrentPage((c) => Math.min(c + 1, totalPages))}
@@ -687,7 +697,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="例如: Production Core, Staging Environment..."
+                        placeholder="例如: 生产账号、预发账号..."
                         className="w-full px-3.5 py-2 border border-hairline-divider rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-outline-variant font-medium text-primary-ink"
                       />
                     </div>
@@ -906,7 +916,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                     <div>
                       <span className="text-[11px] text-secondary-ink font-semibold uppercase tracking-wider">云账户物理名称</span>
                       <div className="font-bold text-primary-ink mt-1 font-space">
-                        {isCreating ? name || 'Pending Name' : displayAccount.name}
+                        {isCreating ? name || '待命名' : displayAccount.name}
                       </div>
                     </div>
 
@@ -917,7 +927,7 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                           <span className={`w-1.5 h-1.5 rounded-full ${
                             displayAccount.status === 'Active' ? 'bg-healthy-green' : displayAccount.status === 'Sync Delayed' ? 'bg-signal-amber' : displayAccount.status === 'Auth Failed' ? 'bg-recovery-red' : 'bg-outline'
                           }`} />
-                          {displayAccount.status === 'Active' ? '运行中' : displayAccount.status === 'Auth Failed' ? '认证失效' : displayAccount.status}
+                          {statusLabel(displayAccount.status)}
                         </span>
                       </div>
                     </div>
@@ -952,10 +962,10 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                       <button 
                         onClick={() => {
                           setSelectedAuditLog([
-                            `[2026-06-16 10:14:15 UTC] - Operator SYSTEM initiated sync scan on ${selectedAccount.name}`,
-                            `[2026-06-16 10:14:16 UTC] - Handshake metadata check - Success`,
-                            `[2026-06-16 10:14:18 UTC] - Pulled 142 ECS instances metadata successfully.`,
-                            `[2026-06-16 10:14:20 UTC] - KMS secret decryption verify code matches - Signature matches`,
+                            `[2026-06-16 10:14:15 UTC] - SYSTEM 操作员已对 ${selectedAccount.name} 发起同步扫描`,
+                            `[2026-06-16 10:14:16 UTC] - 握手元数据检查 - 成功`,
+                            `[2026-06-16 10:14:18 UTC] - 已成功拉取 142 个 ECS 实例元数据。`,
+                            `[2026-06-16 10:14:20 UTC] - KMS 密钥解密校验码匹配 - 签名一致`,
                           ]);
                           setShowAudits(true);
                         }}

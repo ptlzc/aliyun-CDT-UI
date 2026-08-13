@@ -12,8 +12,7 @@ interface DashboardViewProps {
   setSelectedAccount: (account: CloudAccount | null) => void;
 }
 
-function summaryCard(label: string, value: number, hint: string, icon: ReactNode) {
-  return (
+function summaryCard(label: string, value: number, hint: string, icon: ReactNode) {  return (
     <div className="rounded-lg border border-hairline-divider bg-surface-white p-5 shadow-xs">
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -26,6 +25,21 @@ function summaryCard(label: string, value: number, hint: string, icon: ReactNode
     </div>
   );
 }
+
+// 状态枚举 → 中文展示映射（后端枚举值不翻译，仅显示层映射）
+const ACCOUNT_STATUS_LABELS: Record<CloudAccount['status'], string> = {
+  'Active': '运行中',
+  'Sync Delayed': '同步延迟',
+  'Auth Failed': '认证失败',
+  'Inactive': '已停用',
+};
+
+const WORKFLOW_STATUS_LABELS: Record<WorkflowRun['status'], string> = {
+  'Running': '运行中',
+  'Success': '成功',
+  'Failed': '失败',
+  'Idle': '空闲',
+};
 
 export default function DashboardView({
   accounts,
@@ -90,7 +104,7 @@ export default function DashboardView({
                       {account.mainRegion} · 最近同步 {account.lastSynced}
                     </div>
                   </div>
-                  <span className="rounded bg-emphasis-layer px-2 py-1 text-xs text-secondary-ink">{account.status}</span>
+                  <span className="rounded bg-emphasis-layer px-2 py-1 text-xs text-secondary-ink">{ACCOUNT_STATUS_LABELS[account.status]}</span>
                 </button>
               ))
             )}
@@ -155,7 +169,7 @@ export default function DashboardView({
                     {workflow.targetRegion} · {workflow.duration}
                   </div>
                 </div>
-                <span className="rounded bg-emphasis-layer px-2 py-1 text-xs text-secondary-ink">{workflow.status}</span>
+                <span className="rounded bg-emphasis-layer px-2 py-1 text-xs text-secondary-ink">{WORKFLOW_STATUS_LABELS[workflow.status]}</span>
               </div>
             ))
           )}

@@ -60,14 +60,14 @@ describe('AccountsView create flow', () => {
     mocks.listRegions.mockReset();
   });
 
-  it('opens the create form when clicking 添加账号 Credential', async () => {
+  it('opens the create form when clicking 添加账号凭证', async () => {
     const user = userEvent.setup();
     render(<AccountsHarness accounts={[accountA]} />);
 
     // List view is visible initially
     expect(screen.getByRole('heading', {name: /账户管理/})).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', {name: /添加账号 Credential/}));
+    await user.click(screen.getByRole('button', {name: /添加账号凭证/}));
 
     // Create form heading must appear (regression: the parent re-derived
     // selectedAccount as null for the local draft id, so nothing happened)
@@ -90,10 +90,10 @@ describe('AccountsView create flow', () => {
     const user = userEvent.setup();
     render(<AccountsHarness accounts={[accountA]} />);
 
-    await user.click(screen.getByRole('button', {name: /添加账号 Credential/}));
+    await user.click(screen.getByRole('button', {name: /添加账号凭证/}));
     await screen.findByRole('heading', {name: /添加托管云授权凭证/});
 
-    await user.type(screen.getByPlaceholderText(/Production Core/), 'Test Account');
+    await user.type(screen.getByPlaceholderText(/生产账号/), 'Test Account');
     await user.type(screen.getByPlaceholderText(/LTAI5t7/), 'LTAI5t7TEST');
     await user.type(screen.getByPlaceholderText('************************'), 'secret123');
 
@@ -133,7 +133,7 @@ describe('AccountsView create flow', () => {
     const user = userEvent.setup();
     render(<AccountsHarness accounts={[accountA]} />);
 
-    await user.click(screen.getByRole('button', {name: /添加账号 Credential/}));
+    await user.click(screen.getByRole('button', {name: /添加账号凭证/}));
     await screen.findByRole('heading', {name: /添加托管云授权凭证/});
 
     await user.type(screen.getByPlaceholderText(/LTAI5t7/), 'LTAI5t7TEST');
@@ -149,7 +149,7 @@ describe('AccountsView create flow', () => {
     const user = userEvent.setup();
     render(<AccountsHarness accounts={[accountA]} />);
 
-    await user.click(screen.getByRole('button', {name: /添加账号 Credential/}));
+    await user.click(screen.getByRole('button', {name: /添加账号凭证/}));
     await screen.findByRole('heading', {name: /添加托管云授权凭证/});
 
     await user.click(screen.getByRole('button', {name: '取消'}));

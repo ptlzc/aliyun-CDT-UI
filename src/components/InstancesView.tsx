@@ -31,6 +31,18 @@ const SOURCE_LAYER_LABELS: Record<string, string> = {
   'global': '全局默认',
 };
 
+// 实例状态枚举 → 中文展示映射（后端枚举值不翻译，仅显示层映射）
+const INSTANCE_STATUS_LABELS: Record<ECSInstance['status'], string> = {
+  'Running': '运行中',
+  'Stopped': '已停止',
+  'Attention': '需关注',
+};
+
+// 后端返回的未知状态字符串保持原样展示（与 actionLabelZh 同模式）
+function instanceStateLabel(state: string): string {
+  return INSTANCE_STATUS_LABELS[state as ECSInstance['status']] || state;
+}
+
 function sourceLayerBadgeClass(label: string): string {
   if (label === '实例级') {
     return 'border-[#C8E6C9] bg-[#E8F5E9] text-[#1B5E20]';
@@ -252,7 +264,7 @@ export default function InstancesView({instances, isLoading = false, onManageIns
             }`}
             onClick={() => setStatusFilter(status)}
           >
-            {status === 'ALL' ? '全部' : status}
+            {status === 'ALL' ? '全部' : INSTANCE_STATUS_LABELS[status]}
           </button>
         ))}
       </div>
@@ -456,7 +468,7 @@ export default function InstancesView({instances, isLoading = false, onManageIns
                               : 'bg-secondary-ink'
                         }`}
                       />
-                      {effectiveStatus}
+                      {instanceStateLabel(effectiveStatus)}
                     </span>
                   )}
                 </div>
@@ -754,7 +766,7 @@ export default function InstancesView({instances, isLoading = false, onManageIns
                           metricsQuery.data.state === 'Running' ? 'animate-pulse bg-healthy-green' : 'bg-secondary-ink'
                         }`}
                       />
-                      {metricsQuery.data.state}
+                      {instanceStateLabel(metricsQuery.data.state)}
                     </span>
                   )}
                 </div>

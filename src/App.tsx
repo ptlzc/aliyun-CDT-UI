@@ -58,12 +58,12 @@ export default function App() {
       <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
         <header className="w-full h-12 flex justify-between items-center px-6 bg-surface-white border-b border-hairline-divider z-45 sticky top-0 shadow-2xs">
           <div className="flex items-center gap-4">
-            <button onClick={() => setMobileMenuOpen(true)} className="md:hidden text-outline hover:text-primary-ink p-1 rounded-md transition-colors" title="Open Navigation">
+            <button onClick={() => setMobileMenuOpen(true)} className="md:hidden text-outline hover:text-primary-ink p-1 rounded-md transition-colors" title="打开导航">
               <Menu className="w-5 h-5" />
             </button>
-            <span className="font-space font-extrabold text-base tracking-tight text-primary">CloudOps Workbench</span>
+            <span className="font-space font-extrabold text-base tracking-tight text-primary">阿里云 CDT 管控台</span>
             <span className="hidden lg:inline bg-emphasis-layer/60 border border-hairline-divider px-2.5 py-0.5 rounded text-[10px] text-secondary-ink font-semibold">
-              Aliyun CDT Control Plane Runtime
+              阿里云 CDT 管控运行时
             </span>
           </div>
           <div className="flex items-center gap-2">

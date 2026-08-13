@@ -25,7 +25,7 @@ export default function Sidebar({ activeTab, setActiveTab, onDeployTrigger }: Si
             <Cloud className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-semibold text-primary uppercase text-sm tracking-wider font-space">Aliyun Ops</h1>
+            <h1 className="font-semibold text-primary uppercase text-sm tracking-wider font-space">阿里云运维</h1>
             <p className="text-[11px] text-secondary-ink font-medium">生产环境 • 华东 1 (cn-hangzhou)</p>
           </div>
         </div>

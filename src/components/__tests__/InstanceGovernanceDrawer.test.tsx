@@ -2,12 +2,12 @@ import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, it, vi} from 'vitest';
 
-import InstanceGovernanceDrawer from './InstanceGovernanceDrawer';
+import InstanceGovernanceDrawer from '../InstanceGovernanceDrawer';
 
 const governanceMutate = vi.fn();
 const policyMutate = vi.fn();
 
-vi.mock('../features/runtime/hooks', () => ({
+vi.mock('../../features/runtime/hooks', () => ({
   useSaveInstanceGovernanceMutation: () => ({
     mutate: governanceMutate,
     isPending: false,

@@ -1,3 +1,4 @@
+import {createMemoryRouter, RouterProvider} from 'react-router-dom';
 import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, it, vi} from 'vitest';
@@ -11,8 +12,27 @@ const updateMutate = vi.fn();
 const deleteMutate = vi.fn();
 
 let regionGroupsReturnValue: any[] = [];
+let platformDefaultsValue: any = null;
 
 vi.mock('../../../features/runtime/hooks', () => ({
+  useRuntimeDashboard: () => ({
+    isLoading: false,
+    accounts: [],
+    rawAccounts: [],
+    graphs: [],
+    instances: [],
+    workflows: [],
+    summary: {
+      accountCount: 0,
+      ecsCount: 0,
+      eipCount: 0,
+      activeWorkflowCount: 0,
+      attentionInstanceCount: 0,
+      monitoredInstanceCount: 0,
+    },
+    platformDefaults: platformDefaultsValue,
+    policiesByAccount: {},
+  }),
   useSavePlatformDefaultsMutation: () => ({
     mutate: saveMutate,
     isPending: false,
@@ -28,19 +48,22 @@ vi.mock('../../../features/runtime/hooks', () => ({
   useDeleteRegionGroupMutation: () => ({mutate: deleteMutate, isPending: false}),
 }));
 
+function renderSettings() {
+  const router = createMemoryRouter([{path: '/', element: <SettingsPage />}], {initialEntries: ['/']});
+  render(<RouterProvider router={router} />);
+  return router;
+}
+
 describe('SettingsPage', () => {
   it('submits platform defaults and rollout action', async () => {
+    platformDefaultsValue = {
+      maximumTrafficGb: 200,
+      overflowAction: 'notify',
+      monitoringEnabled: true,
+    };
     const user = userEvent.setup();
 
-    render(
-      <SettingsPage
-        defaults={{
-          maximumTrafficGb: 200,
-          overflowAction: 'notify',
-          monitoringEnabled: true,
-        }}
-      />,
-    );
+    renderSettings();
 
     expect(screen.getByText('默认累计流量上限（GB）')).toBeInTheDocument();
 
@@ -71,8 +94,9 @@ describe('SettingsPage region group section', () => {
         updatedAt: '2026-06-02T00:00:00Z',
       },
     ];
+    platformDefaultsValue = null;
 
-    render(<SettingsPage defaults={null} />);
+    renderSettings();
 
     expect(screen.getByText('地区组配置')).toBeInTheDocument();
     expect(screen.getByText('全局默认值')).toBeInTheDocument();
@@ -84,9 +108,10 @@ describe('SettingsPage region group section', () => {
 
   it('opens the editor in create mode when 新建地区组 clicked', async () => {
     regionGroupsReturnValue = [];
+    platformDefaultsValue = null;
     const user = userEvent.setup();
 
-    render(<SettingsPage defaults={null} />);
+    renderSettings();
 
     await user.click(screen.getByRole('button', {name: '新建地区组'}));
 
@@ -105,9 +130,10 @@ describe('SettingsPage region group section', () => {
         updatedAt: '2026-06-02T00:00:00Z',
       },
     ];
+    platformDefaultsValue = null;
     const user = userEvent.setup();
 
-    render(<SettingsPage defaults={null} />);
+    renderSettings();
 
     await user.click(screen.getByRole('button', {name: '删除'}));
     expect(deleteMutate).toHaveBeenCalledWith('rg-9');
@@ -124,9 +150,10 @@ describe('SettingsPage region group section', () => {
         updatedAt: '2026-06-02T00:00:00Z',
       },
     ];
+    platformDefaultsValue = null;
     const user = userEvent.setup();
 
-    render(<SettingsPage defaults={null} />);
+    renderSettings();
 
     await user.click(screen.getByRole('button', {name: '编辑'}));
     expect((screen.getByPlaceholderText('例如：cn-hangzhou 组') as HTMLInputElement).value).toBe('华北组');

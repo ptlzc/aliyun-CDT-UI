@@ -1,16 +1,18 @@
 import {useMemo, useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {Filter, RefreshCw} from 'lucide-react';
+import {useOutletContext} from 'react-router-dom';
 
 import {
   useCdtFreeQuotaQuery,
   useEffectiveTrafficGovernanceQuery,
   useECSMetricsQuery,
   useECSVncUrlQuery,
+  useRuntimeDashboard,
   useStartECSInstanceMutation,
   useStopECSInstanceMutation,
 } from '../../features/runtime/hooks';
-import type {ApiEffectiveTrafficGovernance, ApiTrafficQuotaSnapshot} from '../../lib/api/client';
+import type {ApiEffectiveTrafficGovernance} from '../../lib/api/client';
 import type {ECSInstance} from '../../types';
 import {actionLabelZh} from '../../utils/actionLabels';
 import CdtFreeQuotaCard from './components/CdtFreeQuotaCard';
@@ -20,20 +22,20 @@ import OverQuotaConfirmModal from './components/OverQuotaConfirmModal';
 import VncModal from './components/VncModal';
 import {INSTANCE_STATUS_LABELS, SOURCE_LAYER_LABELS, sourceLayerBadgeClass} from './components/instanceLabels';
 
-interface InstancesPageProps {
-  instances: ECSInstance[];
-  isLoading?: boolean;
-  onManageInstance: (instance: ECSInstance) => void;
-  accountId?: string | null;
-}
-
 /**
  * Instances page: search/filter orchestration, per-instance power/VNC/metrics
- * state and the account-level CDT quota / governance panels.
+ * state and the account-level CDT quota / governance panels. The governance
+ * drawer stays mounted by the layout shell; "编辑" triggers it through the
+ * Outlet context `openInstance` callback.
  *
  * @when 侧边栏点击「ECS 实例列表」或深链 /instances 时渲染
  */
-export default function InstancesPage({instances, isLoading = false, onManageInstance, accountId = null}: InstancesPageProps) {
+export default function InstancesPage() {
+  const runtime = useRuntimeDashboard();
+  const {openInstance} = useOutletContext<{openInstance: (instance: ECSInstance) => void}>();
+  const instances = runtime.instances;
+  const isLoading = runtime.isLoading;
+  const accountId = null;
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
   const [filterText, setFilterText] = useState('');
@@ -204,7 +206,7 @@ export default function InstancesPage({instances, isLoading = false, onManageIns
                 onTogglePower={togglePower}
                 onOpenVnc={openVnc}
                 onToggleStateModal={(inst) => setActiveStateModalId(activeStateModalId === inst.id ? null : inst.id)}
-                onManageInstance={onManageInstance}
+                onManageInstance={openInstance}
               />
             ))}
           </div>

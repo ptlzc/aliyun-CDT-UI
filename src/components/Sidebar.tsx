@@ -1,15 +1,26 @@
 import {Cloud, Plus} from 'lucide-react';
 import {motion} from 'motion/react';
+import {useLocation, useNavigate} from 'react-router-dom';
 
-import {menuItems, type AppTabId} from '../navigation';
+import {menuItems} from '../navigation';
 
 interface SidebarProps {
-  activeTab: AppTabId;
-  setActiveTab: (tab: AppTabId) => void;
   onDeployTrigger: () => void;
 }
 
-export default function Sidebar({activeTab, setActiveTab, onDeployTrigger}: SidebarProps) {
+/**
+ * Desktop navigation rail. Active state is path-derived so deep links and
+ * browser back/forward stay in sync with the sidebar highlight.
+ *
+ * @when 布局壳渲染时（桌面端）
+ */
+export default function Sidebar({onDeployTrigger}: SidebarProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const isPathActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(`${path}/`);
+
   return (
     <nav className="fixed left-0 top-0 h-full w-64 z-50 flex flex-col py-4 bg-section-layer border-r border-hairline-divider hidden md:flex font-sans">
       {/* Brand Header */}
@@ -38,12 +49,12 @@ export default function Sidebar({activeTab, setActiveTab, onDeployTrigger}: Side
       <ul className="flex-1 flex flex-col gap-1 px-3">
         {menuItems.map((item) => {
           const IconComponent = item.icon;
-          const isActive = activeTab === item.id;
+          const isActive = isPathActive(item.path);
 
           return (
-            <li key={item.id}>
+            <li key={item.path}>
               <button
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => navigate(item.path)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded transition-all cursor-pointer text-left relative group ${
                   isActive
                     ? 'bg-emphasis-layer text-primary font-semibold'

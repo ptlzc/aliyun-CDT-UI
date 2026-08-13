@@ -1,5 +1,4 @@
-import {useState} from 'react';
-import {MemoryRouter} from 'react-router-dom';
+import {createMemoryRouter, RouterProvider} from 'react-router-dom';
 import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
@@ -32,7 +31,27 @@ const mocks = vi.hoisted(() => ({
   listRegions: vi.fn(),
 }));
 
+let runtimeAccounts: CloudAccount[] = [];
+
 vi.mock('../../../features/runtime/hooks', () => ({
+  useRuntimeDashboard: () => ({
+    isLoading: false,
+    accounts: runtimeAccounts,
+    rawAccounts: [],
+    graphs: [],
+    instances: [],
+    workflows: [],
+    summary: {
+      accountCount: 0,
+      ecsCount: 0,
+      eipCount: 0,
+      activeWorkflowCount: 0,
+      attentionInstanceCount: 0,
+      monitoredInstanceCount: 0,
+    },
+    platformDefaults: null,
+    policiesByAccount: {},
+  }),
   useSaveAccountMutation: () => ({mutateAsync: mocks.saveMutate, isPending: false}),
   useCdtPermissionQuery: () => ({data: undefined, isLoading: false}),
   useValidateAccountMutation: () => ({mutateAsync: vi.fn()}),
@@ -42,41 +61,40 @@ vi.mock('../../../lib/api/client', () => ({
   listRegions: mocks.listRegions,
 }));
 
-// Mirrors App.tsx wiring: the parent stores only the account id and re-derives
-// the account from the backend-fetched accounts list. The harness runs inside
-// a MemoryRouter so router context (future URL-driven selection) is available
-// to the page, matching production routing behavior.
-function AccountsHarness({accounts}: {accounts: CloudAccount[]}) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selectedAccount = accounts.find((account) => account.id === selectedId) || null;
-  return (
-    <MemoryRouter>
-      <AccountsPage
-        accounts={accounts}
-        selectedAccount={selectedAccount}
-        setSelectedAccount={(account) => setSelectedId(account?.id || null)}
-      />
-    </MemoryRouter>
+// Mirrors production routing: the accounts page is URL-driven, so the harness
+// renders the page through a memory router with the accounts route set.
+function renderAccounts(initialPath = '/accounts') {
+  const router = createMemoryRouter(
+    [
+      {path: '/accounts', element: <AccountsPage />},
+      {path: '/accounts/new', element: <AccountsPage />},
+      {path: '/accounts/:accountId', element: <AccountsPage />},
+      {path: '*', element: <div>not found</div>},
+    ],
+    {initialEntries: [initialPath]},
   );
+  render(<RouterProvider router={router} />);
+  return router;
 }
 
 describe('AccountsPage create flow', () => {
   beforeEach(() => {
     mocks.saveMutate.mockReset();
     mocks.listRegions.mockReset();
+    runtimeAccounts = [accountA];
   });
 
   it('opens the create form when clicking 添加账号凭证', async () => {
     const user = userEvent.setup();
-    render(<AccountsHarness accounts={[accountA]} />);
+    const router = renderAccounts();
 
     // List view is visible initially
     expect(screen.getByRole('heading', {name: /账户管理/})).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', {name: /添加账号凭证/}));
 
-    // Create form heading must appear (regression: the parent re-derived
-    // selectedAccount as null for the local draft id, so nothing happened)
+    // URL moves to the static create segment and the form renders
+    expect(router.state.location.pathname).toBe('/accounts/new');
     expect(await screen.findByRole('heading', {name: /添加托管云授权凭证/})).toBeInTheDocument();
     // Create mode must not fire the CDT permission check (enabled only for
     // existing accounts) and has no 测试连接 button
@@ -94,7 +112,7 @@ describe('AccountsPage create flow', () => {
       {regionId: 'cn-beijing', localName: '华北 2（北京）'},
     ]);
     const user = userEvent.setup();
-    render(<AccountsHarness accounts={[accountA]} />);
+    const router = renderAccounts();
 
     await user.click(screen.getByRole('button', {name: /添加账号凭证/}));
     await screen.findByRole('heading', {name: /添加托管云授权凭证/});
@@ -131,13 +149,14 @@ describe('AccountsPage create flow', () => {
     });
 
     // Form closes and the listing is shown again
+    expect(router.state.location.pathname).toBe('/accounts');
     expect(await screen.findByRole('heading', {name: /账户管理/})).toBeInTheDocument();
   });
 
   it('shows the backend error message inline when the region fetch fails', async () => {
     mocks.listRegions.mockRejectedValue(new Error('InvalidAccessKeyId: 无效的 AccessKey'));
     const user = userEvent.setup();
-    render(<AccountsHarness accounts={[accountA]} />);
+    renderAccounts();
 
     await user.click(screen.getByRole('button', {name: /添加账号凭证/}));
     await screen.findByRole('heading', {name: /添加托管云授权凭证/});
@@ -153,13 +172,14 @@ describe('AccountsPage create flow', () => {
 
   it('cancelling the create form returns to the listing', async () => {
     const user = userEvent.setup();
-    render(<AccountsHarness accounts={[accountA]} />);
+    const router = renderAccounts();
 
     await user.click(screen.getByRole('button', {name: /添加账号凭证/}));
     await screen.findByRole('heading', {name: /添加托管云授权凭证/});
 
     await user.click(screen.getByRole('button', {name: '取消'}));
 
+    expect(router.state.location.pathname).toBe('/accounts');
     expect(await screen.findByRole('heading', {name: /账户管理/})).toBeInTheDocument();
     expect(mocks.saveMutate).not.toHaveBeenCalled();
   });
@@ -170,7 +190,7 @@ describe('AccountsPage required-field validation', () => {
   // controls exactly what state the save handler sees.
   async function openCreateForm() {
     const user = userEvent.setup();
-    render(<AccountsHarness accounts={[accountA]} />);
+    renderAccounts();
     await user.click(screen.getByRole('button', {name: /添加账号凭证/}));
     await screen.findByRole('heading', {name: /添加托管云授权凭证/});
     return user;
@@ -179,6 +199,7 @@ describe('AccountsPage required-field validation', () => {
   beforeEach(() => {
     mocks.saveMutate.mockReset();
     mocks.listRegions.mockReset();
+    runtimeAccounts = [accountA];
   });
 
   afterEach(() => {
@@ -236,7 +257,7 @@ describe('AccountsPage managed region select-all and instance counts', () => {
   async function openCreateWithRegions(regions: ApiAccountRegion[]) {
     mocks.listRegions.mockResolvedValue(regions);
     const user = userEvent.setup();
-    render(<AccountsHarness accounts={[accountA]} />);
+    renderAccounts();
     await user.click(screen.getByRole('button', {name: /添加账号凭证/}));
     await screen.findByRole('heading', {name: /添加托管云授权凭证/});
     await user.type(screen.getByPlaceholderText(/生产账号/), 'Test Account');
@@ -250,6 +271,7 @@ describe('AccountsPage managed region select-all and instance counts', () => {
   beforeEach(() => {
     mocks.saveMutate.mockReset();
     mocks.listRegions.mockReset();
+    runtimeAccounts = [accountA];
   });
 
   it('selects and clears every SDK-fetched region via the 全选 checkbox', async () => {
@@ -279,7 +301,7 @@ describe('AccountsPage managed region select-all and instance counts', () => {
   it('select-all never touches edit-flow fallback options outside the SDK list', async () => {
     mocks.saveMutate.mockResolvedValue({id: 'acc-2'});
     const user = userEvent.setup();
-    render(<AccountsHarness accounts={[accountA]} />);
+    renderAccounts();
     await user.click(screen.getByText('Account A'));
     await screen.findByRole('heading', {name: /凭据配置详情/});
 
@@ -345,13 +367,21 @@ describe('AccountsPage managed region select-all and instance counts', () => {
 });
 
 describe('AccountsPage edit flow', () => {
+  beforeEach(() => {
+    mocks.saveMutate.mockReset();
+    mocks.listRegions.mockReset();
+    runtimeAccounts = [accountA];
+  });
+
   it('backfills managed regions from the stored string and keeps no owner field', async () => {
     const user = userEvent.setup();
-    render(<AccountsHarness accounts={[accountA]} />);
+    const router = renderAccounts();
 
     await user.click(screen.getByText('Account A'));
     await screen.findByRole('heading', {name: /凭据配置详情/});
 
+    // URL reflects the selected account id
+    expect(router.state.location.pathname).toBe('/accounts/acc-1');
     // acc.managedRegions 'cn-hangzhou' → checked checkbox without a fetch
     expect(screen.getByRole('checkbox', {name: /cn-hangzhou/})).toBeChecked();
     // Main region select keeps the stored region visible
@@ -366,7 +396,7 @@ describe('AccountsPage edit flow', () => {
       {regionId: 'us-west-1', localName: '硅谷'},
     ]);
     const user = userEvent.setup();
-    render(<AccountsHarness accounts={[accountA]} />);
+    renderAccounts();
 
     await user.click(screen.getByText('Account A'));
     await screen.findByRole('heading', {name: /凭据配置详情/});
@@ -388,5 +418,11 @@ describe('AccountsPage edit flow', () => {
       siteType: 'international',
     });
     expect(screen.getByRole('checkbox', {name: /ap-southeast-1/})).toBeInTheDocument();
+  });
+
+  it('redirects an unknown account id back to the listing', async () => {
+    const router = renderAccounts('/accounts/does-not-exist');
+    expect(router.state.location.pathname).toBe('/accounts');
+    expect(await screen.findByRole('heading', {name: /账户管理/})).toBeInTheDocument();
   });
 });

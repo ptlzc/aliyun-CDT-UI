@@ -1,6 +1,7 @@
+import {createMemoryRouter, RouterProvider} from 'react-router-dom';
 import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {describe, expect, it} from 'vitest';
+import {describe, expect, it, vi} from 'vitest';
 
 import WorkflowsPage from '../index';
 import type {WorkflowRun} from '../../../types';
@@ -45,9 +46,39 @@ const finishedWorkflow: WorkflowRun = {
   logs: [],
 };
 
+let workflowsData: WorkflowRun[] = [];
+
+vi.mock('../../../features/runtime/hooks', () => ({
+  useRuntimeDashboard: () => ({
+    isLoading: false,
+    accounts: [],
+    rawAccounts: [],
+    graphs: [],
+    instances: [],
+    workflows: workflowsData,
+    summary: {
+      accountCount: 0,
+      ecsCount: 0,
+      eipCount: 0,
+      activeWorkflowCount: 0,
+      attentionInstanceCount: 0,
+      monitoredInstanceCount: 0,
+    },
+    platformDefaults: null,
+    policiesByAccount: {},
+  }),
+}));
+
+function renderWorkflows() {
+  const router = createMemoryRouter([{path: '/', element: <WorkflowsPage />}], {initialEntries: ['/']});
+  render(<RouterProvider router={router} />);
+  return router;
+}
+
 describe('WorkflowsPage', () => {
   it('renders the workflow center with jobs, tasks and log lines', () => {
-    render(<WorkflowsPage workflows={[runningWorkflow]} />);
+    workflowsData = [runningWorkflow];
+    renderWorkflows();
 
     expect(screen.getByRole('heading', {name: /自动化工作流中心/})).toBeInTheDocument();
     // Job switcher button
@@ -66,7 +97,8 @@ describe('WorkflowsPage', () => {
   });
 
   it('shows the empty state when no workflows exist', () => {
-    render(<WorkflowsPage workflows={[]} />);
+    workflowsData = [];
+    renderWorkflows();
 
     expect(screen.getByRole('heading', {name: /自动化工作流中心/})).toBeInTheDocument();
     expect(screen.getByText(/当前没有运行或历史作业/)).toBeInTheDocument();
@@ -74,7 +106,8 @@ describe('WorkflowsPage', () => {
 
   it('switches the active workflow when another job button is clicked', async () => {
     const user = userEvent.setup();
-    render(<WorkflowsPage workflows={[runningWorkflow, finishedWorkflow]} />);
+    workflowsData = [runningWorkflow, finishedWorkflow];
+    renderWorkflows();
 
     // Initially the first workflow is active
     expect(screen.getByRole('heading', {level: 2})).toHaveTextContent('discover - acc-1');
@@ -89,7 +122,8 @@ describe('WorkflowsPage', () => {
 
   it('toggles the auto-scroll checkbox without losing the log view', async () => {
     const user = userEvent.setup();
-    render(<WorkflowsPage workflows={[runningWorkflow]} />);
+    workflowsData = [runningWorkflow];
+    renderWorkflows();
 
     const autoScroll = screen.getByRole('checkbox', {name: /自动滚动/});
     expect(autoScroll).toBeChecked();

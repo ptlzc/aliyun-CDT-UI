@@ -2,32 +2,37 @@ import {useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {Bell, Cloud, Menu, RefreshCw, X} from 'lucide-react';
 import {AnimatePresence, motion} from 'motion/react';
+import {Outlet, useLocation, useNavigate} from 'react-router-dom';
 
-import Sidebar from './components/Sidebar';
-import DashboardPage from './pages/Dashboard';
-import AccountsPage from './pages/Accounts';
-import InstancesPage from './pages/Instances';
 import InstanceGovernanceDrawer from './components/InstanceGovernanceDrawer';
-import SettingsPage from './pages/Settings';
-import WorkflowsPage from './pages/Workflows';
-import {menuItems} from './navigation';
-import {useRuntimeDashboard} from './features/runtime/hooks';
+import Sidebar from './components/Sidebar';
 import {useRuntimeEventBridge} from './features/runtime/events';
+import {useRuntimeDashboard} from './features/runtime/hooks';
+import {menuItems} from './navigation';
+import type {ECSInstance} from './types';
 
+/**
+ * Layout shell: Sidebar + header + mobile drawer menu + instance governance
+ * drawer, with the routed page rendered through <Outlet/>.
+ *
+ * @when 任意路由命中时作为布局层渲染
+ */
 export default function App() {
   const runtime = useRuntimeDashboard();
   const client = useQueryClient();
   useRuntimeEventBridge(client);
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'accounts' | 'instances' | 'workflows' | 'settings'>('dashboard');
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(2);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const selectedAccount = runtime.accounts.find((account) => account.id === selectedAccountId) || null;
   const selectedInstance = runtime.instances.find((instance) => instance.id === selectedInstanceId) || null;
+
+  const isPathActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   const handleGlobalSync = () => {
     setIsSyncing(true);
@@ -38,7 +43,7 @@ export default function App() {
   };
 
   const handleDeployTrigger = () => {
-    setActiveTab('workflows');
+    navigate('/workflows');
     setMobileMenuOpen(false);
     if (runtime.workflows.length > 0) {
       setNotificationCount((count) => Math.max(0, count - 1));
@@ -47,14 +52,7 @@ export default function App() {
 
   return (
     <div className="bg-workspace-canvas text-primary-ink min-h-screen flex antialiased font-sans">
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={(tab) => {
-          setActiveTab(tab);
-          setSelectedAccountId(null);
-        }}
-        onDeployTrigger={handleDeployTrigger}
-      />
+      <Sidebar onDeployTrigger={handleDeployTrigger} />
 
       <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
         <header className="w-full h-12 flex justify-between items-center px-6 bg-surface-white border-b border-hairline-divider z-45 sticky top-0 shadow-2xs">
@@ -79,54 +77,11 @@ export default function App() {
         </header>
 
         <main className="flex-1 p-6 max-w-7xl w-full mx-auto flex flex-col gap-6">
-          <AnimatePresence mode="wait">
-            {activeTab === 'dashboard' && (
-              <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }}>
-                <DashboardPage
-                  accounts={runtime.accounts}
-                  instances={runtime.instances}
-                  summary={runtime.summary}
-                  workflows={runtime.workflows}
-                  setActiveTab={setActiveTab}
-                  setSelectedAccount={(account) => setSelectedAccountId(account?.id || null)}
-                />
-              </motion.div>
-            )}
-
-            {activeTab === 'accounts' && (
-              <motion.div key="accounts" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }}>
-                <AccountsPage
-                  accounts={runtime.accounts}
-                  selectedAccount={selectedAccount}
-                  setSelectedAccount={(account) => setSelectedAccountId(account?.id || null)}
-                />
-              </motion.div>
-            )}
-
-            {activeTab === 'instances' && (
-              <motion.div key="instances" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }}>
-                <InstancesPage
-                  instances={runtime.instances}
-                  isLoading={runtime.isLoading}
-                  onManageInstance={(instance) => {
-                    setSelectedInstanceId(instance.id);
-                  }}
-                />
-              </motion.div>
-            )}
-
-            {activeTab === 'workflows' && (
-              <motion.div key="workflows" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }}>
-                <WorkflowsPage workflows={runtime.workflows} />
-              </motion.div>
-            )}
-
-            {activeTab === 'settings' && (
-              <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }}>
-                <SettingsPage defaults={runtime.platformDefaults} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <Outlet
+            context={{
+              openInstance: (instance: ECSInstance) => setSelectedInstanceId(instance.id),
+            }}
+          />
         </main>
       </div>
 
@@ -155,16 +110,16 @@ export default function App() {
               <ul className="flex-1 flex flex-col gap-1 px-2.5">
                 {menuItems.map((item) => {
                   const Icon = item.icon;
+                  const isActive = isPathActive(item.path);
                   return (
-                    <li key={item.id}>
+                    <li key={item.path}>
                       <button
                         onClick={() => {
-                          setActiveTab(item.id);
-                          setSelectedAccountId(null);
+                          navigate(item.path);
                           setMobileMenuOpen(false);
                         }}
                         className={`w-full flex items-center gap-3.5 px-4 py-3 rounded text-xs font-semibold cursor-pointer text-left ${
-                          activeTab === item.id ? 'bg-emphasis-layer text-primary shadow-xs' : 'text-on-surface-variant hover:bg-emphasis-layer/40'
+                          isActive ? 'bg-emphasis-layer text-primary shadow-xs' : 'text-on-surface-variant hover:bg-emphasis-layer/40'
                         }`}
                       >
                         <Icon className="w-4.5 h-4.5 text-outline" />

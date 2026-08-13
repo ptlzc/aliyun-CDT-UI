@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 
+import {useRuntimeDashboard} from '../../features/runtime/hooks';
 import {
   useApplyPlatformDefaultsMutation,
   useCreateRegionGroupMutation,
@@ -9,15 +10,13 @@ import {
   useUpdateRegionGroupMutation,
 } from '../../features/runtime/hooks';
 import type {ApiRegionGroup} from '../../lib/api/client';
-import type {TrafficDefaults} from '../../types';
 import RegionGroupEditor, {type RegionGroupEditorPayload} from '../../components/RegionGroupEditor';
 import {ACTION_OPTIONS, actionLabelZh, type TrafficOverflowAction} from '../../utils/actionLabels';
 
-interface SettingsPageProps {
-  defaults: TrafficDefaults | null;
-}
+export default function SettingsPage() {
+  const runtime = useRuntimeDashboard();
+  const defaults = runtime.platformDefaults;
 
-export default function SettingsPage({defaults}: SettingsPageProps) {
   const saveMutation = useSavePlatformDefaultsMutation();
   const applyMutation = useApplyPlatformDefaultsMutation();
   const [maximumTrafficGb, setMaximumTrafficGb] = useState(200);

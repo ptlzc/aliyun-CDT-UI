@@ -1,18 +1,13 @@
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {AnimatePresence, motion} from 'motion/react';
+import {useLocation, useNavigate} from 'react-router-dom';
 
-import {useCdtPermissionQuery} from '../../features/runtime/hooks';
+import {useCdtPermissionQuery, useRuntimeDashboard} from '../../features/runtime/hooks';
 import type {CloudAccount} from '../../types';
 import AccountList from './components/AccountList';
 import AccountDetailEditor from './components/AccountDetailEditor';
 import AuditLogModal from './components/AuditLogModal';
 import AuthPolicyModal from './components/AuthPolicyModal';
-
-interface AccountsPageProps {
-  accounts: CloudAccount[];
-  selectedAccount: CloudAccount | null;
-  setSelectedAccount: (account: CloudAccount | null) => void;
-}
 
 /**
  * Synthetic draft for the create flow. The parent re-derives selectedAccount
@@ -44,17 +39,56 @@ function makeAccountDraft(): CloudAccount {
 }
 
 /**
- * Accounts page: listing ↔ detail/create orchestration. The parent holds the
- * selected account id and re-derives the account from the accounts list.
+ * Accounts page: URL-driven listing ↔ detail/create orchestration.
+ *
+ * - /accounts          → list mode
+ * - /accounts/new      → create form (static segment outranks :accountId)
+ * - /accounts/:id      → detail mode; unknown ids redirect back to the list
+ *
+ * The account id is parsed from the pathname (useLocation) instead of
+ * useParams: the router context in this React build does not propagate route
+ * params on re-render, while the location is always current. Path parsing is
+ * equivalent for these fixed-segment routes and works in both production and
+ * jsdom.
  *
  * @when 侧边栏点击「账户管理」或深链 /accounts* 时渲染
  */
-export default function AccountsPage({accounts, selectedAccount, setSelectedAccount}: AccountsPageProps) {
-  // Track if we are creating a brand new account
-  const [isCreating, setIsCreating] = useState(false);
+export default function AccountsPage() {
+  const runtime = useRuntimeDashboard();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // Local draft for the create flow (see makeAccountDraft).
-  const [createDraft, setCreateDraft] = useState<CloudAccount | null>(null);
+  const pathSegments = location.pathname.split('/').filter(Boolean);
+  const accountParam = pathSegments[1];
+  // Mode discrimination: /accounts/new is a static segment; any other id
+  // selects an existing account from the backend list.
+  const isCreating = accountParam === 'new';
+  const detailAccountId = accountParam && accountParam !== 'new' ? accountParam : undefined;
+  const selectedAccount =
+    detailAccountId ? runtime.accounts.find((account) => account.id === detailAccountId) || null : null;
+
+  // Guard: after the accounts list has loaded, an unknown id must not render
+  // a dangling detail view — redirect back to the listing.
+  const accountNotFound = Boolean(
+    detailAccountId && !runtime.isLoading && runtime.accounts.length > 0 && !selectedAccount,
+  );
+  useEffect(() => {
+    if (accountNotFound) {
+      navigate('/accounts', {replace: true});
+    }
+  }, [accountNotFound, navigate]);
+
+  // Local draft for the create flow (see makeAccountDraft). Lazily seeded when
+  // the create route is entered; cleared when leaving it.
+  const [createDraft, setCreateDraft] = useState<CloudAccount | null>(() => (isCreating ? makeAccountDraft() : null));
+  useEffect(() => {
+    if (isCreating && !createDraft) {
+      setCreateDraft(makeAccountDraft());
+    }
+    if (!isCreating && createDraft) {
+      setCreateDraft(null);
+    }
+  }, [isCreating]);
 
   // CDT permission check for existing accounts
   const cdtPermissionQuery = useCdtPermissionQuery(selectedAccount && !isCreating ? selectedAccount.id : null);
@@ -71,16 +105,12 @@ export default function AccountsPage({accounts, selectedAccount, setSelectedAcco
   const displayAccount = isCreating ? createDraft : selectedAccount;
 
   const handleCreateClick = () => {
-    setIsCreating(true);
-    setCreateDraft(makeAccountDraft());
+    navigate('/accounts/new');
   };
 
-  // Exit the details/create view back to the listing. Clears both the
-  // parent-selected account and the local create draft.
+  // Exit the details/create view back to the listing.
   const handleCloseDetails = () => {
-    setIsCreating(false);
-    setCreateDraft(null);
-    setSelectedAccount(null);
+    navigate('/accounts');
   };
 
   const handleOpenAuditLogs = () => {
@@ -110,12 +140,9 @@ export default function AccountsPage({accounts, selectedAccount, setSelectedAcco
             className="flex flex-col gap-6"
           >
             <AccountList
-              accounts={accounts}
+              accounts={runtime.accounts}
               onCreate={handleCreateClick}
-              onEdit={(acc) => {
-                setSelectedAccount(acc);
-                setIsCreating(false);
-              }}
+              onEdit={(acc) => navigate(`/accounts/${acc.id}`)}
             />
           </motion.div>
         ) : (

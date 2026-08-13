@@ -1,16 +1,9 @@
 import {AlertTriangle, Cpu, Globe, Server} from 'lucide-react';
+import {useNavigate} from 'react-router-dom';
 
 import type {CloudAccount, DashboardSummary, ECSInstance, WorkflowRun} from '../../types';
+import {useRuntimeDashboard} from '../../features/runtime/hooks';
 import SummaryCard from './components/SummaryCard';
-
-interface DashboardPageProps {
-  accounts: CloudAccount[];
-  instances: ECSInstance[];
-  summary: DashboardSummary;
-  workflows: WorkflowRun[];
-  setActiveTab: (tab: 'dashboard' | 'accounts' | 'instances' | 'workflows' | 'settings') => void;
-  setSelectedAccount: (account: CloudAccount | null) => void;
-}
 
 // 状态枚举 → 中文展示映射（后端枚举值不翻译，仅显示层映射）
 const ACCOUNT_STATUS_LABELS: Record<CloudAccount['status'], string> = {
@@ -27,16 +20,27 @@ const WORKFLOW_STATUS_LABELS: Record<WorkflowRun['status'], string> = {
   'Idle': '空闲',
 };
 
-export default function DashboardPage({
-  accounts,
-  instances,
-  summary,
-  workflows,
-  setActiveTab,
-  setSelectedAccount,
-}: DashboardPageProps) {
+export default function DashboardPage() {
+  const runtime = useRuntimeDashboard();
+  const navigate = useNavigate();
+  const {accounts, instances, summary, workflows} = runtime;
+
   const attentionInstances = instances.filter((instance) => instance.alerts.length > 0 || instance.status === 'Attention');
   const latestWorkflows = workflows.slice(0, 5);
+
+  /**
+   * @when 仪表盘按钮点击跳转对应页面时触发
+   */
+  const openPage = (path: string) => {
+    navigate(path);
+  };
+
+  /**
+   * @when 账号状态卡片点击进入该账号详情时触发
+   */
+  const openAccount = (account: CloudAccount) => {
+    navigate(`/accounts/${account.id}`);
+  };
 
   return (
     <div className="flex flex-col gap-6 font-sans">
@@ -47,7 +51,7 @@ export default function DashboardPage({
         </div>
         <button
           className="rounded border border-hairline-divider bg-surface-white px-4 py-2 text-sm font-medium text-primary-ink hover:bg-emphasis-layer"
-          onClick={() => setActiveTab('settings')}
+          onClick={() => openPage('/settings')}
         >
           系统设置
         </button>
@@ -67,7 +71,7 @@ export default function DashboardPage({
               <h2 className="text-base font-semibold text-primary-ink">账号状态</h2>
               <p className="mt-1 text-xs text-secondary-ink">点击进入账号详情或凭据编辑。</p>
             </div>
-            <button className="text-sm text-primary hover:underline" onClick={() => setActiveTab('accounts')}>
+            <button className="text-sm text-primary hover:underline" onClick={() => openPage('/accounts')}>
               查看全部
             </button>
           </div>
@@ -80,8 +84,7 @@ export default function DashboardPage({
                   key={account.id}
                   className="flex w-full items-center justify-between rounded border border-hairline-divider px-4 py-3 text-left hover:bg-emphasis-layer/40"
                   onClick={() => {
-                    setSelectedAccount(account);
-                    setActiveTab('accounts');
+                    openAccount(account);
                   }}
                 >
                   <div>
@@ -103,7 +106,7 @@ export default function DashboardPage({
               <h2 className="text-base font-semibold text-primary-ink">实例风险</h2>
               <p className="mt-1 text-xs text-secondary-ink">流量上限、监控开关与 EIP 绑定来自图谱数据。</p>
             </div>
-            <button className="text-sm text-primary hover:underline" onClick={() => setActiveTab('instances')}>
+            <button className="text-sm text-primary hover:underline" onClick={() => openPage('/instances')}>
               管理实例
             </button>
           </div>
@@ -139,7 +142,7 @@ export default function DashboardPage({
             <h2 className="text-base font-semibold text-primary-ink">最近作业</h2>
             <p className="mt-1 text-xs text-secondary-ink">后端作业快照和 WebSocket 增量事件合并展示。</p>
           </div>
-          <button className="text-sm text-primary hover:underline" onClick={() => setActiveTab('workflows')}>
+          <button className="text-sm text-primary hover:underline" onClick={() => openPage('/workflows')}>
             打开工作流
           </button>
         </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, Download, Layers, RefreshCw, Terminal } from 'lucide-react';
 
+import {useRuntimeDashboard} from '../../features/runtime/hooks';
 import { WorkflowRun, WorkflowTask } from '../../types';
 
 // 状态枚举 → 中文展示映射（后端枚举值不翻译，仅显示层映射）
@@ -19,11 +20,10 @@ const TASK_STATUS_LABELS: Record<WorkflowTask['status'], string> = {
   'Failed': '失败',
 };
 
-interface WorkflowsPageProps {
-  workflows: WorkflowRun[];
-}
+export default function WorkflowsPage() {
+  const runtime = useRuntimeDashboard();
+  const workflows = runtime.workflows;
 
-export default function WorkflowsPage({ workflows }: WorkflowsPageProps) {
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(workflows[0]?.id ?? null);
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(workflows[0]?.tasks[0]?.id ?? null);
   const [autoScroll, setAutoScroll] = useState(true);

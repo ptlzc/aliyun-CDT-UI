@@ -27,6 +27,7 @@ const accountA: CloudAccount = {
 const mocks = vi.hoisted(() => ({
   saveMutate: vi.fn(),
   listRegions: vi.fn(),
+  deleteMutate: vi.fn(),
 }));
 
 let runtimeAccounts: CloudAccount[] = [];
@@ -51,6 +52,7 @@ vi.mock('../../../features/runtime/hooks', () => ({
     policiesByAccount: {},
   }),
   useSaveAccountMutation: () => ({mutateAsync: mocks.saveMutate, isPending: false}),
+  useDeleteAccountMutation: () => ({mutate: mocks.deleteMutate, isPending: false}),
   useCdtPermissionQuery: () => ({data: undefined, isLoading: false}),
   useValidateAccountMutation: () => ({mutateAsync: vi.fn()}),
 }));
@@ -429,5 +431,87 @@ describe('AccountsPage edit flow', () => {
     const router = renderAccounts('/accounts/does-not-exist');
     expect(router.state.location.pathname).toBe('/accounts');
     expect(await screen.findByRole('heading', {name: /账户管理/})).toBeInTheDocument();
+  });
+});
+
+describe('AccountsPage delete account flow', () => {
+  beforeEach(() => {
+    mocks.saveMutate.mockReset();
+    mocks.listRegions.mockReset();
+    mocks.deleteMutate.mockReset();
+    runtimeAccounts = [accountA];
+  });
+
+  // The delete mutation mock emulates the backend refetch: on success the
+  // account disappears from the runtime list, mirroring what
+  // invalidateQueries(['runtime', 'accounts']) produces in production.
+  function mockDeleteRefreshesList() {
+    mocks.deleteMutate.mockImplementation(() => {
+      runtimeAccounts = runtimeAccounts.filter((acc) => acc.id !== accountA.id);
+      return Promise.resolve();
+    });
+  }
+
+  it('opens the confirm dialog with the account name when the delete button is clicked', async () => {
+    const user = userEvent.setup();
+    renderAccounts();
+
+    await user.click(screen.getByRole('button', {name: '删除账户'}));
+
+    expect(screen.getByText(/确认删除账户/)).toBeInTheDocument();
+    expect(screen.getByText('Account A')).toBeInTheDocument();
+    // Matching the name is mandatory: the confirm action starts disabled
+    expect(screen.getByRole('button', {name: '确认删除'})).toBeDisabled();
+  });
+
+  it('keeps confirm disabled until the typed name matches the account name', async () => {
+    const user = userEvent.setup();
+    renderAccounts();
+
+    await user.click(screen.getByRole('button', {name: '删除账户'}));
+    const input = screen.getByPlaceholderText(/请输入账户名/);
+
+    // A mismatched name must not arm the destructive action
+    await user.type(input, 'Account B');
+    expect(screen.getByRole('button', {name: '确认删除'})).toBeDisabled();
+
+    // Exact match arms it; trailing whitespace still counts as a mismatch
+    await user.clear(input);
+    await user.type(input, 'Account A ');
+    expect(screen.getByRole('button', {name: '确认删除'})).toBeDisabled();
+
+    await user.clear(input);
+    await user.type(input, 'Account A');
+    expect(screen.getByRole('button', {name: '确认删除'})).toBeEnabled();
+  });
+
+  it('deletes the account and refreshes the list when the matching name is confirmed', async () => {
+    mockDeleteRefreshesList();
+    const user = userEvent.setup();
+    const router = renderAccounts();
+
+    await user.click(screen.getByRole('button', {name: '删除账户'}));
+    await user.type(screen.getByPlaceholderText(/请输入账户名/), 'Account A');
+    await user.click(screen.getByRole('button', {name: '确认删除'}));
+
+    expect(mocks.deleteMutate).toHaveBeenCalledTimes(1);
+    expect(mocks.deleteMutate).toHaveBeenCalledWith('acc-1');
+    // Dialog closes and the refreshed list no longer contains the account
+    expect(screen.queryByRole('button', {name: '确认删除'})).not.toBeInTheDocument();
+    expect(await screen.findByRole('heading', {name: /账户管理/})).toBeInTheDocument();
+    expect(screen.queryByText('Account A')).not.toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/accounts');
+  });
+
+  it('issues no delete request when the dialog is cancelled', async () => {
+    const user = userEvent.setup();
+    renderAccounts();
+
+    await user.click(screen.getByRole('button', {name: '删除账户'}));
+    await user.click(screen.getByRole('button', {name: '取消'}));
+
+    expect(mocks.deleteMutate).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', {name: '确认删除'})).not.toBeInTheDocument();
+    expect(screen.getByText('Account A')).toBeInTheDocument();
   });
 });

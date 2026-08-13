@@ -48,6 +48,7 @@ const runtimeData = {
 vi.mock('../features/runtime/hooks', () => ({
   useRuntimeDashboard: () => runtimeData,
   useSaveAccountMutation: () => ({mutateAsync: vi.fn(), isPending: false}),
+  useDeleteAccountMutation: () => ({mutate: vi.fn(), isPending: false}),
   useCdtPermissionQuery: () => ({data: undefined, isLoading: false}),
   useValidateAccountMutation: () => ({mutateAsync: vi.fn()}),
   useSavePlatformDefaultsMutation: () => ({mutate: vi.fn(), isPending: false}),

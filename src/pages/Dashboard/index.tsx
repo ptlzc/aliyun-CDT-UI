@@ -47,7 +47,6 @@ export default function DashboardPage() {
       <div className="flex items-end justify-between gap-4">
         <div>
           <h1 className="font-space text-2xl font-bold text-primary-ink">控制台概览</h1>
-          <p className="mt-1 text-sm text-secondary-ink">摘要、实例风险和作业状态均来自后端 API 与 runtime 事件流。</p>
         </div>
         <button
           className="rounded border border-hairline-divider bg-surface-white px-4 py-2 text-sm font-medium text-primary-ink hover:bg-emphasis-layer"

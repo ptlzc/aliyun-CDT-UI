@@ -80,6 +80,18 @@ describe('mapGraphToInstances traffic usage mapping', () => {
     expect(instance.alerts).not.toContain('该实例的累计流量数据当前不可用。');
   });
 
+  it('maps a bss-api-error graph node to the API-unavailable alert', () => {
+    const [instance] = mapGraphToInstances(
+      [graphWith(ecsNode('i-1', usageMeasurement('bss-api-error', false, 0)))],
+      [account],
+      {},
+    );
+
+    expect(instance.trafficUsageSource).toBe('bss-api-error');
+    expect(instance.trafficUsage).toBeNull();
+    expect(instance.alerts).toContain('BSS 账单接口不可用，请联系管理员升级到 DescribeInstanceBill。');
+  });
+
   it('keeps the generic unavailable alert for non-bss error sources', () => {
     const [instance] = mapGraphToInstances(
       [graphWith(ecsNode('i-1', usageMeasurement('cdt-network-error', false, 0)))],

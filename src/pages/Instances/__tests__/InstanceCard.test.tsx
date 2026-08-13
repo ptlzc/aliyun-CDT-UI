@@ -72,6 +72,12 @@ describe('InstanceCard bss-* cumulative traffic usage branches', () => {
     expect(screen.getByText(/BSS 接口网络错误/)).toBeInTheDocument();
   });
 
+  it('mentions the DescribeInstanceBill upgrade for bss-api-error', () => {
+    renderCard({trafficUsageSource: 'bss-api-error'});
+
+    expect(screen.getByText('BSS 账单接口不可用，请联系管理员升级到 DescribeInstanceBill')).toBeInTheDocument();
+  });
+
   it('prefers the backend errorReason over the branch fallback copy', () => {
     renderCard({trafficUsageSource: 'bss-no-data', trafficUsageErrorReason: '自定义出账原因'});
 

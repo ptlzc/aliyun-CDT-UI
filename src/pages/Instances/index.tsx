@@ -6,6 +6,7 @@ import {useOutletContext} from 'react-router-dom';
 import AuthPolicyModal from '../../components/AuthPolicyModal';
 import {
   mapAccountToViewModel,
+  runtimeKeys,
   useCdtFreeQuotaQuery,
   useEffectiveTrafficGovernanceQuery,
   useECSMetricsQuery,
@@ -139,7 +140,14 @@ export default function InstancesPage() {
 
   const handleSync = () => {
     setIsSyncing(true);
-    void queryClient.invalidateQueries().then(() => {
+    // Targeted invalidate: graph (all accounts, prefix match) + jobs +
+    // accounts. Avoids the previous full invalidate that refetched every
+    // query on the page (settings, policies, region groups, …).
+    void Promise.all([
+      queryClient.invalidateQueries({queryKey: runtimeKeys.graphAll}),
+      queryClient.invalidateQueries({queryKey: runtimeKeys.jobs}),
+      queryClient.invalidateQueries({queryKey: runtimeKeys.accounts}),
+    ]).then(() => {
       setIsSyncing(false);
     });
   };

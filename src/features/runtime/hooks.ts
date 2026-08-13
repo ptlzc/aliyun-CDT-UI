@@ -47,6 +47,7 @@ import type {CloudAccount, DashboardSummary, ECSInstance, WorkflowRun, WorkflowT
 export const runtimeKeys = {
   accounts: ['runtime', 'accounts'] as const,
   graph: (accountId: string) => ['runtime', 'graph', accountId] as const,
+  graphAll: ['runtime', 'graph'] as const,
   jobs: ['runtime', 'jobs'] as const,
   settings: ['runtime', 'settings', 'traffic-governance'] as const,
   policies: (accountId: string) => ['runtime', 'traffic-policies', accountId] as const,
@@ -293,6 +294,11 @@ export function useRuntimeDashboard() {
       queryKey: runtimeKeys.graph(accountId),
       queryFn: () => listGraph(accountId),
       enabled: Boolean(accountId),
+      // Graph is persisted in the backend store and only changes when a
+      // discovery run finishes — not realtime. 60s keeps it cached across
+      // page visits instead of refetching the slow /graph endpoint (enrich
+      // does live RPCs per node) every time.
+      staleTime: 60_000,
     })),
   }) as Array<{data?: ApiResourceGraph; isLoading: boolean}>;
   const policyQueries = useQueries({

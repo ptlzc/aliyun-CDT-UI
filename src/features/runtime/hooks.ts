@@ -6,6 +6,7 @@ import {
   checkCdtPermission,
   createAccount,
   createRegionGroup,
+  deleteAccount,
   deleteRegionGroup,
   getCdtFreeQuota,
   getEffectiveTrafficGovernance,
@@ -321,6 +322,16 @@ export function useSaveAccountMutation() {
       }
       return createAccount(payload);
     },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({queryKey: runtimeKeys.accounts});
+    },
+  });
+}
+
+export function useDeleteAccountMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (accountId: string) => deleteAccount(accountId),
     onSuccess: () => {
       void queryClient.invalidateQueries({queryKey: runtimeKeys.accounts});
     },

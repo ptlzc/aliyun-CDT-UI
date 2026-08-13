@@ -6,7 +6,7 @@ import {AnimatePresence, motion} from 'motion/react';
 import Sidebar from './components/Sidebar';
 import DashboardPage from './pages/Dashboard';
 import AccountsPage from './pages/Accounts';
-import InstancesView from './components/InstancesView';
+import InstancesPage from './pages/Instances';
 import InstanceGovernanceDrawer from './components/InstanceGovernanceDrawer';
 import SettingsPage from './pages/Settings';
 import WorkflowsPage from './pages/Workflows';
@@ -105,7 +105,7 @@ export default function App() {
 
             {activeTab === 'instances' && (
               <motion.div key="instances" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }}>
-                <InstancesView
+                <InstancesPage
                   instances={runtime.instances}
                   isLoading={runtime.isLoading}
                   onManageInstance={(instance) => {

@@ -6,7 +6,7 @@ import InstancesPage from '../index';
 let cdtData: any = null;
 let governanceData: any = null;
 
-vi.mock('../../features/runtime/hooks', () => ({
+vi.mock('../../../features/runtime/hooks', () => ({
   useStartECSInstanceMutation: () => ({mutateAsync: vi.fn(), mutate: vi.fn(), isPending: false}),
   useStopECSInstanceMutation: () => ({mutateAsync: vi.fn(), mutate: vi.fn(), isPending: false}),
   useCdtFreeQuotaQuery: () => ({data: cdtData, isLoading: false}),

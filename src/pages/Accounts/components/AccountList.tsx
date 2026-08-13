@@ -2,7 +2,6 @@ import {useMemo, useState} from 'react';
 import {ChevronLeft, ChevronRight, Edit, Plus, RefreshCw, Search, ShieldAlert, Trash2} from 'lucide-react';
 
 import type {CloudAccount} from '../../../types';
-import {getStatusStyle, statusLabel} from '../accountPolicy';
 
 interface AccountListProps {
   accounts: CloudAccount[];
@@ -11,27 +10,24 @@ interface AccountListProps {
 }
 
 /**
- * Accounts listing: search, status filter, paginated table and the create /
- * sync entry points. Row clicks open the detail editor via `onEdit`.
+ * Accounts listing: search, paginated table and the create / sync entry
+ * points. Row clicks open the detail editor via `onEdit`.
  *
  * @when /accounts 列表模式渲染时
  */
 export default function AccountList({accounts, onCreate, onEdit}: AccountListProps) {
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
 
   const filteredAccounts = useMemo(() => {
     return accounts.filter((acc) => {
-      const matchSearch =
+      return (
         acc.name.toLowerCase().includes(search.toLowerCase()) ||
         acc.id.toLowerCase().includes(search.toLowerCase()) ||
-        acc.providerRegion.toLowerCase().includes(search.toLowerCase());
-
-      if (statusFilter === 'ALL') return matchSearch;
-      return matchSearch && acc.status === statusFilter;
+        acc.providerRegion.toLowerCase().includes(search.toLowerCase())
+      );
     });
-  }, [accounts, search, statusFilter]);
+  }, [accounts, search]);
 
   // Pagination bounds
   const pageSize = 5;
@@ -58,7 +54,6 @@ export default function AccountList({accounts, onCreate, onEdit}: AccountListPro
           <button
             onClick={() => {
               setSearch('');
-              setStatusFilter('ALL');
               setCurrentPage(1);
             }}
             className="px-4 py-2 bg-surface-white border border-hairline-divider text-primary-ink text-xs rounded hover:bg-emphasis-layer transition-colors flex items-center gap-2 cursor-pointer"
@@ -93,28 +88,6 @@ export default function AccountList({accounts, onCreate, onEdit}: AccountListPro
               className="w-full pl-9 pr-4 py-2 bg-surface-white border border-hairline-divider rounded text-xs select-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-outline-variant"
             />
           </div>
-
-          <div className="flex items-center gap-4 text-xs font-medium text-primary-ink select-none">
-            <span className="text-secondary-ink text-[11px] font-bold uppercase tracking-wider">过滤状态:</span>
-            <div className="flex bg-surface-white border border-hairline-divider rounded p-0.5">
-              {['ALL', 'Active', 'Sync Delayed', 'Auth Failed', 'Inactive'].map((st) => (
-                <button
-                  key={st}
-                  onClick={() => {
-                    setStatusFilter(st);
-                    setCurrentPage(1);
-                  }}
-                  className={`px-2.5 py-1 text-[11px] rounded transition-colors cursor-pointer ${
-                    statusFilter === st
-                      ? 'bg-primary text-white font-semibold shadow-xs'
-                      : 'text-on-surface-variant hover:bg-emphasis-layer'
-                  }`}
-                >
-                  {st === 'ALL' ? '全部' : statusLabel(st as CloudAccount['status'])}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Table rendering content */}
@@ -125,7 +98,6 @@ export default function AccountList({accounts, onCreate, onEdit}: AccountListPro
                 <th className="px-5 py-3.5">账户名称</th>
                 <th className="px-5 py-3.5">账户 ID</th>
                 <th className="px-5 py-3.5">受托管主地域</th>
-                <th className="px-5 py-3.5">探测同步状态</th>
                 <th className="px-5 py-3.5">上次同步检测</th>
                 <th className="px-5 py-3.5 text-right w-24">操作指令</th>
               </tr>
@@ -139,29 +111,13 @@ export default function AccountList({accounts, onCreate, onEdit}: AccountListPro
                     onClick={() => onEdit(acc)}
                   >
                     <td className="px-5 py-3.5 font-semibold text-primary-ink relative">
-                      {acc.status === 'Auth Failed' && (
-                        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-recovery-red"></div>
-                      )}
-                      <div className="flex flex-col">
-                        <span>{acc.name}</span>
-                        <span className="text-[10px] text-secondary-ink font-mono font-normal">
-                          {acc.owner}
-                        </span>
-                      </div>
+                      <span>{acc.name}</span>
                     </td>
                     <td className="px-5 py-3.5 font-mono text-secondary-ink select-all">
                       {acc.id}
                     </td>
                     <td className="px-5 py-3.5 text-secondary-ink font-medium">
                       {acc.providerRegion}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[10px] font-semibold ${getStatusStyle(acc.status)}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${
-                          acc.status === 'Active' ? 'bg-healthy-green' : acc.status === 'Sync Delayed' ? 'bg-signal-amber' : acc.status === 'Auth Failed' ? 'bg-recovery-red animate-pulse' : 'bg-outline'
-                        }`} />
-                        {statusLabel(acc.status)}
-                      </span>
                     </td>
                     <td className="px-5 py-3.5 text-secondary-ink font-mono">
                       {acc.lastSynced}
@@ -192,7 +148,7 @@ export default function AccountList({accounts, onCreate, onEdit}: AccountListPro
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="text-center py-10 text-secondary-ink bg-section-layer/20 border-dashed border-t">
+                  <td colSpan={5} className="text-center py-10 text-secondary-ink bg-section-layer/20 border-dashed border-t">
                     无匹配过滤账号凭据，请重新输入或清空过滤器。
                   </td>
                 </tr>

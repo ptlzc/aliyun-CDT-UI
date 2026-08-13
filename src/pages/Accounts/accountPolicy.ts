@@ -1,5 +1,3 @@
-import type {CloudAccount} from '../../types';
-
 /**
  * RAM authorization policy required by the platform for a managed account.
  * Covers ECS lifecycle, VPC/EIP networking, CMS metrics, CDT quota queries,
@@ -55,36 +53,3 @@ export const accountPolicyJson = {
     },
   ],
 };
-
-// 状态枚举 → 中文展示映射（后端枚举值不翻译，仅显示层映射）
-export const ACCOUNT_STATUS_LABELS: Record<CloudAccount['status'], string> = {
-  'Active': '运行中',
-  'Sync Delayed': '同步延迟',
-  'Auth Failed': '认证失败',
-  'Inactive': '已停用',
-};
-
-export function statusLabel(status: CloudAccount['status']): string {
-  return ACCOUNT_STATUS_LABELS[status];
-}
-
-/**
- * Status badge tailwind classes. Unknown statuses fall back to the muted
- * style so a future backend enum value never renders unstyled.
- *
- * @when 账户列表行与详情元数据的同步状态徽章渲染时
- */
-export function getStatusStyle(status: CloudAccount['status']): string {
-  switch (status) {
-    case 'Active':
-      return 'bg-[#E6F4EA] text-healthy-green border-[#C3E6CB]';
-    case 'Sync Delayed':
-      return 'bg-[#FFF4E5] text-signal-amber border-[#FFE0B2]';
-    case 'Auth Failed':
-      return 'bg-[#FFEBEE] text-recovery-red border-[#FFCDD2]';
-    case 'Inactive':
-      return 'bg-emphasis-layer text-outline border-outline-variant';
-    default:
-      return 'bg-emphasis-layer text-outline border-outline-variant';
-  }
-}

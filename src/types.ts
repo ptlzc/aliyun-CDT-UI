@@ -1,5 +1,3 @@
-export type AccountStatus = 'Active' | 'Sync Delayed' | 'Auth Failed' | 'Inactive';
-
 export interface TrafficDefaults {
   maximumTrafficGb: number;
   overflowAction: string;
@@ -9,12 +7,12 @@ export interface TrafficDefaults {
 export interface CloudAccount {
   id: string;
   name: string;
-  status: AccountStatus;
   providerRegion: string;
   mainRegion: string;
   lastSynced: string;
-  creationDate: string;
-  owner: string;
+  /** Real backend createdAt (formatted). Absent for the create draft, which
+   * has no real account yet — the UI hides the row instead of faking a date. */
+  creationDate?: string;
   accessKeyId: string;
   accessKeySecret: string;
   roleArn?: string;

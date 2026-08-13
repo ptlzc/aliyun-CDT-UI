@@ -60,7 +60,10 @@ function formatDateLabel(value?: string): string {
   if (Number.isNaN(parsed.getTime())) {
     return value;
   }
-  return parsed.toISOString().replace('T', ' ').replace('.000Z', ' UTC');
+  // toISOString() emits 'YYYY-MM-DDTHH:mm:ss.sssZ' — strip seconds and the
+  // millisecond fraction whatever its length ('.000Z', '.930Z', …) so real
+  // timestamps render as a clean 'YYYY-MM-DD HH:mm UTC'.
+  return parsed.toISOString().replace('T', ' ').replace(/:\d{2}\.\d{3}Z$/, ' UTC');
 }
 
 function relativeTimeLabel(value?: string): string {
@@ -90,12 +93,10 @@ function mapAccountToViewModel(account: ApiAccount): CloudAccount {
   return {
     id: account.id,
     name: account.name,
-    status: 'Active',
     providerRegion: account.siteType === 'domestic' ? 'Aliyun Domestic' : 'Aliyun International',
     mainRegion: account.regionId,
     lastSynced: relativeTimeLabel(account.updatedAt),
     creationDate: formatDateLabel(account.createdAt),
-    owner: `${account.siteType}@aliyun.local`,
     accessKeyId: account.accessKeyId,
     accessKeySecret: account.accessKeySecret ?? '************************',
     managedRegions: account.regions.join(', '),

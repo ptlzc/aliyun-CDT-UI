@@ -1,7 +1,6 @@
-import {Calendar, History, MapPin, User} from 'lucide-react';
+import {Calendar, History, MapPin} from 'lucide-react';
 
 import type {CloudAccount} from '../../../types';
-import {getStatusStyle, statusLabel} from '../accountPolicy';
 
 interface AccountMetadataCardProps {
   /** The account driving the view (create draft while creating). */
@@ -14,8 +13,9 @@ interface AccountMetadataCardProps {
 }
 
 /**
- * Right-column metadata card for the account detail view: identity, sync
- * status, main region, creation date, owner and the audit log entry point.
+ * Right-column metadata card for the account detail view: identity, main
+ * region, import date and the audit log entry point. Only real backend
+ * fields are shown — the create draft hides rows that have no real data.
  *
  * @when 账户详情视图（编辑或新建）渲染时
  */
@@ -41,18 +41,6 @@ export default function AccountMetadataCard({
         </div>
 
         <div>
-          <span className="text-[11px] text-secondary-ink font-semibold uppercase tracking-wider">数据同步状态</span>
-          <div className="mt-1.5">
-            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-bold border ${getStatusStyle(account.status)}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${
-                account.status === 'Active' ? 'bg-healthy-green' : account.status === 'Sync Delayed' ? 'bg-signal-amber' : account.status === 'Auth Failed' ? 'bg-recovery-red' : 'bg-outline'
-              }`} />
-              {statusLabel(account.status)}
-            </span>
-          </div>
-        </div>
-
-        <div>
           <span className="text-[11px] text-secondary-ink font-semibold uppercase tracking-wider">注册主拓扑宿地域</span>
           <div className="text-primary-ink mt-1 flex items-center gap-2 font-medium">
             <MapPin className="w-3.5 h-3.5 text-outline" />
@@ -60,21 +48,15 @@ export default function AccountMetadataCard({
           </div>
         </div>
 
-        <div>
-          <span className="text-[11px] text-secondary-ink font-semibold uppercase tracking-wider">关联导入日期</span>
-          <div className="text-primary-ink mt-1 flex items-center gap-2 font-mono font-medium">
-            <Calendar className="w-3.5 h-3.5 text-outline" />
-            {account.creationDate}
+        {!isCreating && (
+          <div>
+            <span className="text-[11px] text-secondary-ink font-semibold uppercase tracking-wider">关联导入日期</span>
+            <div className="text-primary-ink mt-1 flex items-center gap-2 font-mono font-medium">
+              <Calendar className="w-3.5 h-3.5 text-outline" />
+              {account.creationDate}
+            </div>
           </div>
-        </div>
-
-        <div>
-          <span className="text-[11px] text-secondary-ink font-semibold uppercase tracking-wider">项目安全所有者</span>
-          <div className="text-primary-ink mt-1 flex items-center gap-2 font-medium">
-            <User className="w-3.5 h-3.5 text-outline" />
-            {account.owner}
-          </div>
-        </div>
+        )}
       </div>
 
       {!isCreating && (

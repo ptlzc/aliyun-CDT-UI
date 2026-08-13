@@ -101,7 +101,7 @@ describe('AccountsPage create flow', () => {
     expect(screen.queryByLabelText('责任人')).not.toBeInTheDocument();
     expect(screen.getByRole('radio', {name: /国内 \(domestic\)/})).toBeChecked();
     // No real createdAt exists for a draft — the metadata card must not show
-    // a fabricated import date row (mock '12:00 UTC' dates were removed)
+    // a fabricated import date row (the mock today-based date was removed)
     expect(screen.queryByText('关联导入日期')).not.toBeInTheDocument();
   });
 

@@ -5,14 +5,6 @@ import type {CloudAccount, DashboardSummary, ECSInstance, WorkflowRun} from '../
 import {useRuntimeDashboard} from '../../features/runtime/hooks';
 import SummaryCard from './components/SummaryCard';
 
-// 状态枚举 → 中文展示映射（后端枚举值不翻译，仅显示层映射）
-const ACCOUNT_STATUS_LABELS: Record<CloudAccount['status'], string> = {
-  'Active': '运行中',
-  'Sync Delayed': '同步延迟',
-  'Auth Failed': '认证失败',
-  'Inactive': '已停用',
-};
-
 const WORKFLOW_STATUS_LABELS: Record<WorkflowRun['status'], string> = {
   'Running': '运行中',
   'Success': '成功',
@@ -92,7 +84,6 @@ export default function DashboardPage() {
                       {account.mainRegion} · 最近同步 {account.lastSynced}
                     </div>
                   </div>
-                  <span className="rounded bg-emphasis-layer px-2 py-1 text-xs text-secondary-ink">{ACCOUNT_STATUS_LABELS[account.status]}</span>
                 </button>
               ))
             )}

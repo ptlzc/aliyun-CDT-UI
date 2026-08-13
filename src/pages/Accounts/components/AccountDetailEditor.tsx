@@ -306,11 +306,6 @@ export default function AccountDetailEditor({
                 <KeyRound className="w-4 h-4 text-primary" />
                 API 凭据与角色授权策略
               </h2>
-              {account.status === 'Auth Failed' && (
-                <span className="bg-[#FFEBEE] border border-recovery-red/30 text-recovery-red px-2.5 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1">
-                  🔑 密匙检测失效，请输入正确密钥重连
-                </span>
-              )}
             </header>
 
             <div className="p-5 flex flex-col gap-4">

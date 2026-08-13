@@ -20,12 +20,9 @@ function makeAccountDraft(): CloudAccount {
   return {
     id: `ali-${Math.random().toString(36).substr(2, 4)}-${Math.floor(100000 + Math.random() * 900000)}`,
     name: '',
-    status: 'Active',
     providerRegion: 'Aliyun China East 1',
     mainRegion: 'cn-hangzhou (华东 1)',
     lastSynced: '刚刚',
-    creationDate: new Date().toISOString().substring(0, 10) + ' 12:00 UTC',
-    owner: 'sysadmin@aliyun.com',
     accessKeyId: '',
     accessKeySecret: '',
     roleArn: '',

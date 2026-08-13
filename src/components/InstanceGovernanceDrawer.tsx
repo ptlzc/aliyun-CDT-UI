@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react';
 
 import {useSaveInstanceGovernanceMutation, useSaveTrafficPolicyMutation} from '../features/runtime/hooks';
 import type {ECSInstance} from '../types';
-import {ACTION_OPTIONS} from '../utils/actionLabels';
+import {ACTION_OPTIONS, type TrafficOverflowAction} from '../utils/actionLabels';
 
 interface InstanceGovernanceDrawerProps {
   instance: ECSInstance | null;
@@ -13,7 +13,7 @@ export default function InstanceGovernanceDrawer({instance, onClose}: InstanceGo
   const governanceMutation = useSaveInstanceGovernanceMutation();
   const policyMutation = useSaveTrafficPolicyMutation();
   const [maximumTrafficGb, setMaximumTrafficGb] = useState<number | ''>('');
-  const [overflowAction, setOverflowAction] = useState('notify');
+  const [overflowAction, setOverflowAction] = useState<TrafficOverflowAction>('notify');
   const [monitoringEnabled, setMonitoringEnabled] = useState(true);
   const [policyEnabled, setPolicyEnabled] = useState(true);
   const [thresholdValue, setThresholdValue] = useState(80);
@@ -25,7 +25,7 @@ export default function InstanceGovernanceDrawer({instance, onClose}: InstanceGo
       return;
     }
     setMaximumTrafficGb(instance.inherited ? '' : instance.trafficLimit);
-    setOverflowAction(instance.overflowAction);
+    setOverflowAction(instance.overflowAction as TrafficOverflowAction);
     setMonitoringEnabled(instance.monitoringEnabled);
     setPolicyEnabled(instance.trafficPolicy?.enabled ?? true);
     setThresholdValue(instance.trafficPolicy?.thresholdValue ?? 80);
@@ -70,7 +70,7 @@ export default function InstanceGovernanceDrawer({instance, onClose}: InstanceGo
             </label>
             <label className="flex flex-col gap-2 text-sm">
               <span className="font-medium text-primary-ink">溢出动作</span>
-              <select value={overflowAction} onChange={(event) => setOverflowAction(event.target.value)} className="rounded border border-hairline-divider px-3 py-2">
+              <select value={overflowAction} onChange={(event) => setOverflowAction(event.target.value as TrafficOverflowAction)} className="rounded border border-hairline-divider px-3 py-2">
                 {ACTION_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}

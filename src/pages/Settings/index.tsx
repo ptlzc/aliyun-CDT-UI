@@ -11,7 +11,7 @@ import {
 import type {ApiRegionGroup} from '../../lib/api/client';
 import type {TrafficDefaults} from '../../types';
 import RegionGroupEditor, {type RegionGroupEditorPayload} from '../../components/RegionGroupEditor';
-import {ACTION_OPTIONS, actionLabelZh} from '../../utils/actionLabels';
+import {ACTION_OPTIONS, actionLabelZh, type TrafficOverflowAction} from '../../utils/actionLabels';
 
 interface SettingsPageProps {
   defaults: TrafficDefaults | null;
@@ -21,7 +21,7 @@ export default function SettingsPage({defaults}: SettingsPageProps) {
   const saveMutation = useSavePlatformDefaultsMutation();
   const applyMutation = useApplyPlatformDefaultsMutation();
   const [maximumTrafficGb, setMaximumTrafficGb] = useState(200);
-  const [overflowAction, setOverflowAction] = useState('notify');
+  const [overflowAction, setOverflowAction] = useState<TrafficOverflowAction>('notify');
   const [monitoringEnabled, setMonitoringEnabled] = useState(true);
 
   const regionGroupsQuery = useRegionGroupsQuery();
@@ -36,7 +36,7 @@ export default function SettingsPage({defaults}: SettingsPageProps) {
       return;
     }
     setMaximumTrafficGb(defaults.maximumTrafficGb);
-    setOverflowAction(defaults.overflowAction);
+    setOverflowAction(defaults.overflowAction as TrafficOverflowAction);
     setMonitoringEnabled(defaults.monitoringEnabled);
   }, [defaults]);
 
@@ -90,7 +90,7 @@ export default function SettingsPage({defaults}: SettingsPageProps) {
             <span className="font-medium text-primary-ink">溢出动作</span>
             <select
               value={overflowAction}
-              onChange={(event) => setOverflowAction(event.target.value)}
+              onChange={(event) => setOverflowAction(event.target.value as TrafficOverflowAction)}
               className="rounded border border-hairline-divider px-3 py-2"
             >
               <option value="notify">通知</option>

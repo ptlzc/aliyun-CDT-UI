@@ -1,4 +1,11 @@
 // 流量治理动作中文标签映射
+/**
+ * Backend contract values for the traffic overflow/underflow action.
+ * Mirrors the generated client union; kept here so form state can be typed
+ * without reaching into generated files.
+ */
+export type TrafficOverflowAction = 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+
 export const ACTION_LABELS_ZH: Record<string, string> = {
   'notify': '通知',
   'keepalive-job': '保活任务',

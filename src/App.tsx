@@ -9,7 +9,7 @@ import AccountsView from './components/AccountsView';
 import InstancesView from './components/InstancesView';
 import InstanceGovernanceDrawer from './components/InstanceGovernanceDrawer';
 import SettingsView from './components/SettingsView';
-import WorkflowsView from './components/WorkflowsView';
+import WorkflowsPage from './pages/Workflows';
 import {menuItems} from './navigation';
 import {useRuntimeDashboard} from './features/runtime/hooks';
 import {useRuntimeEventBridge} from './features/runtime/events';
@@ -117,7 +117,7 @@ export default function App() {
 
             {activeTab === 'workflows' && (
               <motion.div key="workflows" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }}>
-                <WorkflowsView workflows={runtime.workflows} />
+                <WorkflowsPage workflows={runtime.workflows} />
               </motion.div>
             )}
 

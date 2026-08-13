@@ -10,12 +10,10 @@ import type {ApiAccountRegion} from '../../../lib/api/client';
 const accountA: CloudAccount = {
   id: 'acc-1',
   name: 'Account A',
-  status: 'Active',
   providerRegion: 'Aliyun Domestic',
   mainRegion: 'cn-hangzhou',
   lastSynced: 'Just now',
   creationDate: '2026-06-17',
-  owner: 'domestic@aliyun.local',
   accessKeyId: 'ak',
   accessKeySecret: 'secret',
   managedRegions: 'cn-hangzhou',
@@ -102,6 +100,9 @@ describe('AccountsPage create flow', () => {
     // 责任人 input is removed; site type defaults to domestic
     expect(screen.queryByLabelText('责任人')).not.toBeInTheDocument();
     expect(screen.getByRole('radio', {name: /国内 \(domestic\)/})).toBeChecked();
+    // No real createdAt exists for a draft — the metadata card must not show
+    // a fabricated import date row (mock '12:00 UTC' dates were removed)
+    expect(screen.queryByText('关联导入日期')).not.toBeInTheDocument();
   });
 
   it('saves a new account with SDK-fetched regions and returns to the listing', async () => {
@@ -387,6 +388,11 @@ describe('AccountsPage edit flow', () => {
     expect(screen.getByRole('combobox', {name: /主注册地域/})).toHaveValue('cn-hangzhou');
     // The 责任人 input is gone from the edit form as well
     expect(screen.queryByLabelText('责任人')).not.toBeInTheDocument();
+    // Metadata card shows only real fields: no fake sync status / owner rows,
+    // but the real import date from backend createdAt stays visible
+    expect(screen.queryByText('数据同步状态')).not.toBeInTheDocument();
+    expect(screen.queryByText('项目安全所有者')).not.toBeInTheDocument();
+    expect(screen.getByText('关联导入日期')).toBeInTheDocument();
   });
 
   it('preserves stored regions and switches site type when the radio changes', async () => {

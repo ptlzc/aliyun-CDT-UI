@@ -10,12 +10,10 @@ const accounts: CloudAccount[] = [
   {
     id: 'acc-1',
     name: 'Account A',
-    status: 'Active',
     providerRegion: 'Aliyun Domestic',
     mainRegion: 'cn-hangzhou',
     lastSynced: 'Just now',
     creationDate: '2026-06-17',
-    owner: 'domestic@aliyun.local',
     accessKeyId: 'ak',
     accessKeySecret: 'secret',
     managedRegions: 'cn-hangzhou',

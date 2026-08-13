@@ -219,6 +219,10 @@
       "AccountRegion": {
         "additionalProperties": false,
         "properties": {
+          "instanceCount": {
+            "format": "int32",
+            "type": "integer"
+          },
           "localName": {
             "type": "string"
           },

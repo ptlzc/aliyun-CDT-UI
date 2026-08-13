@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { CloudAccount } from '../types';
 import { Search, Filter, RefreshCw, Plus, Edit, Trash2, KeyRound, ArrowLeft, ShieldAlert, Copy, Eye, EyeOff, MapPin, Calendar, User, History, Check, ShieldCheck, ChevronLeft, ChevronRight, FileCode, Server, AlertTriangle, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -235,6 +235,40 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
     setManagedRegions((prev) =>
       prev.includes(regionId) ? prev.filter((item) => item !== regionId) : [...prev, regionId],
     );
+  };
+
+  // Select-all drives the SDK-fetched region list only: fallback options
+  // (stored regions kept visible in the edit flow until a re-fetch) are never
+  // touched by 全选. Indeterminate is a DOM property React cannot express via
+  // JSX, so it is applied imperatively through a ref.
+  const selectAllRef = useRef<HTMLInputElement>(null);
+  const allManagedRegionsSelected =
+    regions.length > 0 && regions.every((region) => managedRegions.includes(region.regionId));
+  const someManagedRegionsSelected =
+    !allManagedRegionsSelected && regions.some((region) => managedRegions.includes(region.regionId));
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someManagedRegionsSelected;
+    }
+  }, [someManagedRegionsSelected]);
+
+  /**
+   * Select or clear every SDK-fetched region at once. When clearing, only the
+   * SDK region ids are removed — pre-existing fallback selections survive.
+   *
+   * @when 托管地域多选区表头点击「全选」checkbox 时触发
+   */
+  const toggleAllManagedRegions = () => {
+    setManagedRegions((prev) => {
+      const selectableIds = regions.map((region) => region.regionId);
+      const allSelected =
+        selectableIds.length > 0 && selectableIds.every((id) => prev.includes(id));
+      if (allSelected) {
+        return prev.filter((id) => !selectableIds.includes(id));
+      }
+      return [...new Set([...prev, ...selectableIds])];
+    });
   };
 
   const handleSave = async () => {
@@ -841,10 +875,21 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
 
                     {/* Managed Regions */}
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider flex items-center justify-between">
-                        <span>管理地域限制</span>
-                        <span className="text-[9px] text-[#0058bc]">可选多个</span>
-                      </label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider">管理地域限制</label>
+                        {regions.length > 0 && (
+                          <label className="flex items-center gap-1.5 text-[11px] text-[#0058bc] cursor-pointer select-none">
+                            <input
+                              ref={selectAllRef}
+                              type="checkbox"
+                              checked={allManagedRegionsSelected}
+                              onChange={toggleAllManagedRegions}
+                              className="accent-primary"
+                            />
+                            全选
+                          </label>
+                        )}
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
                         {regionOptions.length === 0 && (
                           <p className="text-[10px] text-secondary-ink col-span-2">请先填写 Access Key 并点击「获取可用地域」加载可选地域</p>
@@ -857,7 +902,21 @@ export default function AccountsView({ accounts, selectedAccount, setSelectedAcc
                               onChange={() => toggleManagedRegion(option.regionId)}
                               className="accent-primary"
                             />
-                            {option.localName ? `${option.regionId} (${option.localName})` : option.regionId}
+                            <span className="truncate">
+                              {option.localName ? `${option.regionId} (${option.localName})` : option.regionId}
+                            </span>
+                            {option.instanceCount !== undefined ? (
+                              <span className="ml-auto shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-emphasis-layer text-secondary-ink tabular-nums">
+                                {option.instanceCount} 台
+                              </span>
+                            ) : (
+                              <span
+                                className="ml-auto shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-emphasis-layer/60 text-outline"
+                                title="实例数未知"
+                              >
+                                —
+                              </span>
+                            )}
                           </label>
                         ))}
                       </div>

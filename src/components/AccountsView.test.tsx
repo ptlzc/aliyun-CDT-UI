@@ -5,6 +5,7 @@ import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import AccountsView from './AccountsView';
 import type {CloudAccount} from '../types';
+import type {ApiAccountRegion} from '../lib/api/client';
 
 const accountA: CloudAccount = {
   id: 'acc-1',
@@ -156,6 +157,120 @@ describe('AccountsView create flow', () => {
 
     expect(await screen.findByRole('heading', {name: /账户管理/})).toBeInTheDocument();
     expect(mocks.saveMutate).not.toHaveBeenCalled();
+  });
+});
+
+describe('AccountsView managed region select-all and instance counts', () => {
+  // Opens the create form with credentials and loads the SDK-fetched regions,
+  // mirroring the existing create-flow tests.
+  async function openCreateWithRegions(regions: ApiAccountRegion[]) {
+    mocks.listRegions.mockResolvedValue(regions);
+    const user = userEvent.setup();
+    render(<AccountsHarness accounts={[accountA]} />);
+    await user.click(screen.getByRole('button', {name: /添加账号凭证/}));
+    await screen.findByRole('heading', {name: /添加托管云授权凭证/});
+    await user.type(screen.getByPlaceholderText(/生产账号/), 'Test Account');
+    await user.type(screen.getByPlaceholderText(/LTAI5t7/), 'LTAI5t7TEST');
+    await user.type(screen.getByPlaceholderText('************************'), 'secret123');
+    await user.click(screen.getByRole('button', {name: /获取可用地域/}));
+    await screen.findByText(new RegExp(`已加载 ${regions.length} 个可用地域`));
+    return user;
+  }
+
+  beforeEach(() => {
+    mocks.saveMutate.mockReset();
+    mocks.listRegions.mockReset();
+  });
+
+  it('selects and clears every SDK-fetched region via the 全选 checkbox', async () => {
+    mocks.saveMutate.mockResolvedValue({id: 'acc-2'});
+    const user = await openCreateWithRegions([
+      {regionId: 'cn-hangzhou', localName: '华东 1（杭州）'},
+      {regionId: 'cn-beijing', localName: '华北 2（北京）'},
+    ]);
+
+    await user.click(screen.getByRole('checkbox', {name: /全选/}));
+    expect(screen.getByRole('checkbox', {name: /cn-hangzhou/})).toBeChecked();
+    expect(screen.getByRole('checkbox', {name: /cn-beijing/})).toBeChecked();
+
+    // Second click clears the whole SDK list again
+    await user.click(screen.getByRole('checkbox', {name: /全选/}));
+    expect(screen.getByRole('checkbox', {name: /cn-hangzhou/})).not.toBeChecked();
+    expect(screen.getByRole('checkbox', {name: /cn-beijing/})).not.toBeChecked();
+
+    // Select all once more and persist: the payload contains every SDK region
+    await user.click(screen.getByRole('checkbox', {name: /全选/}));
+    await user.click(screen.getByRole('button', {name: '保存'}));
+    expect(mocks.saveMutate).toHaveBeenCalledWith(
+      expect.objectContaining({regions: ['cn-hangzhou', 'cn-beijing']}),
+    );
+  });
+
+  it('select-all never touches edit-flow fallback options outside the SDK list', async () => {
+    mocks.saveMutate.mockResolvedValue({id: 'acc-2'});
+    const user = userEvent.setup();
+    render(<AccountsHarness accounts={[accountA]} />);
+    await user.click(screen.getByText('Account A'));
+    await screen.findByRole('heading', {name: /凭据配置详情/});
+
+    // Edit flow backfills the stored cn-hangzhou without any SDK fetch
+    expect(screen.getByRole('checkbox', {name: /cn-hangzhou/})).toBeChecked();
+    // No SDK list → no select-all control at all
+    expect(screen.queryByRole('checkbox', {name: /全选/})).not.toBeInTheDocument();
+
+    // SDK fetch returns only cn-beijing; stored cn-hangzhou stays a fallback option
+    mocks.listRegions.mockResolvedValue([{regionId: 'cn-beijing', localName: '华北 2（北京）'}]);
+    await user.click(screen.getByRole('button', {name: /获取可用地域/}));
+    await screen.findByText(/已加载 1 个可用地域/);
+
+    await user.click(screen.getByRole('checkbox', {name: /全选/}));
+    expect(screen.getByRole('checkbox', {name: /cn-beijing/})).toBeChecked();
+    // The fallback keeps its pre-existing selection, untouched by select-all
+    expect(screen.getByRole('checkbox', {name: /cn-hangzhou/})).toBeChecked();
+
+    await user.click(screen.getByRole('checkbox', {name: /全选/}));
+    expect(screen.getByRole('checkbox', {name: /cn-beijing/})).not.toBeChecked();
+    expect(screen.getByRole('checkbox', {name: /cn-hangzhou/})).toBeChecked();
+  });
+
+  it('marks the 全选 checkbox indeterminate when only some SDK regions are selected', async () => {
+    const user = await openCreateWithRegions([
+      {regionId: 'cn-hangzhou', localName: '华东 1（杭州）'},
+      {regionId: 'cn-beijing', localName: '华北 2（北京）'},
+    ]);
+
+    await user.click(screen.getByRole('checkbox', {name: /cn-hangzhou/}));
+    expect((screen.getByRole('checkbox', {name: /全选/}) as HTMLInputElement).indeterminate).toBe(true);
+
+    // Both selected → fully checked, no longer indeterminate
+    await user.click(screen.getByRole('checkbox', {name: /cn-beijing/}));
+    const selectAll = screen.getByRole('checkbox', {name: /全选/}) as HTMLInputElement;
+    expect(selectAll.checked).toBe(true);
+    expect(selectAll.indeterminate).toBe(false);
+
+    // One deselected → back to indeterminate
+    await user.click(screen.getByRole('checkbox', {name: /cn-hangzhou/}));
+    expect((screen.getByRole('checkbox', {name: /全选/}) as HTMLInputElement).indeterminate).toBe(true);
+  });
+
+  it('renders the per-region ECS instance count badge from the SDK payload', async () => {
+    await openCreateWithRegions([
+      {regionId: 'cn-hangzhou', localName: '华东 1（杭州）', instanceCount: 42},
+      {regionId: 'cn-beijing', localName: '华北 2（北京）', instanceCount: 7},
+    ]);
+
+    expect(screen.getByText('42 台')).toBeInTheDocument();
+    expect(screen.getByText('7 台')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', {name: /cn-hangzhou/})).toBeInTheDocument();
+  });
+
+  it('shows an em dash when a region has no instance count', async () => {
+    await openCreateWithRegions([
+      {regionId: 'cn-hangzhou', localName: '华东 1（杭州）'}, // no instanceCount → undefined
+    ]);
+
+    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(screen.queryByText(/台/)).not.toBeInTheDocument();
   });
 });
 

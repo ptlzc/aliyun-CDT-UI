@@ -10,6 +10,7 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "generate:api": "node ./scripts/generate-openapi-client.mjs",
+    "check:size": "node ./scripts/check-file-size.mjs",
     "test": "vitest run"
   },
   "dependencies": {
@@ -24,6 +25,7 @@
     "motion": "^12.23.24",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
+    "react-router-dom": "^7.18.2",
     "vite": "^6.2.3"
   },
   "devDependencies": {

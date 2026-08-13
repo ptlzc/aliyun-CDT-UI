@@ -1,0 +1,101 @@
+import {render, screen} from '@testing-library/react';
+import {describe, expect, it, vi} from 'vitest';
+
+import type {ECSInstance} from '../../../types';
+import InstanceCard from '../components/InstanceCard';
+
+/**
+ * Renders a single InstanceCard with a default healthy instance; per-test
+ * overrides (e.g. trafficUsageSource) drive the branch under assertion.
+ *
+ * @when InstanceCard 累计流量监测分支测试
+ */
+function renderCard(overrides: Partial<ECSInstance> = {}) {
+  const instance: ECSInstance = {
+    id: 'i-1',
+    accountId: 'acc-1',
+    accountName: 'Account A',
+    name: 'ecs-a',
+    status: 'Running',
+    type: 'ecs.g6.large',
+    zone: 'cn-hangzhou-i',
+    regionId: 'cn-hangzhou-i',
+    publicIp: '1.1.1.1',
+    privateIp: '10.0.0.1',
+    trafficUsage: null,
+    trafficUsageUnit: 'GB',
+    trafficRate: 22.5,
+    trafficRateUnit: 'Mbps',
+    trafficLimit: 200,
+    monitoringEnabled: true,
+    overflowAction: 'notify',
+    inherited: true,
+    alerts: [],
+    ...overrides,
+  };
+  render(
+    <InstanceCard
+      instance={instance}
+      loadingStatus={null}
+      effectiveStatus="Running"
+      powerError={null}
+      onTogglePower={vi.fn()}
+      onOpenVnc={vi.fn()}
+      onToggleStateModal={vi.fn()}
+      onManageInstance={vi.fn()}
+    />,
+  );
+}
+
+describe('InstanceCard bss-* cumulative traffic usage branches', () => {
+  it('renders the billing-delay copy for bss-no-data', () => {
+    renderCard({trafficUsageSource: 'bss-no-data'});
+
+    expect(screen.getByText('该实例本月暂无 CDT 出账明细（出账有小时级延迟）')).toBeInTheDocument();
+  });
+
+  it('mentions the bss:DescribeBillList permission for bss-permission-error', () => {
+    renderCard({trafficUsageSource: 'bss-permission-error'});
+
+    expect(screen.getByText(/bss:DescribeBillList/)).toBeInTheDocument();
+  });
+
+  it('reuses the credential error copy for bss-credential-error', () => {
+    renderCard({trafficUsageSource: 'bss-credential-error'});
+
+    expect(screen.getByText('凭据验证失败，请检查 AccessKey Secret 是否正确')).toBeInTheDocument();
+  });
+
+  it('reuses the network error copy for bss-network-error', () => {
+    renderCard({trafficUsageSource: 'bss-network-error'});
+
+    expect(screen.getByText(/BSS 接口网络错误/)).toBeInTheDocument();
+  });
+
+  it('prefers the backend errorReason over the branch fallback copy', () => {
+    renderCard({trafficUsageSource: 'bss-no-data', trafficUsageErrorReason: '自定义出账原因'});
+
+    expect(screen.getByText('自定义出账原因')).toBeInTheDocument();
+  });
+
+  it('renders the progress bar instead of an error notice for bss-cumulative with data', () => {
+    renderCard({trafficUsageSource: 'bss-cumulative', trafficUsage: 180});
+
+    expect(screen.getByText('180 GB / 200 GB')).toBeInTheDocument();
+    expect(screen.queryByText(/暂无 CDT 出账明细/)).not.toBeInTheDocument();
+  });
+});
+
+describe('InstanceCard legacy cdt-* compatibility', () => {
+  it('still renders the legacy copy for cdt-no-data', () => {
+    renderCard({trafficUsageSource: 'cdt-no-data'});
+
+    expect(screen.getByText('该实例暂无 CDT 累计流量数据')).toBeInTheDocument();
+  });
+
+  it('still renders the legacy permission copy for cdt-permission-error', () => {
+    renderCard({trafficUsageSource: 'cdt-permission-error'});
+
+    expect(screen.getByText(/cdt:ListCdtInternetTraffic/)).toBeInTheDocument();
+  });
+});

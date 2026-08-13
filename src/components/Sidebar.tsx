@@ -1,21 +1,15 @@
-import { Cloud, LayoutDashboard, KeyRound, Server, Cpu, FileText, Plus } from 'lucide-react';
-import { motion } from 'motion/react';
+import {Cloud, Plus} from 'lucide-react';
+import {motion} from 'motion/react';
+
+import {menuItems, type AppTabId} from '../navigation';
 
 interface SidebarProps {
-  activeTab: 'dashboard' | 'accounts' | 'instances' | 'workflows' | 'settings';
-  setActiveTab: (tab: 'dashboard' | 'accounts' | 'instances' | 'workflows' | 'settings') => void;
+  activeTab: AppTabId;
+  setActiveTab: (tab: AppTabId) => void;
   onDeployTrigger: () => void;
 }
 
-export default function Sidebar({ activeTab, setActiveTab, onDeployTrigger }: SidebarProps) {
-  const menuItems = [
-    { id: 'dashboard', label: '仪表盘', icon: LayoutDashboard },
-    { id: 'accounts', label: '账户管理', icon: KeyRound },
-    { id: 'instances', label: 'ECS 实例列表', icon: Server },
-    { id: 'workflows', label: '自动化工作流', icon: Cpu },
-    { id: 'settings', label: '系统设置', icon: FileText },
-  ] as const;
-
+export default function Sidebar({activeTab, setActiveTab, onDeployTrigger}: SidebarProps) {
   return (
     <nav className="fixed left-0 top-0 h-full w-64 z-50 flex flex-col py-4 bg-section-layer border-r border-hairline-divider hidden md:flex font-sans">
       {/* Brand Header */}

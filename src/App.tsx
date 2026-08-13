@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { Bell, Cloud, Cpu, KeyRound, LayoutDashboard, Menu, RefreshCw, Server, Settings, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import {useState} from 'react';
+import {useQueryClient} from '@tanstack/react-query';
+import {Bell, Cloud, Menu, RefreshCw, X} from 'lucide-react';
+import {AnimatePresence, motion} from 'motion/react';
 
 import Sidebar from './components/Sidebar';
 import DashboardView from './components/DashboardView';
@@ -10,8 +10,9 @@ import InstancesView from './components/InstancesView';
 import InstanceGovernanceDrawer from './components/InstanceGovernanceDrawer';
 import SettingsView from './components/SettingsView';
 import WorkflowsView from './components/WorkflowsView';
-import { useRuntimeDashboard } from './features/runtime/hooks';
-import { useRuntimeEventBridge } from './features/runtime/events';
+import {menuItems} from './navigation';
+import {useRuntimeDashboard} from './features/runtime/hooks';
+import {useRuntimeEventBridge} from './features/runtime/events';
 
 export default function App() {
   const runtime = useRuntimeDashboard();
@@ -152,19 +153,13 @@ export default function App() {
                 </button>
               </div>
               <ul className="flex-1 flex flex-col gap-1 px-2.5">
-                {[
-                  { id: 'dashboard', label: '仪表盘', icon: LayoutDashboard },
-                  { id: 'accounts', label: '账户管理', icon: KeyRound },
-                  { id: 'instances', label: 'ECS 实例列表', icon: Server },
-                  { id: 'workflows', label: '自动化工作流', icon: Cpu },
-                  { id: 'settings', label: '系统设置', icon: Settings },
-                ].map((item) => {
+                {menuItems.map((item) => {
                   const Icon = item.icon;
                   return (
                     <li key={item.id}>
                       <button
                         onClick={() => {
-                          setActiveTab(item.id as any);
+                          setActiveTab(item.id);
                           setSelectedAccountId(null);
                           setMobileMenuOpen(false);
                         }}

@@ -7,17 +7,17 @@ import {
   useRegionGroupsQuery,
   useSavePlatformDefaultsMutation,
   useUpdateRegionGroupMutation,
-} from '../features/runtime/hooks';
-import type {ApiRegionGroup} from '../lib/api/client';
-import type {TrafficDefaults} from '../types';
-import RegionGroupEditor, {type RegionGroupEditorPayload} from './RegionGroupEditor';
-import {ACTION_OPTIONS, actionLabelZh} from '../utils/actionLabels';
+} from '../../features/runtime/hooks';
+import type {ApiRegionGroup} from '../../lib/api/client';
+import type {TrafficDefaults} from '../../types';
+import RegionGroupEditor, {type RegionGroupEditorPayload} from '../../components/RegionGroupEditor';
+import {ACTION_OPTIONS, actionLabelZh} from '../../utils/actionLabels';
 
-interface SettingsViewProps {
+interface SettingsPageProps {
   defaults: TrafficDefaults | null;
 }
 
-export default function SettingsView({defaults}: SettingsViewProps) {
+export default function SettingsPage({defaults}: SettingsPageProps) {
   const saveMutation = useSavePlatformDefaultsMutation();
   const applyMutation = useApplyPlatformDefaultsMutation();
   const [maximumTrafficGb, setMaximumTrafficGb] = useState(200);

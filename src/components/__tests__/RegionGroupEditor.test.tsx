@@ -2,7 +2,7 @@ import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, it, vi} from 'vitest';
 
-import RegionGroupEditor from './RegionGroupEditor';
+import RegionGroupEditor from '../RegionGroupEditor';
 
 describe('RegionGroupEditor', () => {
   it('renders all form fields in create mode', () => {

@@ -2,7 +2,7 @@ import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, it, vi} from 'vitest';
 
-import SettingsView from './SettingsView';
+import SettingsPage from '../index';
 
 const saveMutate = vi.fn();
 const applyMutate = vi.fn();
@@ -12,7 +12,7 @@ const deleteMutate = vi.fn();
 
 let regionGroupsReturnValue: any[] = [];
 
-vi.mock('../features/runtime/hooks', () => ({
+vi.mock('../../../features/runtime/hooks', () => ({
   useSavePlatformDefaultsMutation: () => ({
     mutate: saveMutate,
     isPending: false,
@@ -28,12 +28,12 @@ vi.mock('../features/runtime/hooks', () => ({
   useDeleteRegionGroupMutation: () => ({mutate: deleteMutate, isPending: false}),
 }));
 
-describe('SettingsView', () => {
+describe('SettingsPage', () => {
   it('submits platform defaults and rollout action', async () => {
     const user = userEvent.setup();
 
     render(
-      <SettingsView
+      <SettingsPage
         defaults={{
           maximumTrafficGb: 200,
           overflowAction: 'notify',
@@ -59,7 +59,7 @@ describe('SettingsView', () => {
   });
 });
 
-describe('SettingsView region group section', () => {
+describe('SettingsPage region group section', () => {
   it('renders the two-tier relationship and region group list', () => {
     regionGroupsReturnValue = [
       {
@@ -72,7 +72,7 @@ describe('SettingsView region group section', () => {
       },
     ];
 
-    render(<SettingsView defaults={null} />);
+    render(<SettingsPage defaults={null} />);
 
     expect(screen.getByText('地区组配置')).toBeInTheDocument();
     expect(screen.getByText('全局默认值')).toBeInTheDocument();
@@ -86,7 +86,7 @@ describe('SettingsView region group section', () => {
     regionGroupsReturnValue = [];
     const user = userEvent.setup();
 
-    render(<SettingsView defaults={null} />);
+    render(<SettingsPage defaults={null} />);
 
     await user.click(screen.getByRole('button', {name: '新建地区组'}));
 
@@ -107,7 +107,7 @@ describe('SettingsView region group section', () => {
     ];
     const user = userEvent.setup();
 
-    render(<SettingsView defaults={null} />);
+    render(<SettingsPage defaults={null} />);
 
     await user.click(screen.getByRole('button', {name: '删除'}));
     expect(deleteMutate).toHaveBeenCalledWith('rg-9');
@@ -126,7 +126,7 @@ describe('SettingsView region group section', () => {
     ];
     const user = userEvent.setup();
 
-    render(<SettingsView defaults={null} />);
+    render(<SettingsPage defaults={null} />);
 
     await user.click(screen.getByRole('button', {name: '编辑'}));
     expect((screen.getByPlaceholderText('例如：cn-hangzhou 组') as HTMLInputElement).value).toBe('华北组');

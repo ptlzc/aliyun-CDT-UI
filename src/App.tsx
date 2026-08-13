@@ -8,7 +8,7 @@ import DashboardPage from './pages/Dashboard';
 import AccountsView from './components/AccountsView';
 import InstancesView from './components/InstancesView';
 import InstanceGovernanceDrawer from './components/InstanceGovernanceDrawer';
-import SettingsView from './components/SettingsView';
+import SettingsPage from './pages/Settings';
 import WorkflowsPage from './pages/Workflows';
 import {menuItems} from './navigation';
 import {useRuntimeDashboard} from './features/runtime/hooks';
@@ -123,7 +123,7 @@ export default function App() {
 
             {activeTab === 'settings' && (
               <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }}>
-                <SettingsView defaults={runtime.platformDefaults} />
+                <SettingsPage defaults={runtime.platformDefaults} />
               </motion.div>
             )}
           </AnimatePresence>

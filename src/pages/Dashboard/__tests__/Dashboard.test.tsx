@@ -2,16 +2,16 @@ import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, it, vi} from 'vitest';
 
-import DashboardView from './DashboardView';
+import DashboardPage from '../index';
 
-describe('DashboardView', () => {
+describe('DashboardPage', () => {
   it('renders backend-derived summary metrics and account rows', async () => {
     const setActiveTab = vi.fn();
     const setSelectedAccount = vi.fn();
     const user = userEvent.setup();
 
     render(
-      <DashboardView
+      <DashboardPage
         accounts={[
           {
             id: 'acc-1',

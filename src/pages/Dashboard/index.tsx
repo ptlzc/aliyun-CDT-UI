@@ -1,29 +1,15 @@
-import {type ReactNode} from 'react';
 import {AlertTriangle, Cpu, Globe, Server} from 'lucide-react';
 
-import type {CloudAccount, DashboardSummary, ECSInstance, WorkflowRun} from '../types';
+import type {CloudAccount, DashboardSummary, ECSInstance, WorkflowRun} from '../../types';
+import SummaryCard from './components/SummaryCard';
 
-interface DashboardViewProps {
+interface DashboardPageProps {
   accounts: CloudAccount[];
   instances: ECSInstance[];
   summary: DashboardSummary;
   workflows: WorkflowRun[];
   setActiveTab: (tab: 'dashboard' | 'accounts' | 'instances' | 'workflows' | 'settings') => void;
   setSelectedAccount: (account: CloudAccount | null) => void;
-}
-
-function summaryCard(label: string, value: number, hint: string, icon: ReactNode) {  return (
-    <div className="rounded-lg border border-hairline-divider bg-surface-white p-5 shadow-xs">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-secondary-ink">{label}</p>
-          <p className="mt-2 text-3xl font-space font-bold text-primary-ink">{value}</p>
-          <p className="mt-1 text-xs text-secondary-ink">{hint}</p>
-        </div>
-        <div className="rounded-full bg-emphasis-layer p-3 text-primary">{icon}</div>
-      </div>
-    </div>
-  );
 }
 
 // 状态枚举 → 中文展示映射（后端枚举值不翻译，仅显示层映射）
@@ -41,14 +27,14 @@ const WORKFLOW_STATUS_LABELS: Record<WorkflowRun['status'], string> = {
   'Idle': '空闲',
 };
 
-export default function DashboardView({
+export default function DashboardPage({
   accounts,
   instances,
   summary,
   workflows,
   setActiveTab,
   setSelectedAccount,
-}: DashboardViewProps) {
+}: DashboardPageProps) {
   const attentionInstances = instances.filter((instance) => instance.alerts.length > 0 || instance.status === 'Attention');
   const latestWorkflows = workflows.slice(0, 5);
 
@@ -68,10 +54,10 @@ export default function DashboardView({
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {summaryCard('账户', summary.accountCount, '已接入控制面的账号', <Globe className="h-5 w-5" />)}
-        {summaryCard('ECS', summary.ecsCount, '发现到的实例总数', <Server className="h-5 w-5" />)}
-        {summaryCard('EIP', summary.eipCount, '图谱中已绑定或待绑定的公网地址', <Cpu className="h-5 w-5" />)}
-        {summaryCard('风险实例', summary.attentionInstanceCount, '接近阈值或监控异常', <AlertTriangle className="h-5 w-5" />)}
+        <SummaryCard label="账户" value={summary.accountCount} hint="已接入控制面的账号" icon={<Globe className="h-5 w-5" />} />
+        <SummaryCard label="ECS" value={summary.ecsCount} hint="发现到的实例总数" icon={<Server className="h-5 w-5" />} />
+        <SummaryCard label="EIP" value={summary.eipCount} hint="图谱中已绑定或待绑定的公网地址" icon={<Cpu className="h-5 w-5" />} />
+        <SummaryCard label="风险实例" value={summary.attentionInstanceCount} hint="接近阈值或监控异常" icon={<AlertTriangle className="h-5 w-5" />} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">

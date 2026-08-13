@@ -4,7 +4,7 @@ import {Bell, Cloud, Menu, RefreshCw, X} from 'lucide-react';
 import {AnimatePresence, motion} from 'motion/react';
 
 import Sidebar from './components/Sidebar';
-import DashboardView from './components/DashboardView';
+import DashboardPage from './pages/Dashboard';
 import AccountsView from './components/AccountsView';
 import InstancesView from './components/InstancesView';
 import InstanceGovernanceDrawer from './components/InstanceGovernanceDrawer';
@@ -82,7 +82,7 @@ export default function App() {
           <AnimatePresence mode="wait">
             {activeTab === 'dashboard' && (
               <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }}>
-                <DashboardView
+                <DashboardPage
                   accounts={runtime.accounts}
                   instances={runtime.instances}
                   summary={runtime.summary}

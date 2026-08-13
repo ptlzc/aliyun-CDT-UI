@@ -101,7 +101,7 @@ function relativeTimeLabel(value?: string): string {
   return `${Math.round(diffHours / 24)} 天前`;
 }
 
-function mapAccountToViewModel(account: ApiAccount): CloudAccount {
+export function mapAccountToViewModel(account: ApiAccount): CloudAccount {
   return {
     id: account.id,
     name: account.name,

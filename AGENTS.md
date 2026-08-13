@@ -10,8 +10,9 @@ React 19 + TypeScript 5.8 + Vite + Tailwind CSS 4 + TanStack Query 5 + react-rou
 
 - Every page lives in `src/pages/<Page>/index.tsx`.
 - Page-private components live in `src/pages/<Page>/components/` and belong to that page only; cross-page imports of page-private components are forbidden.
-- `src/components/` is reserved for components shared across pages: currently Sidebar, RegionGroupEditor, InstanceGovernanceDrawer.
-- Page-private helpers (e.g. `accountPolicy.ts`, `instanceLabels.ts`) sit next to the page `index.tsx` and are subject to the same no-cross-page-import rule.
+- `src/components/` is reserved for components shared across pages: currently Sidebar, RegionGroupEditor, InstanceGovernanceDrawer, AuthPolicyModal.
+- Shared helpers used by shared components live in `src/components/` too (e.g. `accountPolicy.ts`, the RAM policy document rendered by AuthPolicyModal).
+- Page-private helpers (e.g. `instanceLabels.ts`) sit next to the page `index.tsx` and are subject to the same no-cross-page-import rule.
 
 ## Routing
 

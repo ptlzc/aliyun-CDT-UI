@@ -40,7 +40,11 @@ export const accountPolicyJson = {
         'cms:QueryMetricLast',
         // CDT — 累计互联网流量查询
         'cdt:ListCdtInternetTraffic',
-        // BSS OpenAPI — 账单与 CDT 免费额度查询（RAM action 为 bss:DescribeBillList，覆盖 QueryBill/QueryBillDetail 等）
+        // BSS OpenAPI — 账单与 CDT 免费额度查询。实例级累计流量实际调用
+        // QueryInstanceBill（RAM action bss:QueryInstanceBill）；DescribeBillList
+        // 保留以覆盖旧版账单查询路径。DescribeInstanceBill 为升级路径，待后端
+        // 迁移后加入。
+        'bss:QueryInstanceBill',
         'bss:DescribeBillList',
         // OSS — 镜像导入上传与存储桶管理
         'oss:ListBuckets',

@@ -15,6 +15,8 @@ interface InstanceCardProps {
   onOpenVnc: (instance: ECSInstance) => void;
   onToggleStateModal: (instance: ECSInstance) => void;
   onManageInstance: (instance: ECSInstance) => void;
+  /** Opens the shared auth policy modal for the instance account (permission errors). */
+  onViewPolicy?: (instance: ECSInstance) => void;
 }
 
 interface TrafficUsageErrorVariant {
@@ -22,14 +24,17 @@ interface TrafficUsageErrorVariant {
   containerClass: string;
   /** Copy shown when the backend did not include an errorReason. */
   fallbackText: string;
+  /** Permission errors are clickable and open the shared auth policy modal. */
+  permission?: boolean;
 }
 
 /**
  * Per-source variants for the cumulative traffic error notice. cdt-* entries
  * keep the legacy copy/styles; bss-* entries mirror BSS classification
  * (bss-no-data carries billing-delay semantics, bss-permission-error points
- * at bss:DescribeBillList, bss-api-error points at the DescribeInstanceBill
- * upgrade path).
+ * at bss:QueryInstanceBill, bss-api-error points at the DescribeInstanceBill
+ * upgrade path). Both permission variants render in recovery-red and open the
+ * full RAM policy script on click.
  *
  * @when 实例卡片累计流量监测错误分支渲染
  */
@@ -39,8 +44,9 @@ const TRAFFIC_USAGE_ERROR_VARIANTS: Record<string, TrafficUsageErrorVariant> = {
     fallbackText: 'CDT 流量查询无权限，请在账号管理中为该账号授权 cdt:ListCdtInternetTraffic',
   },
   'cdt-permission-error': {
-    containerClass: 'border-signal-amber/30 bg-signal-amber/[0.06] text-signal-amber',
+    containerClass: 'border-recovery-red/30 bg-recovery-red/[0.06] text-recovery-red',
     fallbackText: 'CDT 流量查询无权限，请在账号管理中为该账号授权 cdt:ListCdtInternetTraffic',
+    permission: true,
   },
   'cdt-network-error': {
     containerClass: 'border-primary/30 bg-primary/[0.06] text-primary',
@@ -55,8 +61,9 @@ const TRAFFIC_USAGE_ERROR_VARIANTS: Record<string, TrafficUsageErrorVariant> = {
     fallbackText: '该实例暂无 CDT 累计流量数据',
   },
   'bss-permission-error': {
-    containerClass: 'border-signal-amber/30 bg-signal-amber/[0.06] text-signal-amber',
-    fallbackText: '缺少 bss:DescribeBillList 权限，请在账号管理中为该账号授权',
+    containerClass: 'border-recovery-red/30 bg-recovery-red/[0.06] text-recovery-red',
+    fallbackText: '缺少 bss:QueryInstanceBill 权限，请在账号管理中为该账号授权',
+    permission: true,
   },
   'bss-network-error': {
     containerClass: 'border-primary/30 bg-primary/[0.06] text-primary',
@@ -91,6 +98,7 @@ export default function InstanceCard({
   onOpenVnc,
   onToggleStateModal,
   onManageInstance,
+  onViewPolicy,
 }: InstanceCardProps) {
   const isBooting = loadingStatus === 'starting';
   const isStopped = effectiveStatus === 'Stopped';
@@ -133,6 +141,7 @@ export default function InstanceCard({
   const trafficUsageErrorVariant = instance.trafficUsageSource
     ? TRAFFIC_USAGE_ERROR_VARIANTS[instance.trafficUsageSource]
     : undefined;
+  const isPermissionNotice = Boolean(trafficUsageErrorVariant?.permission);
 
   return (
     <div
@@ -241,9 +250,30 @@ export default function InstanceCard({
                 累计流量监测
               </span>
               <div
-                className={`rounded-md border px-2 py-1.5 text-[10px] leading-relaxed ${trafficUsageErrorVariant.containerClass}`}
+                role={isPermissionNotice ? 'button' : undefined}
+                tabIndex={isPermissionNotice ? 0 : undefined}
+                onClick={isPermissionNotice ? () => onViewPolicy?.(instance) : undefined}
+                onKeyDown={
+                  isPermissionNotice
+                    ? (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          onViewPolicy?.(instance);
+                        }
+                      }
+                    : undefined
+                }
+                className={`rounded-md border px-2 py-1.5 text-[10px] leading-relaxed ${trafficUsageErrorVariant.containerClass} ${
+                  isPermissionNotice ? 'flex cursor-pointer items-start gap-1.5 outline-none focus-visible:ring-2 focus-visible:ring-primary/40' : ''
+                }`}
               >
-                {instance.trafficUsageErrorReason || trafficUsageErrorVariant.fallbackText}
+                {isPermissionNotice && <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <div>{instance.trafficUsageErrorReason || trafficUsageErrorVariant.fallbackText}</div>
+                  {isPermissionNotice && (
+                    <div className="font-semibold underline decoration-dotted underline-offset-2">点击查看授权脚本 →</div>
+                  )}
+                </div>
               </div>
             </>
           ) : (

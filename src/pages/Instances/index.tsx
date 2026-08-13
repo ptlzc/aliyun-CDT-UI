@@ -3,7 +3,9 @@ import {useQueryClient} from '@tanstack/react-query';
 import {Filter, RefreshCw} from 'lucide-react';
 import {useOutletContext} from 'react-router-dom';
 
+import AuthPolicyModal from '../../components/AuthPolicyModal';
 import {
+  mapAccountToViewModel,
   useCdtFreeQuotaQuery,
   useEffectiveTrafficGovernanceQuery,
   useECSMetricsQuery,
@@ -13,7 +15,7 @@ import {
   useStopECSInstanceMutation,
 } from '../../features/runtime/hooks';
 import type {ApiEffectiveTrafficGovernance} from '../../lib/api/client';
-import type {ECSInstance} from '../../types';
+import type {CloudAccount, ECSInstance} from '../../types';
 import {actionLabelZh} from '../../utils/actionLabels';
 import CdtFreeQuotaCard from './components/CdtFreeQuotaCard';
 import InstanceCard from './components/InstanceCard';
@@ -48,6 +50,7 @@ export default function InstancesPage() {
   const [tempState, setTempState] = useState<{[key: string]: 'starting' | 'stopping' | null}>({});
   const [statusOverride, setStatusOverride] = useState<{[key: string]: ECSInstance['status']}>({});
   const [powerError, setPowerError] = useState<{[key: string]: string | null}>({});
+  const [activePolicyAccount, setActivePolicyAccount] = useState<CloudAccount | null>(null);
 
   const startMutation = useStartECSInstanceMutation();
   const stopMutation = useStopECSInstanceMutation();
@@ -123,6 +126,15 @@ export default function InstancesPage() {
   // Open VNC connection in new window
   const openVnc = (instance: ECSInstance) => {
     setActiveVncId(instance.id);
+  };
+
+  // Permission notices on instance cards open the shared auth policy modal for
+  // the owning account. rawAccounts covers every graph account, so a missing
+  // match is unexpected; if it ever happens, keep the card as-is (no modal).
+  const openPolicyModal = (instance: ECSInstance) => {
+    const rawAccount = runtime.rawAccounts.find((account) => account.id === instance.accountId);
+    if (!rawAccount) return;
+    setActivePolicyAccount(mapAccountToViewModel(rawAccount));
   };
 
   const handleSync = () => {
@@ -207,6 +219,7 @@ export default function InstancesPage() {
                 onOpenVnc={openVnc}
                 onToggleStateModal={(inst) => setActiveStateModalId(activeStateModalId === inst.id ? null : inst.id)}
                 onManageInstance={openInstance}
+                onViewPolicy={openPolicyModal}
               />
             ))}
           </div>
@@ -249,6 +262,11 @@ export default function InstancesPage() {
           onCancel={() => setPendingStartInstance(null)}
           onConfirm={confirmStartOverQuota}
         />
+      )}
+
+      {/* Shared Auth Policy Modal — opened from a permission error notice */}
+      {activePolicyAccount && (
+        <AuthPolicyModal account={activePolicyAccount} onClose={() => setActivePolicyAccount(null)} />
       )}
     </div>
   );

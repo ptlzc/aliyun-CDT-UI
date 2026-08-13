@@ -7,7 +7,7 @@ import type {CloudAccount} from '../../types';
 import AccountList from './components/AccountList';
 import AccountDetailEditor from './components/AccountDetailEditor';
 import AuditLogModal from './components/AuditLogModal';
-import AuthPolicyModal from './components/AuthPolicyModal';
+import AuthPolicyModal from '../../components/AuthPolicyModal';
 import ConfirmDeleteModal from './components/ConfirmDeleteModal';
 
 /**

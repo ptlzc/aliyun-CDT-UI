@@ -1,9 +1,9 @@
 import {useState} from 'react';
 import {Check, Copy, ExternalLink, ShieldCheck} from 'lucide-react';
 
-import type {CdtPermissionResult} from '../../../lib/api/client';
-import type {CloudAccount} from '../../../types';
-import {accountPolicyJson} from '../accountPolicy';
+import type {CdtPermissionResult} from '../lib/api/client';
+import type {CloudAccount} from '../types';
+import {accountPolicyJson} from './accountPolicy';
 
 interface AuthPolicyModalProps {
   account: CloudAccount;
@@ -58,7 +58,7 @@ export default function AuthPolicyModal({account, cdtPermission, onClose}: AuthP
               </>
             ) : (
               <>
-                <p className="font-medium">该账号缺少 CDT 流量查询（<code className="font-mono bg-signal-amber/10 px-1 rounded">cdt:ListCdtInternetTraffic</code>）与 BSS 账单明细（<code className="font-mono bg-signal-amber/10 px-1 rounded">bss:DescribeBillList</code>）权限。</p>
+                <p className="font-medium">该账号缺少 CDT 流量查询（<code className="font-mono bg-signal-amber/10 px-1 rounded">cdt:ListCdtInternetTraffic</code>）与 BSS 账单明细（<code className="font-mono bg-signal-amber/10 px-1 rounded">bss:QueryInstanceBill</code>）权限。</p>
                 {cdtPermission?.error && (
                   <p className="mt-1 text-[10px] font-mono break-all opacity-80">错误详情: {cdtPermission.error}</p>
                 )}

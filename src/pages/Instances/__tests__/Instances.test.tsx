@@ -1,5 +1,5 @@
 import {createMemoryRouter, Outlet, RouterProvider} from 'react-router-dom';
-import {render, screen} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, it, vi} from 'vitest';
 
@@ -12,52 +12,60 @@ let rawAccountsData: any[] = [];
 let cdtData: any = null;
 let governanceData: any = null;
 
-vi.mock('../../../features/runtime/hooks', () => ({
-  useRuntimeDashboard: () => ({
-    isLoading: false,
-    accounts: [],
-    rawAccounts: rawAccountsData,
-    graphs: [],
-    instances: instancesData,
-    workflows: [],
-    summary: {
-      accountCount: 0,
-      ecsCount: 0,
-      eipCount: 0,
-      activeWorkflowCount: 0,
-      attentionInstanceCount: 0,
-      monitoredInstanceCount: 0,
-    },
-    platformDefaults: null,
-    policiesByAccount: {},
-  }),
-  mapAccountToViewModel: (account: any) => ({
-    id: account.id,
-    name: account.name,
-    providerRegion: account.siteType === 'domestic' ? 'Aliyun Domestic' : 'Aliyun International',
-    mainRegion: account.regionId,
-    lastSynced: 'Just now',
-    creationDate: '2026-06-17',
-    accessKeyId: account.accessKeyId,
-    accessKeySecret: account.accessKeySecret ?? '************************',
-    managedRegions: (account.regions || []).join(', '),
-    roleArn: '',
-    trafficDefaults: account.trafficGovernanceDefaults ?? {
-      maximumTrafficGb: 200,
-      overflowAction: 'notify',
-      monitoringEnabled: true,
-    },
-  }),
-  useStartECSInstanceMutation: () => ({mutateAsync: vi.fn(), mutate: vi.fn(), isPending: false}),
-  useStopECSInstanceMutation: () => ({mutateAsync: vi.fn(), mutate: vi.fn(), isPending: false}),
-  useCdtFreeQuotaQuery: () => ({data: cdtData, isLoading: false}),
-  useEffectiveTrafficGovernanceQuery: () => ({data: governanceData, isLoading: false}),
-  useECSVncUrlQuery: () => ({data: null, isLoading: false}),
-  useECSMetricsQuery: () => ({data: null, isLoading: false}),
+vi.mock('../../../features/runtime/hooks', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../features/runtime/hooks')>();
+  return {
+    ...actual,
+    useRuntimeDashboard: () => ({
+      isLoading: false,
+      accounts: [],
+      rawAccounts: rawAccountsData,
+      graphs: [],
+      instances: instancesData,
+      workflows: [],
+      summary: {
+        accountCount: 0,
+        ecsCount: 0,
+        eipCount: 0,
+        activeWorkflowCount: 0,
+        attentionInstanceCount: 0,
+        monitoredInstanceCount: 0,
+      },
+      platformDefaults: null,
+      policiesByAccount: {},
+    }),
+    mapAccountToViewModel: (account: any) => ({
+      id: account.id,
+      name: account.name,
+      providerRegion: account.siteType === 'domestic' ? 'Aliyun Domestic' : 'Aliyun International',
+      mainRegion: account.regionId,
+      lastSynced: 'Just now',
+      creationDate: '2026-06-17',
+      accessKeyId: account.accessKeyId,
+      accessKeySecret: account.accessKeySecret ?? '************************',
+      managedRegions: (account.regions || []).join(', '),
+      roleArn: '',
+      trafficDefaults: account.trafficGovernanceDefaults ?? {
+        maximumTrafficGb: 200,
+        overflowAction: 'notify',
+        monitoringEnabled: true,
+      },
+    }),
+    useStartECSInstanceMutation: () => ({mutateAsync: vi.fn(), mutate: vi.fn(), isPending: false}),
+    useStopECSInstanceMutation: () => ({mutateAsync: vi.fn(), mutate: vi.fn(), isPending: false}),
+    useCdtFreeQuotaQuery: () => ({data: cdtData, isLoading: false}),
+    useEffectiveTrafficGovernanceQuery: () => ({data: governanceData, isLoading: false}),
+    useECSVncUrlQuery: () => ({data: null, isLoading: false}),
+    useECSMetricsQuery: () => ({data: null, isLoading: false}),
+  };
+});
+
+const {invalidateQueriesMock} = vi.hoisted(() => ({
+  invalidateQueriesMock: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@tanstack/react-query', () => ({
-  useQueryClient: () => ({invalidateQueries: vi.fn().mockResolvedValue(undefined)}),
+  useQueryClient: () => ({invalidateQueries: invalidateQueriesMock}),
 }));
 
 // The page reads its openInstance callback from the layout Outlet context,
@@ -118,6 +126,34 @@ describe('InstancesPage', () => {
     expect(screen.queryByText('CDT 免费额度')).not.toBeInTheDocument();
     expect(screen.queryByText('生效治理来源')).not.toBeInTheDocument();
     expect(screen.getByText('没有匹配的实例。')).toBeInTheDocument();
+  });
+
+  it('sync button invalidates graph/jobs/accounts only (targeted, no full invalidate)', async () => {
+    const user = userEvent.setup();
+    cdtData = null;
+    governanceData = null;
+    instancesData = [];
+    invalidateQueriesMock.mockClear();
+
+    renderInstances();
+
+    await user.click(screen.getByRole('button', {name: '同步'}));
+
+    await waitFor(() => expect(invalidateQueriesMock).toHaveBeenCalled());
+    const filters = invalidateQueriesMock.mock.calls.map(([arg]) => arg as {queryKey: readonly unknown[]} | undefined);
+    expect(filters).toHaveLength(3);
+    const keys = filters.map((filter) => filter?.queryKey);
+    expect(keys).toEqual(
+      expect.arrayContaining([
+        ['runtime', 'graph'],
+        ['runtime', 'jobs'],
+        ['runtime', 'accounts'],
+      ]),
+    );
+    // Every call is targeted — the previous argument-less full invalidate is gone.
+    for (const filter of filters) {
+      expect(filter?.queryKey).toBeDefined();
+    }
   });
 
   it('renders an instance card per filtered instance', () => {

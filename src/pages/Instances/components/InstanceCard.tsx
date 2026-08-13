@@ -28,7 +28,8 @@ interface TrafficUsageErrorVariant {
  * Per-source variants for the cumulative traffic error notice. cdt-* entries
  * keep the legacy copy/styles; bss-* entries mirror BSS classification
  * (bss-no-data carries billing-delay semantics, bss-permission-error points
- * at bss:DescribeBillList).
+ * at bss:DescribeBillList, bss-api-error points at the DescribeInstanceBill
+ * upgrade path).
  *
  * @when 实例卡片累计流量监测错误分支渲染
  */
@@ -60,6 +61,10 @@ const TRAFFIC_USAGE_ERROR_VARIANTS: Record<string, TrafficUsageErrorVariant> = {
   'bss-network-error': {
     containerClass: 'border-primary/30 bg-primary/[0.06] text-primary',
     fallbackText: 'BSS 接口网络错误（非权限问题），请检查服务器到阿里云 API 的网络连通性',
+  },
+  'bss-api-error': {
+    containerClass: 'border-primary/30 bg-primary/[0.06] text-primary',
+    fallbackText: 'BSS 账单接口不可用，请联系管理员升级到 DescribeInstanceBill',
   },
   'bss-credential-error': {
     containerClass: 'border-recovery-red/30 bg-recovery-red/[0.06] text-recovery-red',

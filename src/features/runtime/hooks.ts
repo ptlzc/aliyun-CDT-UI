@@ -53,6 +53,17 @@ export const runtimeKeys = {
   cdtPermission: (accountId: string) => ['runtime', 'cdt-permission', accountId] as const,
 };
 
+/**
+ * Alert copy per unavailable traffic source; sources without an entry fall
+ * back to the generic unavailable copy in mapGraphToInstances.
+ *
+ * @when 实例累计流量不可用时的节点报警文案
+ */
+const TRAFFIC_UNAVAILABLE_ALERT_COPY: Record<string, string> = {
+  'bss-no-data': '该实例本月暂无 CDT 出账明细（出账有小时级延迟）。',
+  'bss-api-error': 'BSS 账单接口不可用，请联系管理员升级到 DescribeInstanceBill。',
+};
+
 function formatDateLabel(value?: string): string {
   if (!value) {
     return '-';
@@ -192,11 +203,8 @@ export function mapGraphToInstances(graphs: ApiResourceGraph[], accounts: ApiAcc
           alerts.push(`累计流量使用已达配置上限的 ${Math.round((currentTraffic / maximumTraffic) * 100)}%。`);
         }
         if (!usage?.available) {
-          alerts.push(
-            usage?.source === 'bss-no-data'
-              ? '该实例本月暂无 CDT 出账明细（出账有小时级延迟）。'
-              : '该实例的累计流量数据当前不可用。',
-          );
+          const sourceAlert = usage?.source ? TRAFFIC_UNAVAILABLE_ALERT_COPY[usage.source] : undefined;
+          alerts.push(sourceAlert || '该实例的累计流量数据当前不可用。');
         }
         if (metadata.trafficMonitoringEnabled === 'false') {
           alerts.push('该实例的监控已关闭。');

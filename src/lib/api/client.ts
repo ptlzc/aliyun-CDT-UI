@@ -2,6 +2,7 @@ import {client as accountsClient} from './generated/accounts/client.gen';
 import {
   checkCdtPermission as checkCdtPermissionRequest,
   createAccount as createAccountRequest,
+  deleteAccount as deleteAccountRequest,
   listAccounts as listAccountsRequest,
   listRegions as listRegionsRequest,
   updateAccount as updateAccountRequest,
@@ -182,6 +183,10 @@ export async function updateAccount(accountId: string, payload: ApiCreateAccount
     path: {accountId},
     body: payload as AccountBody,
   })) as GeneratedResult<ApiAccount>);
+}
+
+export async function deleteAccount(accountId: string): Promise<void> {
+  await deleteAccountRequest({path: {accountId}});
 }
 
 export async function listGraph(accountId: string): Promise<ApiResourceGraph> {

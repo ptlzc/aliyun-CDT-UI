@@ -67,7 +67,6 @@ function renderAccounts(initialPath = '/accounts') {
   const router = createMemoryRouter(
     [
       {path: '/accounts', element: <AccountsPage />},
-      {path: '/accounts/new', element: <AccountsPage />},
       {path: '/accounts/:accountId', element: <AccountsPage />},
       {path: '*', element: <div>not found</div>},
     ],

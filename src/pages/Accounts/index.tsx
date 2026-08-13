@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react';
 import {AnimatePresence, motion} from 'motion/react';
-import {useLocation, useNavigate} from 'react-router-dom';
+import {useNavigate, useParams} from 'react-router-dom';
 
 import {useCdtPermissionQuery, useRuntimeDashboard} from '../../features/runtime/hooks';
 import type {CloudAccount} from '../../types';
@@ -42,28 +42,23 @@ function makeAccountDraft(): CloudAccount {
  * Accounts page: URL-driven listing ↔ detail/create orchestration.
  *
  * - /accounts          → list mode
- * - /accounts/new      → create form (static segment outranks :accountId)
+ * - /accounts/new      → create form (matched by :accountId with value 'new')
  * - /accounts/:id      → detail mode; unknown ids redirect back to the list
  *
- * The account id is parsed from the pathname (useLocation) instead of
- * useParams: the router context in this React build does not propagate route
- * params on re-render, while the location is always current. Path parsing is
- * equivalent for these fixed-segment routes and works in both production and
- * jsdom.
+ * accountId from the matched /accounts/:accountId route; /accounts/new is
+ * matched with accountId='new'.
  *
  * @when 侧边栏点击「账户管理」或深链 /accounts* 时渲染
  */
 export default function AccountsPage() {
   const runtime = useRuntimeDashboard();
-  const location = useLocation();
+  const {accountId} = useParams();
   const navigate = useNavigate();
 
-  const pathSegments = location.pathname.split('/').filter(Boolean);
-  const accountParam = pathSegments[1];
-  // Mode discrimination: /accounts/new is a static segment; any other id
-  // selects an existing account from the backend list.
-  const isCreating = accountParam === 'new';
-  const detailAccountId = accountParam && accountParam !== 'new' ? accountParam : undefined;
+  // Mode discrimination: /accounts/new is matched by :accountId ('new'); any
+  // other id selects an existing account from the backend list.
+  const isCreating = accountId === 'new';
+  const detailAccountId = accountId && accountId !== 'new' ? accountId : undefined;
   const selectedAccount =
     detailAccountId ? runtime.accounts.find((account) => account.id === detailAccountId) || null : null;
 

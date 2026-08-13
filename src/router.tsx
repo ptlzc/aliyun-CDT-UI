@@ -10,8 +10,8 @@ import WorkflowsPage from './pages/Workflows';
 /**
  * Single routing table for the console. The layout route mounts App as the
  * shell (Sidebar + header + instance drawer + <Outlet/>) and every page is a
- * child. /accounts/new is a static segment and outranks /accounts/:accountId
- * regardless of declaration order.
+ * child. /accounts/new is matched by the :accountId route with value 'new'
+ * (standard create-route pattern); the page discriminates on that value.
  *
  * Instances intentionally has no sub-route: the governance drawer stays
  * mounted by the layout shell and is triggered through the Outlet context.
@@ -24,7 +24,6 @@ export const appRoutes: RouteObject[] = [
       {index: true, element: <Navigate to="/dashboard" replace />},
       {path: 'dashboard', element: <DashboardPage />},
       {path: 'accounts', element: <AccountsPage />},
-      {path: 'accounts/new', element: <AccountsPage />},
       {path: 'accounts/:accountId', element: <AccountsPage />},
       {path: 'instances', element: <InstancesPage />},
       {path: 'workflows', element: <WorkflowsPage />},

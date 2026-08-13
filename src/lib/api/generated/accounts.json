@@ -220,7 +220,7 @@
         "additionalProperties": false,
         "properties": {
           "instanceCount": {
-            "format": "int32",
+            "format": "int64",
             "type": "integer"
           },
           "localName": {
@@ -1993,6 +1993,37 @@
       }
     },
     "/api/accounts/{accountId}": {
+      "delete": {
+        "operationId": "deleteAccount",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "tags": [
+          "accounts"
+        ]
+      },
       "get": {
         "operationId": "getAccount",
         "parameters": [

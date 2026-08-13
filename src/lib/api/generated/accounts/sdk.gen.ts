@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CheckCdtPermissionData, CheckCdtPermissionErrors, CheckCdtPermissionResponses, CreateAccountData, CreateAccountErrors, CreateAccountResponses, GetAccountData, GetAccountErrors, GetAccountResponses, ListAccountsData, ListAccountsErrors, ListAccountsResponses, ListRegionsData, ListRegionsErrors, ListRegionsForAccountData, ListRegionsForAccountErrors, ListRegionsForAccountResponses, ListRegionsResponses, UpdateAccountData, UpdateAccountErrors, UpdateAccountResponses, ValidateAccountByIdData, ValidateAccountByIdErrors, ValidateAccountByIdResponses, ValidateAccountData, ValidateAccountErrors, ValidateAccountResponses } from './types.gen';
+import type { CheckCdtPermissionData, CheckCdtPermissionErrors, CheckCdtPermissionResponses, CreateAccountData, CreateAccountErrors, CreateAccountResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, GetAccountData, GetAccountErrors, GetAccountResponses, ListAccountsData, ListAccountsErrors, ListAccountsResponses, ListRegionsData, ListRegionsErrors, ListRegionsForAccountData, ListRegionsForAccountErrors, ListRegionsForAccountResponses, ListRegionsResponses, UpdateAccountData, UpdateAccountErrors, UpdateAccountResponses, ValidateAccountByIdData, ValidateAccountByIdErrors, ValidateAccountByIdResponses, ValidateAccountData, ValidateAccountErrors, ValidateAccountResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -46,6 +46,8 @@ export const validateAccount = <ThrowOnError extends boolean = false>(options: O
         ...options.headers
     }
 });
+
+export const deleteAccount = <ThrowOnError extends boolean = false>(options: Options<DeleteAccountData, ThrowOnError>): RequestResult<DeleteAccountResponses, DeleteAccountErrors, ThrowOnError> => (options.client ?? client).delete<DeleteAccountResponses, DeleteAccountErrors, ThrowOnError>({ url: '/api/accounts/{accountId}', ...options });
 
 export const getAccount = <ThrowOnError extends boolean = false>(options: Options<GetAccountData, ThrowOnError>): RequestResult<GetAccountResponses, GetAccountErrors, ThrowOnError> => (options.client ?? client).get<GetAccountResponses, GetAccountErrors, ThrowOnError>({ url: '/api/accounts/{accountId}', ...options });
 

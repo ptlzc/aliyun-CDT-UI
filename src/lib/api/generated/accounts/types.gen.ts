@@ -592,6 +592,33 @@ export type ValidateAccountResponses = {
 
 export type ValidateAccountResponse = ValidateAccountResponses[keyof ValidateAccountResponses];
 
+export type DeleteAccountData = {
+    body?: never;
+    path: {
+        accountId: string;
+    };
+    query?: never;
+    url: '/api/accounts/{accountId}';
+};
+
+export type DeleteAccountErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type DeleteAccountError = DeleteAccountErrors[keyof DeleteAccountErrors];
+
+export type DeleteAccountResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteAccountResponse = DeleteAccountResponses[keyof DeleteAccountResponses];
+
 export type GetAccountData = {
     body?: never;
     path: {

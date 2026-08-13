@@ -60,6 +60,7 @@ export type AccountListResponse = {
 };
 
 export type AccountRegion = {
+    instanceCount?: number;
     localName?: string;
     regionId: string;
 };

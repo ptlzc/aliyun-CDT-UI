@@ -5,7 +5,7 @@ import {AnimatePresence, motion} from 'motion/react';
 
 import Sidebar from './components/Sidebar';
 import DashboardPage from './pages/Dashboard';
-import AccountsView from './components/AccountsView';
+import AccountsPage from './pages/Accounts';
 import InstancesView from './components/InstancesView';
 import InstanceGovernanceDrawer from './components/InstanceGovernanceDrawer';
 import SettingsPage from './pages/Settings';
@@ -95,7 +95,7 @@ export default function App() {
 
             {activeTab === 'accounts' && (
               <motion.div key="accounts" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }}>
-                <AccountsView
+                <AccountsPage
                   accounts={runtime.accounts}
                   selectedAccount={selectedAccount}
                   setSelectedAccount={(account) => setSelectedAccountId(account?.id || null)}

@@ -1,11 +1,12 @@
 import {useState} from 'react';
+import {MemoryRouter} from 'react-router-dom';
 import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
-import AccountsView from './AccountsView';
-import type {CloudAccount} from '../types';
-import type {ApiAccountRegion} from '../lib/api/client';
+import AccountsPage from '../index';
+import type {CloudAccount} from '../../../types';
+import type {ApiAccountRegion} from '../../../lib/api/client';
 
 const accountA: CloudAccount = {
   id: 'acc-1',
@@ -31,31 +32,35 @@ const mocks = vi.hoisted(() => ({
   listRegions: vi.fn(),
 }));
 
-vi.mock('../features/runtime/hooks', () => ({
+vi.mock('../../../features/runtime/hooks', () => ({
   useSaveAccountMutation: () => ({mutateAsync: mocks.saveMutate, isPending: false}),
   useCdtPermissionQuery: () => ({data: undefined, isLoading: false}),
   useValidateAccountMutation: () => ({mutateAsync: vi.fn()}),
 }));
 
-vi.mock('../lib/api/client', () => ({
+vi.mock('../../../lib/api/client', () => ({
   listRegions: mocks.listRegions,
 }));
 
 // Mirrors App.tsx wiring: the parent stores only the account id and re-derives
-// the account from the backend-fetched accounts list.
+// the account from the backend-fetched accounts list. The harness runs inside
+// a MemoryRouter so router context (future URL-driven selection) is available
+// to the page, matching production routing behavior.
 function AccountsHarness({accounts}: {accounts: CloudAccount[]}) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedAccount = accounts.find((account) => account.id === selectedId) || null;
   return (
-    <AccountsView
-      accounts={accounts}
-      selectedAccount={selectedAccount}
-      setSelectedAccount={(account) => setSelectedId(account?.id || null)}
-    />
+    <MemoryRouter>
+      <AccountsPage
+        accounts={accounts}
+        selectedAccount={selectedAccount}
+        setSelectedAccount={(account) => setSelectedId(account?.id || null)}
+      />
+    </MemoryRouter>
   );
 }
 
-describe('AccountsView create flow', () => {
+describe('AccountsPage create flow', () => {
   beforeEach(() => {
     mocks.saveMutate.mockReset();
     mocks.listRegions.mockReset();
@@ -160,7 +165,7 @@ describe('AccountsView create flow', () => {
   });
 });
 
-describe('AccountsView required-field validation', () => {
+describe('AccountsPage required-field validation', () => {
   // Opens the create form only; fields are filled per-test so each case
   // controls exactly what state the save handler sees.
   async function openCreateForm() {
@@ -225,7 +230,7 @@ describe('AccountsView required-field validation', () => {
   });
 });
 
-describe('AccountsView managed region select-all and instance counts', () => {
+describe('AccountsPage managed region select-all and instance counts', () => {
   // Opens the create form with credentials and loads the SDK-fetched regions,
   // mirroring the existing create-flow tests.
   async function openCreateWithRegions(regions: ApiAccountRegion[]) {
@@ -339,7 +344,7 @@ describe('AccountsView managed region select-all and instance counts', () => {
   });
 });
 
-describe('AccountsView edit flow', () => {
+describe('AccountsPage edit flow', () => {
   it('backfills managed regions from the stored string and keeps no owner field', async () => {
     const user = userEvent.setup();
     render(<AccountsHarness accounts={[accountA]} />);

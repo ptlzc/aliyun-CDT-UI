@@ -2,12 +2,13 @@ import {useEffect, useState} from 'react';
 import {AnimatePresence, motion} from 'motion/react';
 import {useNavigate, useParams} from 'react-router-dom';
 
-import {useCdtPermissionQuery, useRuntimeDashboard} from '../../features/runtime/hooks';
+import {useCdtPermissionQuery, useDeleteAccountMutation, useRuntimeDashboard} from '../../features/runtime/hooks';
 import type {CloudAccount} from '../../types';
 import AccountList from './components/AccountList';
 import AccountDetailEditor from './components/AccountDetailEditor';
 import AuditLogModal from './components/AuditLogModal';
 import AuthPolicyModal from './components/AuthPolicyModal';
+import ConfirmDeleteModal from './components/ConfirmDeleteModal';
 
 /**
  * Synthetic draft for the create flow. The parent re-derives selectedAccount
@@ -92,6 +93,10 @@ export default function AccountsPage() {
   // Account permission authorization modal
   const [showAuthModal, setShowAuthModal] = useState(false);
 
+  // Account deletion: destructive confirmation driven by the list trash button
+  const [accountToDelete, setAccountToDelete] = useState<CloudAccount | null>(null);
+  const deleteAccountMutation = useDeleteAccountMutation();
+
   // The account driving the details view: the create draft while creating,
   // otherwise the parent-selected account.
   const displayAccount = isCreating ? createDraft : selectedAccount;
@@ -135,6 +140,7 @@ export default function AccountsPage() {
               accounts={runtime.accounts}
               onCreate={handleCreateClick}
               onEdit={(acc) => navigate(`/accounts/${acc.id}`)}
+              onDelete={setAccountToDelete}
             />
           </motion.div>
         ) : (
@@ -178,6 +184,27 @@ export default function AccountsPage() {
           account={selectedAccount}
           cdtPermission={cdtPermissionQuery.data}
           onClose={() => setShowAuthModal(false)}
+        />
+      )}
+
+      {/* Account Deletion Confirmation Modal */}
+      {accountToDelete && (
+        <ConfirmDeleteModal
+          account={accountToDelete}
+          isPending={deleteAccountMutation.isPending}
+          onConfirm={() => {
+            deleteAccountMutation.mutate(accountToDelete.id, {
+              onSuccess: () => {
+                // Fallback: invalidateQueries already refreshed the list; if a
+                // dangling detail view ever survives the refetch, the
+                // accountNotFound effect redirects back — navigate here is a
+                // belt-and-braces landing on the listing.
+                setAccountToDelete(null);
+                navigate('/accounts');
+              },
+            });
+          }}
+          onClose={() => setAccountToDelete(null)}
         />
       )}
     </div>

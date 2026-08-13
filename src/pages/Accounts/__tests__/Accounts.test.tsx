@@ -1,5 +1,5 @@
 import {createMemoryRouter, RouterProvider} from 'react-router-dom';
-import {render, screen} from '@testing-library/react';
+import {render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
@@ -444,10 +444,13 @@ describe('AccountsPage delete account flow', () => {
 
   // The delete mutation mock emulates the backend refetch: on success the
   // account disappears from the runtime list, mirroring what
-  // invalidateQueries(['runtime', 'accounts']) produces in production.
+  // invalidateQueries(['runtime', 'accounts']) produces in production. It also
+  // invokes the per-call onSuccess like real React Query mutations do, so the
+  // page closes the dialog and runs its post-delete navigation.
   function mockDeleteRefreshesList() {
-    mocks.deleteMutate.mockImplementation(() => {
+    mocks.deleteMutate.mockImplementation((_accountId: string, options?: {onSuccess?: () => void}) => {
       runtimeAccounts = runtimeAccounts.filter((acc) => acc.id !== accountA.id);
+      options?.onSuccess?.();
       return Promise.resolve();
     });
   }
@@ -458,10 +461,11 @@ describe('AccountsPage delete account flow', () => {
 
     await user.click(screen.getByRole('button', {name: '删除账户'}));
 
-    expect(screen.getByText(/确认删除账户/)).toBeInTheDocument();
-    expect(screen.getByText('Account A')).toBeInTheDocument();
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText(/确认删除账户/)).toBeInTheDocument();
+    expect(within(dialog).getByText('Account A')).toBeInTheDocument();
     // Matching the name is mandatory: the confirm action starts disabled
-    expect(screen.getByRole('button', {name: '确认删除'})).toBeDisabled();
+    expect(within(dialog).getByRole('button', {name: '确认删除'})).toBeDisabled();
   });
 
   it('keeps confirm disabled until the typed name matches the account name', async () => {
@@ -495,7 +499,8 @@ describe('AccountsPage delete account flow', () => {
     await user.click(screen.getByRole('button', {name: '确认删除'}));
 
     expect(mocks.deleteMutate).toHaveBeenCalledTimes(1);
-    expect(mocks.deleteMutate).toHaveBeenCalledWith('acc-1');
+    // React Query passes the per-call options (onSuccess) alongside the id
+    expect(mocks.deleteMutate).toHaveBeenCalledWith('acc-1', expect.objectContaining({onSuccess: expect.any(Function)}));
     // Dialog closes and the refreshed list no longer contains the account
     expect(screen.queryByRole('button', {name: '确认删除'})).not.toBeInTheDocument();
     expect(await screen.findByRole('heading', {name: /账户管理/})).toBeInTheDocument();

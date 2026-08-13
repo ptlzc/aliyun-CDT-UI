@@ -7,15 +7,17 @@ interface AccountListProps {
   accounts: CloudAccount[];
   onCreate: () => void;
   onEdit: (account: CloudAccount) => void;
+  onDelete: (account: CloudAccount) => void;
 }
 
 /**
  * Accounts listing: search, paginated table and the create / sync entry
- * points. Row clicks open the detail editor via `onEdit`.
+ * points. Row clicks open the detail editor via `onEdit`; the trash button
+ * asks the parent to open the confirmed-deletion dialog via `onDelete`.
  *
  * @when /accounts 列表模式渲染时
  */
-export default function AccountList({accounts, onCreate, onEdit}: AccountListProps) {
+export default function AccountList({accounts, onCreate, onEdit, onDelete}: AccountListProps) {
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -136,9 +138,12 @@ export default function AccountList({accounts, onCreate, onEdit}: AccountListPro
                           <Edit className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(acc);
+                          }}
                           className="p-1.5 text-on-surface-variant hover:text-recovery-red hover:bg-emphasis-layer rounded transition-colors"
-                          title="删除能力未开放"
+                          title="删除账户"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

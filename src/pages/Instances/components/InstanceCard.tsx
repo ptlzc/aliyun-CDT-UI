@@ -17,6 +17,60 @@ interface InstanceCardProps {
   onManageInstance: (instance: ECSInstance) => void;
 }
 
+interface TrafficUsageErrorVariant {
+  /** Tailwind classes for the notice container (credential/network/no-data/permission). */
+  containerClass: string;
+  /** Copy shown when the backend did not include an errorReason. */
+  fallbackText: string;
+}
+
+/**
+ * Per-source variants for the cumulative traffic error notice. cdt-* entries
+ * keep the legacy copy/styles; bss-* entries mirror BSS classification
+ * (bss-no-data carries billing-delay semantics, bss-permission-error points
+ * at bss:DescribeBillList).
+ *
+ * @when 实例卡片累计流量监测错误分支渲染
+ */
+const TRAFFIC_USAGE_ERROR_VARIANTS: Record<string, TrafficUsageErrorVariant> = {
+  'cdt-error': {
+    containerClass: 'border-signal-amber/30 bg-signal-amber/[0.06] text-signal-amber',
+    fallbackText: 'CDT 流量查询无权限，请在账号管理中为该账号授权 cdt:ListCdtInternetTraffic',
+  },
+  'cdt-permission-error': {
+    containerClass: 'border-signal-amber/30 bg-signal-amber/[0.06] text-signal-amber',
+    fallbackText: 'CDT 流量查询无权限，请在账号管理中为该账号授权 cdt:ListCdtInternetTraffic',
+  },
+  'cdt-network-error': {
+    containerClass: 'border-primary/30 bg-primary/[0.06] text-primary',
+    fallbackText: 'CDT 接口网络错误（非权限问题），请检查服务器到阿里云 API 的网络连通性',
+  },
+  'cdt-credential-error': {
+    containerClass: 'border-recovery-red/30 bg-recovery-red/[0.06] text-recovery-red',
+    fallbackText: '凭据验证失败，请检查 AccessKey Secret 是否正确',
+  },
+  'cdt-no-data': {
+    containerClass: 'border-hairline-divider bg-emphasis-layer text-secondary-ink',
+    fallbackText: '该实例暂无 CDT 累计流量数据',
+  },
+  'bss-permission-error': {
+    containerClass: 'border-signal-amber/30 bg-signal-amber/[0.06] text-signal-amber',
+    fallbackText: '缺少 bss:DescribeBillList 权限，请在账号管理中为该账号授权',
+  },
+  'bss-network-error': {
+    containerClass: 'border-primary/30 bg-primary/[0.06] text-primary',
+    fallbackText: 'BSS 接口网络错误（非权限问题），请检查服务器到阿里云 API 的网络连通性',
+  },
+  'bss-credential-error': {
+    containerClass: 'border-recovery-red/30 bg-recovery-red/[0.06] text-recovery-red',
+    fallbackText: '凭据验证失败，请检查 AccessKey Secret 是否正确',
+  },
+  'bss-no-data': {
+    containerClass: 'border-hairline-divider bg-emphasis-layer text-secondary-ink',
+    fallbackText: '该实例本月暂无 CDT 出账明细（出账有小时级延迟）',
+  },
+};
+
 /**
  * Single ECS instance bento card: identity, specs, traffic usage / quota bar,
  * alerts, power error and the action row (power / VNC / state / manage).
@@ -69,6 +123,11 @@ export default function InstanceCard({
 
   const rateDisplayStr =
     instance.trafficRate === null ? '不可用' : `${instance.trafficRate} ${instance.trafficRateUnit || 'Mbps'}`;
+
+  // Unknown / successful sources (bss-cumulative, …) fall through to the progress bar.
+  const trafficUsageErrorVariant = instance.trafficUsageSource
+    ? TRAFFIC_USAGE_ERROR_VARIANTS[instance.trafficUsageSource]
+    : undefined;
 
   return (
     <div
@@ -171,29 +230,15 @@ export default function InstanceCard({
 
         {/* Traffic remaining display progress bar */}
         <div className="mt-1 flex flex-col gap-1">
-          {instance.trafficUsageSource === 'cdt-error' || instance.trafficUsageSource === 'cdt-permission-error' || instance.trafficUsageSource === 'cdt-network-error' || instance.trafficUsageSource === 'cdt-credential-error' || instance.trafficUsageSource === 'cdt-no-data' ? (
+          {trafficUsageErrorVariant ? (
             <>
               <span className="block font-sans text-[10px] font-bold uppercase tracking-wider text-signal-amber">
                 累计流量监测
               </span>
-              <div className={`rounded-md border px-2 py-1.5 text-[10px] leading-relaxed ${
-                instance.trafficUsageSource === 'cdt-network-error'
-                  ? 'border-primary/30 bg-primary/[0.06] text-primary'
-                  : instance.trafficUsageSource === 'cdt-credential-error'
-                    ? 'border-recovery-red/30 bg-recovery-red/[0.06] text-recovery-red'
-                    : instance.trafficUsageSource === 'cdt-no-data'
-                      ? 'border-hairline-divider bg-emphasis-layer text-secondary-ink'
-                      : 'border-signal-amber/30 bg-signal-amber/[0.06] text-signal-amber'
-              }`}>
-                {instance.trafficUsageErrorReason || (
-                  instance.trafficUsageSource === 'cdt-network-error'
-                    ? 'CDT 接口网络错误（非权限问题），请检查服务器到阿里云 API 的网络连通性'
-                    : instance.trafficUsageSource === 'cdt-credential-error'
-                      ? '凭据验证失败，请检查 AccessKey Secret 是否正确'
-                      : instance.trafficUsageSource === 'cdt-no-data'
-                        ? '该实例暂无 CDT 累计流量数据'
-                        : 'CDT 流量查询无权限，请在账号管理中为该账号授权 cdt:ListCdtInternetTraffic'
-                )}
+              <div
+                className={`rounded-md border px-2 py-1.5 text-[10px] leading-relaxed ${trafficUsageErrorVariant.containerClass}`}
+              >
+                {instance.trafficUsageErrorReason || trafficUsageErrorVariant.fallbackText}
               </div>
             </>
           ) : (

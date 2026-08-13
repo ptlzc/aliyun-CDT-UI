@@ -172,7 +172,7 @@ function normalizeInstanceStatus(node: ApiResourceGraph['nodes'][number], metada
   return 'Running';
 }
 
-function mapGraphToInstances(graphs: ApiResourceGraph[], accounts: ApiAccount[], policiesByAccount: Record<string, ApiTrafficPolicy[]>): ECSInstance[] {
+export function mapGraphToInstances(graphs: ApiResourceGraph[], accounts: ApiAccount[], policiesByAccount: Record<string, ApiTrafficPolicy[]>): ECSInstance[] {
   return graphs.flatMap((graph) => {
     const account = accounts.find((item) => item.id === graph.accountId);
     const accountName = account?.name || graph.accountId;
@@ -192,7 +192,11 @@ function mapGraphToInstances(graphs: ApiResourceGraph[], accounts: ApiAccount[],
           alerts.push(`累计流量使用已达配置上限的 ${Math.round((currentTraffic / maximumTraffic) * 100)}%。`);
         }
         if (!usage?.available) {
-          alerts.push('该实例的累计流量数据当前不可用。');
+          alerts.push(
+            usage?.source === 'bss-no-data'
+              ? '该实例本月暂无 CDT 出账明细（出账有小时级延迟）。'
+              : '该实例的累计流量数据当前不可用。',
+          );
         }
         if (metadata.trafficMonitoringEnabled === 'false') {
           alerts.push('该实例的监控已关闭。');

@@ -171,8 +171,8 @@ export default function InstanceCard({
           <h3 className="flex items-center gap-2 text-sm font-bold text-primary-ink">
             {instance.name}
             {instance.regionId && (
-              <span className="rounded bg-emphasis-layer px-1.5 py-0.5 text-[10px] font-medium text-secondary-ink">
-                [{regionNameZh(instance.regionId)}]
+              <span className="rounded-full border border-hairline-divider bg-section-layer px-2 py-0.5 text-[10px] font-medium text-secondary-ink">
+                {regionNameZh(instance.regionId)}
               </span>
             )}
           </h3>
@@ -189,7 +189,7 @@ export default function InstanceCard({
             </span>
           ) : (
             <span
-              className={`inline-flex items-center gap-1.5 rounded border px-2.5 py-1 text-[10px] font-bold ${
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold ${
                 effectiveStatus === 'Running'
                   ? 'border-[#C8E6C9] bg-[#E8F5E9] text-[#1B5E20]'
                   : effectiveStatus === 'Attention'

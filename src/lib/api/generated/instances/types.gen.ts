@@ -92,6 +92,7 @@ export type ActionAudit = {
 
 export type ActionAuditListResponse = {
     items: Array<ActionAudit> | null;
+    total: number;
 };
 
 export type BootstrapNetworkBody = {

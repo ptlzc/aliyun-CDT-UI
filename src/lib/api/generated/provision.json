@@ -339,10 +339,15 @@
               "array",
               "null"
             ]
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
           }
         },
         "required": [
-          "items"
+          "items",
+          "total"
         ],
         "type": "object"
       },

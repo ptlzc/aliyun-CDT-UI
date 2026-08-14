@@ -92,6 +92,7 @@ export type ActionAudit = {
 
 export type ActionAuditListResponse = {
     items: Array<ActionAudit> | null;
+    total: number;
 };
 
 export type BootstrapNetworkBody = {
@@ -560,6 +561,7 @@ export type ListTrafficAuditsData = {
         action?: string;
         targetId?: string;
         limit?: number;
+        offset?: number;
     };
     url: '/api/accounts/{accountId}/traffic-audits';
 };

@@ -111,6 +111,34 @@ describe('InstanceCard bss-* cumulative traffic usage branches', () => {
   });
 });
 
+describe('InstanceCard cdt-region-shared branch', () => {
+  it('renders the region-shared fallback copy when the backend omitted the errorReason', () => {
+    renderCard({trafficUsageSource: 'cdt-region-shared'});
+
+    expect(screen.getByText('该地域多个 EIP 共用流量, 无法按实例拆分')).toBeInTheDocument();
+  });
+
+  it('shows the backend errorReason verbatim when present', () => {
+    renderCard({
+      trafficUsageSource: 'cdt-region-shared',
+      trafficUsageErrorReason: '该地域有多个 EIP 共用流量, 无法按实例拆分（地域合计 51.5 GB）',
+    });
+
+    expect(screen.getByText('该地域有多个 EIP 共用流量, 无法按实例拆分（地域合计 51.5 GB）')).toBeInTheDocument();
+  });
+
+  it('renders the region-shared notice with the neutral no-data style, not a permission/network error', () => {
+    renderCard({trafficUsageSource: 'cdt-region-shared'});
+
+    const notice = screen.getByText('该地域多个 EIP 共用流量, 无法按实例拆分').closest('div.rounded-md');
+    expect(notice?.className).toContain('bg-emphasis-layer');
+    expect(notice?.className).not.toContain('recovery-red');
+    expect(notice?.className).not.toContain('border-primary');
+    expect(screen.queryByRole('button', {name: /点击查看授权脚本/})).not.toBeInTheDocument();
+    expect(screen.queryByText(/cdt:ListCdtInternetTraffic/)).not.toBeInTheDocument();
+  });
+});
+
 describe('InstanceCard legacy cdt-* compatibility', () => {
   it('still renders the legacy copy for cdt-no-data', () => {
     renderCard({trafficUsageSource: 'cdt-no-data'});

@@ -92,6 +92,19 @@ describe('mapGraphToInstances traffic usage mapping', () => {
     expect(instance.alerts).toContain('BSS 账单接口不可用，请联系管理员升级到 DescribeInstanceBill。');
   });
 
+  it('maps a cdt-region-shared graph node to the general region-shared alert (not permission/network)', () => {
+    const [instance] = mapGraphToInstances(
+      [graphWith(ecsNode('i-1', usageMeasurement('cdt-region-shared', false, 0)))],
+      [account],
+      {},
+    );
+
+    expect(instance.trafficUsageSource).toBe('cdt-region-shared');
+    expect(instance.trafficUsage).toBeNull();
+    expect(instance.alerts).toContain('该地域多个 EIP 共用流量, 无法按实例拆分。');
+    expect(instance.alerts).not.toContain('该实例的累计流量数据当前不可用。');
+  });
+
   it('keeps the generic unavailable alert for non-bss error sources', () => {
     const [instance] = mapGraphToInstances(
       [graphWith(ecsNode('i-1', usageMeasurement('cdt-network-error', false, 0)))],

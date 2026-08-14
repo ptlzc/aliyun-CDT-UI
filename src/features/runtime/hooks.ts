@@ -57,12 +57,16 @@ export const runtimeKeys = {
 /**
  * Alert copy per unavailable traffic source; sources without an entry fall
  * back to the generic unavailable copy in mapGraphToInstances.
+ * cdt-region-shared stays a plain informational notice (region-wide eip
+ * traffic cannot be split per instance) — never misreported as a
+ * permission/network error.
  *
  * @when 实例累计流量不可用时的节点报警文案
  */
 const TRAFFIC_UNAVAILABLE_ALERT_COPY: Record<string, string> = {
   'bss-no-data': '该实例本月暂无 CDT 出账明细（出账有小时级延迟）。',
   'bss-api-error': 'BSS 账单接口不可用，请联系管理员升级到 DescribeInstanceBill。',
+  'cdt-region-shared': '该地域多个 EIP 共用流量, 无法按实例拆分。',
 };
 
 function formatDateLabel(value?: string): string {

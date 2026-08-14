@@ -30,7 +30,9 @@ interface TrafficUsageErrorVariant {
 
 /**
  * Per-source variants for the cumulative traffic error notice. cdt-* entries
- * keep the legacy copy/styles; bss-* entries mirror BSS classification
+ * keep the legacy copy/styles (cdt-region-shared carries the cannot-split
+ * semantics for regions where several EIPs share eip traffic); bss-* entries
+ * mirror BSS classification
  * (bss-no-data carries billing-delay semantics, bss-permission-error points
  * at bss:QueryInstanceBill, bss-api-error points at the DescribeInstanceBill
  * upgrade path). Both permission variants render in recovery-red and open the
@@ -39,6 +41,10 @@ interface TrafficUsageErrorVariant {
  * @when 实例卡片累计流量监测错误分支渲染
  */
 const TRAFFIC_USAGE_ERROR_VARIANTS: Record<string, TrafficUsageErrorVariant> = {
+  'cdt-region-shared': {
+    containerClass: 'border-hairline-divider bg-emphasis-layer text-secondary-ink',
+    fallbackText: '该地域多个 EIP 共用流量, 无法按实例拆分',
+  },
   'cdt-error': {
     containerClass: 'border-signal-amber/30 bg-signal-amber/[0.06] text-signal-amber',
     fallbackText: 'CDT 流量查询无权限，请在账号管理中为该账号授权 cdt:ListCdtInternetTraffic',

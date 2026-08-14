@@ -46,6 +46,7 @@ import {
   validateAccount,
 } from '@/src/lib/api/client';
 import type {CloudAccount, DashboardSummary, ECSInstance, WorkflowRun, WorkflowTask} from '@/src/types';
+import {formatDateLabel} from '@/src/utils/dateFormat';
 
 export const runtimeKeys = {
   accounts: ['runtime', 'accounts'] as const,
@@ -72,20 +73,6 @@ const TRAFFIC_UNAVAILABLE_ALERT_COPY: Record<string, string> = {
   'bss-api-error': 'BSS 账单接口不可用，请联系管理员升级到 DescribeInstanceBill。',
   'cdt-region-shared': '该地域多个 EIP 共用流量, 无法按实例拆分。',
 };
-
-function formatDateLabel(value?: string): string {
-  if (!value) {
-    return '-';
-  }
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-  // toISOString() emits 'YYYY-MM-DDTHH:mm:ss.sssZ' — strip seconds and the
-  // millisecond fraction whatever its length ('.000Z', '.930Z', …) so real
-  // timestamps render as a clean 'YYYY-MM-DD HH:mm UTC'.
-  return parsed.toISOString().replace('T', ' ').replace(/:\d{2}\.\d{3}Z$/, ' UTC');
-}
 
 function relativeTimeLabel(value?: string): string {
   if (!value) {

@@ -301,6 +301,9 @@
           "policyId": {
             "type": "string"
           },
+          "regionId": {
+            "type": "string"
+          },
           "status": {
             "type": "string"
           },

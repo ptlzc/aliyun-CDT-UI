@@ -83,6 +83,7 @@ export type ActionAudit = {
     id: string;
     message?: string;
     policyId?: string;
+    regionId?: string;
     status: string;
     targetId?: string;
     triggeredAt: string;

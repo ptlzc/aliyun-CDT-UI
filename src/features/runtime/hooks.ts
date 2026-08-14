@@ -122,6 +122,7 @@ export function mapAccountToViewModel(account: ApiAccount): CloudAccount {
       maximumTrafficGb: 200,
       overflowAction: 'notify',
       monitoringEnabled: true,
+      overflowThresholdGb: 0,
     },
   };
 }

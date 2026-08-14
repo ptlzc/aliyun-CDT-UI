@@ -2,6 +2,8 @@ export interface TrafficDefaults {
   maximumTrafficGb: number;
   overflowAction: string;
   monitoringEnabled: boolean;
+  /** 溢出停止阈值 (GB); 缺省/0 = 未配置, 按上限判定 */
+  overflowThresholdGb?: number;
 }
 
 export interface CloudAccount {

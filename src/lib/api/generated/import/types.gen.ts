@@ -180,6 +180,7 @@ export type EffectiveTrafficGovernance = {
     maximumTrafficGb: number;
     monitoringEnabled: boolean;
     overflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    overflowThresholdGb: number;
     sourceLayer: string;
     underflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
 };
@@ -422,6 +423,7 @@ export type TrafficGovernanceDefaults = {
     maximumTrafficGb: number;
     monitoringEnabled: boolean;
     overflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    overflowThresholdGb: number;
     underflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
 };
 
@@ -429,6 +431,7 @@ export type TrafficGovernanceDefaultsRequest = {
     maximumTrafficGb: number;
     monitoringEnabled?: boolean;
     overflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    overflowThresholdGb?: number;
     underflowAction?: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
 };
 

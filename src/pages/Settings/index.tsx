@@ -13,6 +13,10 @@ import type {ApiRegionGroup} from '../../lib/api/client';
 import RegionGroupEditor, {type RegionGroupEditorPayload} from '../../components/RegionGroupEditor';
 import {ACTION_OPTIONS, actionLabelZh, type TrafficOverflowAction} from '../../utils/actionLabels';
 
+/**
+ * 系统设置页: 平台默认治理参数 (含溢出阈值) + 地区组规则编排.
+ * @when 侧边栏点击「系统设置」时渲染
+ */
 export default function SettingsPage() {
   const runtime = useRuntimeDashboard();
   const defaults = runtime.platformDefaults;
@@ -21,6 +25,7 @@ export default function SettingsPage() {
   const applyMutation = useApplyPlatformDefaultsMutation();
   const [maximumTrafficGb, setMaximumTrafficGb] = useState(200);
   const [overflowAction, setOverflowAction] = useState<TrafficOverflowAction>('notify');
+  const [overflowThresholdGb, setOverflowThresholdGb] = useState<number | ''>('');
   const [monitoringEnabled, setMonitoringEnabled] = useState(true);
 
   const regionGroupsQuery = useRegionGroupsQuery();
@@ -36,6 +41,7 @@ export default function SettingsPage() {
     }
     setMaximumTrafficGb(defaults.maximumTrafficGb);
     setOverflowAction(defaults.overflowAction as TrafficOverflowAction);
+    setOverflowThresholdGb(defaults.overflowThresholdGb > 0 ? defaults.overflowThresholdGb : '');
     setMonitoringEnabled(defaults.monitoringEnabled);
   }, [defaults]);
 
@@ -92,9 +98,22 @@ export default function SettingsPage() {
               onChange={(event) => setOverflowAction(event.target.value as TrafficOverflowAction)}
               className="rounded border border-hairline-divider px-3 py-2"
             >
-              <option value="notify">通知</option>
-              <option value="keepalive-job">保活任务</option>
+              {ACTION_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
+          </label>
+
+          <label className="flex flex-col gap-2 text-sm">
+            <span className="font-medium text-primary-ink">溢出停止阈值（GB）</span>
+            <input
+              type="number"
+              min={1}
+              value={overflowThresholdGb}
+              onChange={(event) => setOverflowThresholdGb(event.target.value === '' ? '' : Number(event.target.value))}
+              placeholder="空则按上限判定"
+              className="rounded border border-hairline-divider px-3 py-2"
+            />
           </label>
         </div>
 
@@ -115,6 +134,7 @@ export default function SettingsPage() {
               saveMutation.mutate({
                 maximumTrafficGb,
                 overflowAction,
+                overflowThresholdGb: overflowThresholdGb === '' ? undefined : overflowThresholdGb,
                 monitoringEnabled,
               })
             }

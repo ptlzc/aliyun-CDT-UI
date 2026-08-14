@@ -191,3 +191,129 @@ describe('InstanceCard legacy cdt-* compatibility', () => {
     expect(notice.className).toContain('recovery-red');
   });
 });
+
+describe('InstanceCard IP copy layout', () => {
+  let writeTextMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    writeTextMock = vi.fn().mockResolvedValue(undefined);
+    // jsdom does not implement navigator.clipboard; stub it per test so the
+    // writeText spy stays fresh for assertions.
+    Object.defineProperty(navigator, 'clipboard', {
+      value: {writeText: writeTextMock},
+      configurable: true,
+    });
+  });
+
+  it('does not render the 已绑定 badge next to the public IP', () => {
+    renderCard();
+
+    expect(screen.queryByText(/已绑定/)).not.toBeInTheDocument();
+  });
+
+  it('renders public and private IPs side by side in two equal cells', () => {
+    renderCard();
+
+    const grid = screen.getByText('1.1.1.1').closest('div.grid-cols-2');
+    expect(grid).not.toBeNull();
+    expect(grid?.className).toContain('gap-2');
+    // Both IPs share the same two-column grid container.
+    expect(screen.getByText('10.0.0.1').closest('div.grid-cols-2')).toBe(grid);
+
+    const cells = Array.from(grid!.children);
+    expect(cells).toHaveLength(2);
+    expect(cells[0].textContent).toContain('1.1.1.1');
+    expect(cells[1].textContent).toContain('10.0.0.1');
+
+    const publicBox = screen.getByText('1.1.1.1').closest('.rounded.border');
+    expect(publicBox?.className).toContain('font-mono');
+    expect(publicBox?.className).toContain('text-xs');
+    expect(publicBox?.className).toContain('px-2.5');
+    expect(publicBox?.className).toContain('py-1');
+  });
+
+  it('keeps the monitoring state label on the IP section header row', () => {
+    renderCard();
+    expect(screen.getByText('监控: 开启')).toBeInTheDocument();
+
+    renderCard({monitoringEnabled: false});
+    expect(screen.getByText('监控: 关闭')).toBeInTheDocument();
+  });
+
+  it('copies the public IP and shows success feedback', async () => {
+    const user = userEvent.setup();
+    renderCard();
+
+    await user.click(screen.getByRole('button', {name: '复制公网 IP'}));
+
+    expect(writeTextMock).toHaveBeenCalledWith('1.1.1.1');
+    expect(screen.getByRole('button', {name: '已复制公网 IP'})).toBeInTheDocument();
+  });
+
+  it('copies the private IP and shows success feedback', async () => {
+    const user = userEvent.setup();
+    renderCard();
+
+    await user.click(screen.getByRole('button', {name: '复制内网 IP'}));
+
+    expect(writeTextMock).toHaveBeenCalledWith('10.0.0.1');
+    expect(screen.getByRole('button', {name: '已复制内网 IP'})).toBeInTheDocument();
+  });
+
+  it('copies the IP when the IP text itself is clicked', async () => {
+    const user = userEvent.setup();
+    renderCard();
+
+    await user.click(screen.getByText('1.1.1.1'));
+
+    expect(writeTextMock).toHaveBeenCalledWith('1.1.1.1');
+  });
+
+  it('tracks the copied field separately for public and private IPs', async () => {
+    const user = userEvent.setup();
+    renderCard();
+
+    await user.click(screen.getByRole('button', {name: '复制公网 IP'}));
+    expect(screen.getByRole('button', {name: '已复制公网 IP'})).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: '复制内网 IP'})).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', {name: '复制内网 IP'}));
+    expect(screen.getByRole('button', {name: '复制公网 IP'})).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: '已复制内网 IP'})).toBeInTheDocument();
+  });
+
+  it('resets the copied feedback after 2 seconds', async () => {
+    vi.useFakeTimers();
+    try {
+      const user = userEvent.setup({advanceTimers: vi.advanceTimersByTime});
+      renderCard();
+
+      await user.click(screen.getByRole('button', {name: '复制公网 IP'}));
+      expect(screen.getByRole('button', {name: '已复制公网 IP'})).toBeInTheDocument();
+
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(screen.getByRole('button', {name: '复制公网 IP'})).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('renders 未绑定 as an italic placeholder without a public copy button', () => {
+    renderCard({publicIp: '未绑定'});
+
+    const placeholder = screen.getByText('未绑定');
+    expect(placeholder.className).toContain('italic');
+    expect(screen.queryByRole('button', {name: '复制公网 IP'})).not.toBeInTheDocument();
+    // The private IP stays copyable when the public one is unbound.
+    expect(screen.getByRole('button', {name: '复制内网 IP'})).toBeInTheDocument();
+  });
+
+  it('does not copy when clicking the 未绑定 placeholder', async () => {
+    const user = userEvent.setup();
+    renderCard({publicIp: '未绑定'});
+
+    await user.click(screen.getByText('未绑定'));
+
+    expect(writeTextMock).not.toHaveBeenCalled();
+  });
+});

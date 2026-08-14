@@ -1,4 +1,4 @@
-import {render, screen} from '@testing-library/react';
+import {render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
@@ -14,6 +14,10 @@ const accountA: ApiAccount = {
   updatedAt: '2026-06-17T00:00:00Z',
   accessKeyId: 'ak',
   accessKeySecret: 'sk',
+  defaultImageKey: '',
+  ossBucket: '',
+  ossEndpoint: '',
+  zoneId: '',
 };
 const accountB: ApiAccount = {
   id: 'acc-2',
@@ -25,6 +29,10 @@ const accountB: ApiAccount = {
   updatedAt: '2026-06-17T00:00:00Z',
   accessKeyId: 'ak2',
   accessKeySecret: 'sk2',
+  defaultImageKey: '',
+  ossBucket: '',
+  ossEndpoint: '',
+  zoneId: '',
 };
 
 interface CapturedQuery {
@@ -127,20 +135,23 @@ describe('ProtectionRecordsPage', () => {
     renderPage();
 
     expect(screen.getByRole('heading', {name: /保护记录/})).toBeInTheDocument();
+    const table = within(screen.getByRole('table'));
     // Time (TriggeredAt, UTC label) + completed time
-    expect(screen.getByText('2026-06-16 10:14 UTC')).toBeInTheDocument();
-    expect(screen.getByText(/完成 2026-06-16 10:14 UTC/)).toBeInTheDocument();
+    expect(table.getByText('2026-06-16 10:14 UTC')).toBeInTheDocument();
+    expect(table.getByText(/完成 2026-06-16 10:14 UTC/)).toBeInTheDocument();
     // Account, instance, action (Chinese label), status badge, message
-    expect(screen.getByText('Account A')).toBeInTheDocument();
-    expect(screen.getByText('Account B')).toBeInTheDocument();
-    expect(screen.getByText('i-001')).toBeInTheDocument();
-    expect(screen.getByText('i-003')).toBeInTheDocument();
-    expect(screen.getByText('停止实例')).toBeInTheDocument();
-    expect(screen.getByText('启动实例')).toBeInTheDocument();
-    expect(screen.getByText('成功')).toBeInTheDocument();
-    expect(screen.getByText('失败')).toBeInTheDocument();
-    expect(screen.getByText('实例已停止')).toBeInTheDocument();
-    expect(screen.getByText('IncorrectInstanceStatus')).toBeInTheDocument();
+    // acc-1 contributes two rows (both Account A), acc-2 one row (Account B)
+    expect(table.getAllByText('Account A')).toHaveLength(2);
+    expect(table.getByText('Account B')).toBeInTheDocument();
+    expect(table.getByText('i-001')).toBeInTheDocument();
+    expect(table.getByText('i-003')).toBeInTheDocument();
+    // two stop-instance rows (acc-1 governance + acc-2 manual) + one start-instance row
+    expect(table.getAllByText('停止实例')).toHaveLength(2);
+    expect(table.getByText('启动实例')).toBeInTheDocument();
+    expect(table.getAllByText('成功')).toHaveLength(2);
+    expect(table.getByText('失败')).toBeInTheDocument();
+    expect(table.getByText('实例已停止')).toBeInTheDocument();
+    expect(table.getByText('IncorrectInstanceStatus')).toBeInTheDocument();
   });
 
   it('sends the default protection filter (traffic-governance + traffic-policy) for every account query', async () => {

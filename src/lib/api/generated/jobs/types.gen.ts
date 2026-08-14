@@ -554,7 +554,12 @@ export type ListTrafficAuditsData = {
     path: {
         accountId: string;
     };
-    query?: never;
+    query?: {
+        triggeredBy?: string;
+        action?: string;
+        targetId?: string;
+        limit?: number;
+    };
     url: '/api/accounts/{accountId}/traffic-audits';
 };
 

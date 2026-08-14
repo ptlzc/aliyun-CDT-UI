@@ -236,9 +236,14 @@ export interface TrafficAuditFilters {
   targetId?: string;
   /** Max records; backend default 100, capped at 500. */
   limit?: number;
+  /** 0-based offset for pagination; page = offset / limit + 1. */
+  offset?: number;
 }
 
-export async function listTrafficAudits(accountId: string, filters?: TrafficAuditFilters): Promise<ApiActionAudit[]> {
+/** One page of action audits: this page's items plus the offset/limit-independent total. */
+export type ApiTrafficAuditPage = {items: ApiActionAudit[]; total: number};
+
+export async function listTrafficAudits(accountId: string, filters?: TrafficAuditFilters): Promise<ApiTrafficAuditPage> {
   const query: ListTrafficAuditsData['query'] = {};
   if (filters?.triggeredBy?.length) {
     query.triggeredBy = filters.triggeredBy.join(',');
@@ -252,8 +257,11 @@ export async function listTrafficAudits(accountId: string, filters?: TrafficAudi
   if (filters?.limit !== undefined) {
     query.limit = filters.limit;
   }
+  if (filters?.offset !== undefined) {
+    query.offset = filters.offset;
+  }
   const response = unwrapData((await listTrafficAuditsRequest({path: {accountId}, query})) as GeneratedResult<ActionAuditListResponse>);
-  return response.items ?? [];
+  return {items: response.items ?? [], total: response.total};
 }
 
 export async function saveTrafficPolicy(accountId: string, payload: ApiTrafficPolicyRequest): Promise<ApiTrafficPolicy> {

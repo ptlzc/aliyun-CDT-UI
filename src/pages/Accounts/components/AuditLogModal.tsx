@@ -35,7 +35,7 @@ function statusBadgeClass(status: string): string {
  */
 export default function AuditLogModal({accountId, accountName, onClose}: AuditLogModalProps) {
   const auditsQuery = useTrafficAuditsQuery(accountId, {limit: 100});
-  const audits = auditsQuery.data || [];
+  const audits = auditsQuery.data?.items ?? [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary-ink/45 backdrop-blur-xs font-sans">

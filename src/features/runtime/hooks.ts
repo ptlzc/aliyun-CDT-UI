@@ -37,6 +37,7 @@ import {
   type ApiPlatformTrafficGovernance,
   type ApiRegionGroup,
   type ApiResourceGraph,
+  type ApiTrafficAuditPage,
   type ApiTrafficGovernanceDefaults,
   type ApiTrafficPolicy,
   type ApiTrafficPolicyRequest,
@@ -511,12 +512,14 @@ export function useCdtFreeQuotaQuery(accountId: string | null) {
 
 /**
  * Action audits for one account with optional server-side filters (see
- * TrafficAuditFilters). No filter = backend default limit 100, newest first.
+ * TrafficAuditFilters). Data is the {items, total} page shape; total is the
+ * offset/limit-independent matching count. No filter = backend default limit
+ * 100, newest first.
  *
  * @when 保护记录页单账号视图 / 账户详情操作日志弹窗挂载时
  */
 export function useTrafficAuditsQuery(accountId: string | null, filters: TrafficAuditFilters = {}, enabled = true) {
-  return useQuery<ApiActionAudit[]>({
+  return useQuery<ApiTrafficAuditPage>({
     queryKey: runtimeKeys.audits(accountId || '', filters),
     queryFn: () => listTrafficAudits(accountId!, filters),
     enabled: Boolean(accountId) && enabled,

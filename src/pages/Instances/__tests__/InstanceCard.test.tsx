@@ -140,22 +140,33 @@ describe('InstanceCard cdt-region-shared branch', () => {
 });
 
 describe('InstanceCard region and status badges', () => {
-  it('renders the region badge without brackets and with pill styling', () => {
+  it('renders the region name as the card title without a pill badge', () => {
     renderCard({regionId: 'ap-southeast-1'});
 
-    const badge = screen.getByText('新加坡');
+    const title = screen.getByRole('heading', {name: '新加坡'});
+    // The h3 title is plain text: no instance name, no nested pill span.
+    expect(title.textContent).not.toContain('ecs-a');
+    expect(title.className).toContain('text-sm');
+    expect(title.className).toContain('font-bold');
+    expect(title.querySelector('span')).toBeNull();
     expect(screen.queryByText('[新加坡]')).not.toBeInTheDocument();
-    expect(badge.className).toContain('rounded-full');
-    expect(badge.className).toContain('border-hairline-divider');
-    expect(badge.className).toContain('bg-section-layer');
-    expect(badge.className).toContain('text-secondary-ink');
   });
 
-  it('renders the status badge with pill styling', () => {
+  it('falls back to the instance name in the title when regionId is missing', () => {
+    renderCard({regionId: ''});
+
+    expect(screen.getByRole('heading', {name: 'ecs-a'})).toBeInTheDocument();
+  });
+
+  it('renders the status badge with lightweight rounded corners', () => {
     renderCard();
 
     const statusBadge = screen.getByText('运行中');
-    expect(statusBadge.className).toContain('rounded-full');
+    const classes = new Set(statusBadge.className.split(/\s+/));
+    expect(classes.has('rounded')).toBe(true);
+    expect(classes.has('rounded-full')).toBe(false);
+    expect(classes.has('px-2')).toBe(true);
+    expect(classes.has('py-0.5')).toBe(true);
     expect(statusBadge.className).toContain('font-bold');
   });
 });

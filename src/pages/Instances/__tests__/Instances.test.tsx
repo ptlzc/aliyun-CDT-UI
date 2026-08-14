@@ -185,7 +185,9 @@ describe('InstancesPage', () => {
 
     renderInstances();
 
-    expect(screen.getByText('ecs-a')).toBeInTheDocument();
+    // Card title shows the region instead of the instance name (lightweight title).
+    expect(screen.getByRole('heading', {name: 'cn-hangzhou-i'})).toBeInTheDocument();
+    expect(screen.queryByText('ecs-a')).not.toBeInTheDocument();
     expect(screen.getAllByText('运行中').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', {name: '停止'})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /连接 VNC/})).toBeInTheDocument();

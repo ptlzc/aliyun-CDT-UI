@@ -15,6 +15,7 @@ import {
   listGraph,
   listJobs,
   listRegionGroups,
+  listTrafficAudits,
   listTrafficPolicies,
   saveECSTrafficGovernance,
   savePlatformTrafficGovernance,
@@ -27,6 +28,7 @@ import {
   updateAccount,
   updateRegionGroup,
   type ApiAccount,
+  type ApiActionAudit,
   type ApiCreateAccountRequest,
   type ApiECSTrafficGovernance,
   type ApiECSMetricsSnapshot,
@@ -40,6 +42,7 @@ import {
   type ApiTrafficPolicyRequest,
   type ApiTrafficQuotaSnapshot,
   type CdtPermissionResult,
+  type TrafficAuditFilters,
   validateAccount,
 } from '@/src/lib/api/client';
 import type {CloudAccount, DashboardSummary, ECSInstance, WorkflowRun, WorkflowTask} from '@/src/types';
@@ -51,6 +54,7 @@ export const runtimeKeys = {
   jobs: ['runtime', 'jobs'] as const,
   settings: ['runtime', 'settings', 'traffic-governance'] as const,
   policies: (accountId: string) => ['runtime', 'traffic-policies', accountId] as const,
+  audits: (accountId: string, filters: TrafficAuditFilters) => ['runtime', 'traffic-audits', accountId, filters] as const,
   cdtPermission: (accountId: string) => ['runtime', 'cdt-permission', accountId] as const,
 };
 
@@ -515,6 +519,20 @@ export function useCdtFreeQuotaQuery(accountId: string | null) {
     queryFn: () => getCdtFreeQuota(accountId!),
     enabled: Boolean(accountId),
     refetchInterval: 60_000,
+  });
+}
+
+/**
+ * Action audits for one account with optional server-side filters (see
+ * TrafficAuditFilters). No filter = backend default limit 100, newest first.
+ *
+ * @when 保护记录页单账号视图 / 账户详情操作日志弹窗挂载时
+ */
+export function useTrafficAuditsQuery(accountId: string | null, filters: TrafficAuditFilters = {}, enabled = true) {
+  return useQuery<ApiActionAudit[]>({
+    queryKey: runtimeKeys.audits(accountId || '', filters),
+    queryFn: () => listTrafficAudits(accountId!, filters),
+    enabled: Boolean(accountId) && enabled,
   });
 }
 

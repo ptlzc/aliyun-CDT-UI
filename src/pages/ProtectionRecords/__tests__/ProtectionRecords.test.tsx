@@ -83,6 +83,7 @@ const governanceStopAudit: ApiActionAudit = {
   accountId: 'acc-1',
   action: 'stop-instance',
   targetId: 'i-001',
+  regionId: 'ap-southeast-1',
   status: 'succeeded',
   message: '实例已停止',
   triggeredBy: 'traffic-governance',
@@ -145,6 +146,12 @@ describe('ProtectionRecordsPage', () => {
     expect(table.getByText('Account B')).toBeInTheDocument();
     expect(table.getByText('i-001')).toBeInTheDocument();
     expect(table.getByText('i-003')).toBeInTheDocument();
+    // Region column header; regionId renders the Chinese name (ap-southeast-1
+    // → 新加坡) and missing regionId falls back to '-'
+    expect(table.getByRole('columnheader', {name: '地区'})).toBeInTheDocument();
+    expect(within(table.getByText('i-001').closest('tr')!).getByText('新加坡')).toBeInTheDocument();
+    expect(within(table.getByText('i-002').closest('tr')!).getByText('-')).toBeInTheDocument();
+    expect(within(table.getByText('i-003').closest('tr')!).getByText('-')).toBeInTheDocument();
     // two stop-instance rows (acc-1 governance + acc-2 manual) + one start-instance row
     expect(table.getAllByText('停止实例')).toHaveLength(2);
     expect(table.getByText('启动实例')).toBeInTheDocument();

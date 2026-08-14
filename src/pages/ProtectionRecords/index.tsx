@@ -64,9 +64,10 @@ export default function ProtectionRecordsPage() {
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
 
   // Any filter change invalidates the current page — jump back to page 1.
+  // pageSize resets inline in its own handler (offset must recompute in one render).
   useEffect(() => {
     setPage(1);
-  }, [accountFilter, targetIdFilter, actionFilter, pageSize]);
+  }, [accountFilter, targetIdFilter, actionFilter]);
 
   const filters = useMemo<TrafficAuditFilters>(() => {
     const next: TrafficAuditFilters = {
@@ -234,7 +235,11 @@ export default function ProtectionRecordsPage() {
                 每页
                 <select
                   value={pageSize}
-                  onChange={(event) => setPageSize(Number(event.target.value))}
+                  onChange={(event) => {
+                    // Reset together with pageSize so offset is recomputed in one render.
+                    setPage(1);
+                    setPageSize(Number(event.target.value));
+                  }}
                   className="rounded border border-hairline-divider bg-surface-white px-2 py-1 text-xs text-primary-ink focus:border-primary focus:outline-none"
                 >
                   {PAGE_SIZE_OPTIONS.map((size) => (

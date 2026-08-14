@@ -215,7 +215,7 @@ export default function InstancesPage() {
         <InstanceSkeletonGrid />
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
             {filtered.map((instance) => (
               <InstanceCard
                 key={instance.id}
@@ -314,7 +314,7 @@ function EffectiveGovernanceCard({data}: {data: ApiEffectiveTrafficGovernance}) 
  */
 function InstanceSkeletonGrid() {
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
       {Array.from({length: 6}).map((_, idx) => (
         <div
           key={idx}

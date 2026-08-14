@@ -168,13 +168,8 @@ export default function InstanceCard({
       {/* Card top banner details */}
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="flex items-center gap-2 text-sm font-bold text-primary-ink">
-            {instance.name}
-            {instance.regionId && (
-              <span className="rounded-full border border-hairline-divider bg-section-layer px-2 py-0.5 text-[10px] font-medium text-secondary-ink">
-                {regionNameZh(instance.regionId)}
-              </span>
-            )}
+          <h3 className="text-sm font-bold text-primary-ink">
+            {instance.regionId ? regionNameZh(instance.regionId) : instance.name}
           </h3>
           <span className="mt-1 block select-all font-mono text-[11px] text-secondary-ink">{instance.id}</span>
           <span className="mt-0.5 block text-[10px] text-secondary-ink">{instance.accountName}</span>
@@ -183,13 +178,13 @@ export default function InstanceCard({
         {/* Machine State details */}
         <div className="flex flex-col items-end gap-1">
           {loadingStatus ? (
-            <span className="flex items-center gap-1 rounded border border-primary-container bg-emphasis-layer px-2.5 py-1 text-[10px] font-semibold text-primary">
+            <span className="flex items-center gap-1 rounded border border-primary-container bg-emphasis-layer px-2 py-0.5 text-[10px] font-semibold text-primary">
               <RefreshCw className="h-3 w-3 animate-spin text-primary" />
               {isBooting ? '正在启动...' : '正在入库停机...'}
             </span>
           ) : (
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold ${
+              className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[10px] font-bold ${
                 effectiveStatus === 'Running'
                   ? 'border-[#C8E6C9] bg-[#E8F5E9] text-[#1B5E20]'
                   : effectiveStatus === 'Attention'

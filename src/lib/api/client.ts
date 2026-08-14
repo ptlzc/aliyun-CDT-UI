@@ -34,8 +34,8 @@ import {
 } from './generated/instances/sdk.gen';
 import type {ActionAudit, EcsInstanceStateResponse, EcsMetricsSnapshot, EcsTrafficGovernance, EcsTrafficGovernanceOverride, EcsVncUrlResponse} from './generated/instances/types.gen';
 import {client as jobsClient} from './generated/jobs/client.gen';
-import {getCdtFreeQuota as getCdtFreeQuotaRequest, listJobs as listJobsRequest, listTrafficPolicies as listTrafficPoliciesRequest, saveTrafficPolicy as saveTrafficPolicyRequest} from './generated/jobs/sdk.gen';
-import type {Job, JobListResponse, TrafficPolicy, TrafficPolicyListResponse, TrafficPolicyRequest} from './generated/jobs/types.gen';
+import {getCdtFreeQuota as getCdtFreeQuotaRequest, listJobs as listJobsRequest, listTrafficAudits as listTrafficAuditsRequest, listTrafficPolicies as listTrafficPoliciesRequest, saveTrafficPolicy as saveTrafficPolicyRequest} from './generated/jobs/sdk.gen';
+import type {ActionAuditListResponse, Job, JobListResponse, ListTrafficAuditsData, TrafficPolicy, TrafficPolicyListResponse, TrafficPolicyRequest} from './generated/jobs/types.gen';
 import {client as provisionClient} from './generated/provision/client.gen';
 import {provision as provisionRequest} from './generated/provision/sdk.gen';
 import type {ProvisionBody, ProvisionResponse2} from './generated/provision/types.gen';
@@ -221,6 +221,39 @@ export async function applyPlatformTrafficGovernanceToAccounts(): Promise<ApiPla
 export async function listTrafficPolicies(accountId: string): Promise<ApiTrafficPolicy[]> {
   const response = unwrapData((await listTrafficPoliciesRequest({path: {accountId}})) as GeneratedResult<TrafficPolicyListResponse>);
   return response.items;
+}
+
+/**
+ * Optional server-side filters for listTrafficAudits. All conditions are ANDed
+ * by the backend; triggeredBy matches any listed value (field-internal OR).
+ */
+export interface TrafficAuditFilters {
+  /** Trigger sources, e.g. ['traffic-governance', 'traffic-policy']; sent as one comma-joined query param. */
+  triggeredBy?: string[];
+  /** Exact action match (stop-instance / start-instance / detach-eip / …). */
+  action?: string;
+  /** Exact instance id match, executed server-side. */
+  targetId?: string;
+  /** Max records; backend default 100, capped at 500. */
+  limit?: number;
+}
+
+export async function listTrafficAudits(accountId: string, filters?: TrafficAuditFilters): Promise<ApiActionAudit[]> {
+  const query: ListTrafficAuditsData['query'] = {};
+  if (filters?.triggeredBy?.length) {
+    query.triggeredBy = filters.triggeredBy.join(',');
+  }
+  if (filters?.action) {
+    query.action = filters.action;
+  }
+  if (filters?.targetId) {
+    query.targetId = filters.targetId;
+  }
+  if (filters?.limit !== undefined) {
+    query.limit = filters.limit;
+  }
+  const response = unwrapData((await listTrafficAuditsRequest({path: {accountId}, query})) as GeneratedResult<ActionAuditListResponse>);
+  return response.items ?? [];
 }
 
 export async function saveTrafficPolicy(accountId: string, payload: ApiTrafficPolicyRequest): Promise<ApiTrafficPolicy> {

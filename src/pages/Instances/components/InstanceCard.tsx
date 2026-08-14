@@ -1,4 +1,5 @@
-import {Activity, AlertTriangle, Monitor, RefreshCw} from 'lucide-react';
+import {useState} from 'react';
+import {Activity, AlertTriangle, Check, Copy, Monitor, RefreshCw} from 'lucide-react';
 
 import type {ECSInstance} from '../../../types';
 import {regionNameZh} from '../../../utils/regionNames';
@@ -17,6 +18,49 @@ interface InstanceCardProps {
   onManageInstance: (instance: ECSInstance) => void;
   /** Opens the shared auth policy modal for the instance account (permission errors). */
   onViewPolicy?: (instance: ECSInstance) => void;
+}
+
+interface IpCopyCellProps {
+  /** Distinguishes public/private copy feedback and aria labels. */
+  field: 'public' | 'private';
+  value: string;
+  /** False for the 未绑定 sentinel: no copy affordance, italic grey text. */
+  copyable: boolean;
+  /** True while this cell shows the copied Check feedback. */
+  copied: boolean;
+  onCopy: (field: 'public' | 'private', value: string) => void;
+}
+
+/**
+ * Single IP cell in the 2-col public/private grid: monospace box styled like
+ * the legacy public-IP box, click-to-copy on both the IP text and the icon
+ * button (touch friendly).
+ *
+ * @when 实例卡片公网/内网 IP 并排格子渲染
+ */
+function IpCopyCell({field, value, copyable, copied, onCopy}: IpCopyCellProps) {
+  const ipLabel = field === 'public' ? '公网 IP' : '内网 IP';
+  return (
+    <div className="flex items-center justify-between rounded border border-hairline-divider bg-surface-white px-2.5 py-1 font-mono text-xs text-primary-ink shadow-2xs">
+      <span
+        onClick={copyable ? () => onCopy(field, value) : undefined}
+        className={copyable ? 'cursor-pointer select-all font-semibold' : 'italic text-secondary-ink'}
+      >
+        {value}
+      </span>
+      {copyable && (
+        <button
+          type="button"
+          onClick={() => onCopy(field, value)}
+          aria-label={copied ? `已复制${ipLabel}` : `复制${ipLabel}`}
+          title={copied ? '已复制' : '复制'}
+          className="cursor-pointer p-0.5 text-outline transition-colors hover:text-primary-ink"
+        >
+          {copied ? <Check className="h-3.5 w-3.5 text-healthy-green" /> : <Copy className="h-3.5 w-3.5" />}
+        </button>
+      )}
+    </div>
+  );
 }
 
 interface TrafficUsageErrorVariant {
@@ -108,6 +152,22 @@ export default function InstanceCard({
 }: InstanceCardProps) {
   const isBooting = loadingStatus === 'starting';
   const isStopped = effectiveStatus === 'Stopped';
+
+  // Copy feedback: which IP cell currently shows the Check icon (null = none).
+  const [copiedField, setCopiedField] = useState<'public' | 'private' | null>(null);
+
+  /**
+   * Copies an IP to the clipboard and flips its cell to a Check feedback for
+   * 2s. Errors propagate (no silent fallback): an unavailable clipboard
+   * surfaces to the caller/console instead of being swallowed.
+   *
+   * @when 点击公网/内网 IP 文本或复制图标
+   */
+  const handleCopyIp = (field: 'public' | 'private', text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
 
   // Traffic indicators
   let trafficDisplayStr = '不可用';
@@ -224,22 +284,31 @@ export default function InstanceCard({
           </div>
         </div>
 
-        {/* Public ip detail mapping */}
+        {/* Public / private ip detail mapping */}
         <div>
-          <span className="mb-1 block font-sans text-[10px] font-bold uppercase tracking-wider text-secondary-ink">
-            绑定公网 IP
-          </span>
-          <div className="flex items-center justify-between rounded border border-hairline-divider bg-surface-white px-2.5 py-1 font-mono text-xs text-primary-ink shadow-2xs">
-            <span className={instance.publicIp === '未绑定' ? 'italic text-secondary-ink' : 'font-semibold'}>
-              {instance.publicIp}
+          <div className="mb-1 flex items-center justify-between">
+            <span className="block font-sans text-[10px] font-bold uppercase tracking-wider text-secondary-ink">
+              绑定公网 IP
             </span>
-            {instance.publicIp !== '未绑定' && (
-              <span className="font-sans text-[10px] font-bold text-healthy-green">✓ 已绑定</span>
-            )}
+            <span className="font-mono text-[10px] text-secondary-ink">
+              监控: {instance.monitoringEnabled ? '开启' : '关闭'}
+            </span>
           </div>
-          <div className="mt-1 flex items-center justify-between font-mono text-[10px] text-secondary-ink">
-            <span>内网: {instance.privateIp}</span>
-            <span>监控: {instance.monitoringEnabled ? '开启' : '关闭'}</span>
+          <div className="grid grid-cols-2 gap-2">
+            <IpCopyCell
+              field="public"
+              value={instance.publicIp}
+              copyable={instance.publicIp !== '未绑定'}
+              copied={copiedField === 'public'}
+              onCopy={handleCopyIp}
+            />
+            <IpCopyCell
+              field="private"
+              value={instance.privateIp}
+              copyable
+              copied={copiedField === 'private'}
+              onCopy={handleCopyIp}
+            />
           </div>
         </div>
 

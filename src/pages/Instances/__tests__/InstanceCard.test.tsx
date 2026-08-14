@@ -1,6 +1,6 @@
-import {render, screen} from '@testing-library/react';
+import {act, fireEvent, render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {describe, expect, it, vi} from 'vitest';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import type {ECSInstance} from '../../../types';
 import InstanceCard from '../components/InstanceCard';
@@ -205,6 +205,24 @@ describe('InstanceCard IP copy layout', () => {
     });
   });
 
+  /**
+   * userEvent.setup() attaches its own clipboard stub to navigator
+   * (attachClipboardStubToView), which would shadow the spy installed in
+   * beforeEach; re-apply the spy right after setup so component writeText
+   * calls hit the mock. The user-event getter is configurable, so plain
+   * defineProperty wins.
+   *
+   * @when 复制交互测试需要 userEvent 与 clipboard spy 并存
+   */
+  function setupUser(options?: Parameters<typeof userEvent.setup>[0]) {
+    const user = userEvent.setup(options);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: {writeText: writeTextMock},
+      configurable: true,
+    });
+    return user;
+  }
+
   it('does not render the 已绑定 badge next to the public IP', () => {
     renderCard();
 
@@ -241,7 +259,7 @@ describe('InstanceCard IP copy layout', () => {
   });
 
   it('copies the public IP and shows success feedback', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     renderCard();
 
     await user.click(screen.getByRole('button', {name: '复制公网 IP'}));
@@ -251,7 +269,7 @@ describe('InstanceCard IP copy layout', () => {
   });
 
   it('copies the private IP and shows success feedback', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     renderCard();
 
     await user.click(screen.getByRole('button', {name: '复制内网 IP'}));
@@ -261,7 +279,7 @@ describe('InstanceCard IP copy layout', () => {
   });
 
   it('copies the IP when the IP text itself is clicked', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     renderCard();
 
     await user.click(screen.getByText('1.1.1.1'));
@@ -270,7 +288,7 @@ describe('InstanceCard IP copy layout', () => {
   });
 
   it('tracks the copied field separately for public and private IPs', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     renderCard();
 
     await user.click(screen.getByRole('button', {name: '复制公网 IP'}));
@@ -285,13 +303,16 @@ describe('InstanceCard IP copy layout', () => {
   it('resets the copied feedback after 2 seconds', async () => {
     vi.useFakeTimers();
     try {
-      const user = userEvent.setup({advanceTimers: vi.advanceTimersByTime});
+      // userEvent hangs under vitest 4 fake timers (its wait() never resolves
+      // with vi.advanceTimersByTime); fireEvent is synchronous and drives the
+      // same onClick handler while the 2s reset window stays on fake timers.
       renderCard();
-
-      await user.click(screen.getByRole('button', {name: '复制公网 IP'}));
+      fireEvent.click(screen.getByRole('button', {name: '复制公网 IP'}));
       expect(screen.getByRole('button', {name: '已复制公网 IP'})).toBeInTheDocument();
 
-      await vi.advanceTimersByTimeAsync(2000);
+      await act(async () => {
+        await vi.runAllTimersAsync();
+      });
       expect(screen.getByRole('button', {name: '复制公网 IP'})).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
@@ -309,7 +330,7 @@ describe('InstanceCard IP copy layout', () => {
   });
 
   it('does not copy when clicking the 未绑定 placeholder', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     renderCard({publicIp: '未绑定'});
 
     await user.click(screen.getByText('未绑定'));

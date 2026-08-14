@@ -21,7 +21,8 @@ vi.mock('../../../features/runtime/hooks', () => ({
   useTrafficAuditsQuery: (accountId: string | null, filters: Record<string, unknown> = {}) => {
     h.hookCalls.push({accountId, filters});
     return {
-      data: h.audits,
+      // The hook now exposes the {items, total} page shape; the modal only consumes items.
+      data: {items: h.audits, total: h.audits.length},
       isLoading: h.isLoading,
       isError: h.isError,
       error: new Error('modal-fetch-error'),

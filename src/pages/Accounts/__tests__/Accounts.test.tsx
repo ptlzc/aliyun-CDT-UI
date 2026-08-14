@@ -56,7 +56,12 @@ vi.mock('../../../features/runtime/hooks', () => ({
   useDeleteAccountMutation: () => ({mutate: mocks.deleteMutate, isPending: false}),
   useCdtPermissionQuery: () => ({data: undefined, isLoading: false}),
   useValidateAccountMutation: () => ({mutateAsync: vi.fn()}),
-  useTrafficAuditsQuery: () => ({data: auditLogs, isLoading: false, isError: false, error: null}),
+  useTrafficAuditsQuery: () => ({
+    data: {items: auditLogs, total: auditLogs.length},
+    isLoading: false,
+    isError: false,
+    error: null,
+  }),
 }));
 
 vi.mock('../../../lib/api/client', () => ({

@@ -31,6 +31,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 let runtimeAccounts: CloudAccount[] = [];
+let auditLogs: unknown[] = [];
 
 vi.mock('../../../features/runtime/hooks', () => ({
   useRuntimeDashboard: () => ({
@@ -55,6 +56,7 @@ vi.mock('../../../features/runtime/hooks', () => ({
   useDeleteAccountMutation: () => ({mutate: mocks.deleteMutate, isPending: false}),
   useCdtPermissionQuery: () => ({data: undefined, isLoading: false}),
   useValidateAccountMutation: () => ({mutateAsync: vi.fn()}),
+  useTrafficAuditsQuery: () => ({data: auditLogs, isLoading: false, isError: false, error: null}),
 }));
 
 vi.mock('../../../lib/api/client', () => ({
@@ -81,6 +83,7 @@ describe('AccountsPage create flow', () => {
     mocks.saveMutate.mockReset();
     mocks.listRegions.mockReset();
     runtimeAccounts = [accountA];
+    auditLogs = [];
   });
 
   it('opens the create form when clicking 添加账号凭证', async () => {
@@ -202,6 +205,7 @@ describe('AccountsPage required-field validation', () => {
     mocks.saveMutate.mockReset();
     mocks.listRegions.mockReset();
     runtimeAccounts = [accountA];
+    auditLogs = [];
   });
 
   afterEach(() => {
@@ -274,6 +278,7 @@ describe('AccountsPage managed region select-all and instance counts', () => {
     mocks.saveMutate.mockReset();
     mocks.listRegions.mockReset();
     runtimeAccounts = [accountA];
+    auditLogs = [];
   });
 
   it('selects and clears every SDK-fetched region via the 全选 checkbox', async () => {
@@ -373,6 +378,7 @@ describe('AccountsPage edit flow', () => {
     mocks.saveMutate.mockReset();
     mocks.listRegions.mockReset();
     runtimeAccounts = [accountA];
+    auditLogs = [];
   });
 
   it('backfills managed regions from the stored string and keeps no owner field', async () => {
@@ -432,6 +438,45 @@ describe('AccountsPage edit flow', () => {
     expect(router.state.location.pathname).toBe('/accounts');
     expect(await screen.findByRole('heading', {name: /账户管理/})).toBeInTheDocument();
   });
+
+  it('opens the audit log modal backed by real listTrafficAudits data', async () => {
+    auditLogs = [
+      {
+        id: 'a1',
+        accountId: 'acc-1',
+        action: 'stop-instance',
+        targetId: 'i-001',
+        status: 'succeeded',
+        message: '实例已停止',
+        triggeredBy: 'traffic-governance',
+        triggeredAt: '2026-06-16T10:14:15Z',
+      },
+      {
+        id: 'a2',
+        accountId: 'acc-1',
+        action: 'start-instance',
+        targetId: 'i-002',
+        status: 'failed',
+        message: 'IncorrectInstanceStatus',
+        triggeredBy: 'manual-power',
+        triggeredAt: '2026-06-16T09:00:00Z',
+      },
+    ];
+    const user = userEvent.setup();
+    renderAccounts();
+
+    await user.click(screen.getByText('Account A'));
+    await screen.findByRole('heading', {name: /凭据配置详情/});
+    await user.click(screen.getByRole('button', {name: /查看操作日志/}));
+
+    expect(await screen.findByText('实例已停止')).toBeInTheDocument();
+    expect(screen.getByText('停止实例')).toBeInTheDocument();
+    expect(screen.getByText('启动实例')).toBeInTheDocument();
+    expect(screen.getByText('i-001')).toBeInTheDocument();
+    expect(screen.getByText('成功')).toBeInTheDocument();
+    expect(screen.getByText('失败')).toBeInTheDocument();
+    expect(screen.getByText('IncorrectInstanceStatus')).toBeInTheDocument();
+  });
 });
 
 describe('AccountsPage delete account flow', () => {
@@ -440,6 +485,7 @@ describe('AccountsPage delete account flow', () => {
     mocks.listRegions.mockReset();
     mocks.deleteMutate.mockReset();
     runtimeAccounts = [accountA];
+    auditLogs = [];
   });
 
   // The delete mutation mock emulates the backend refetch: on success the

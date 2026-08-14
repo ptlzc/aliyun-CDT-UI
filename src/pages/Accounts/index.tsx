@@ -86,9 +86,8 @@ export default function AccountsPage() {
   // CDT permission check for existing accounts
   const cdtPermissionQuery = useCdtPermissionQuery(selectedAccount && !isCreating ? selectedAccount.id : null);
 
-  // Log audit history modal or list preview trigger
+  // Log audit history modal trigger (data is fetched inside the modal via useTrafficAuditsQuery)
   const [showAudits, setShowAudits] = useState(false);
-  const [selectedAuditLog, setSelectedAuditLog] = useState<string[] | null>(null);
 
   // Account permission authorization modal
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -114,12 +113,6 @@ export default function AccountsPage() {
     if (!selectedAccount) {
       return;
     }
-    setSelectedAuditLog([
-      `[2026-06-16 10:14:15 UTC] - SYSTEM 操作员已对 ${selectedAccount.name} 发起同步扫描`,
-      `[2026-06-16 10:14:16 UTC] - 握手元数据检查 - 成功`,
-      `[2026-06-16 10:14:18 UTC] - 已成功拉取 142 个 ECS 实例元数据。`,
-      `[2026-06-16 10:14:20 UTC] - KMS 密钥解密校验码匹配 - 签名一致`,
-    ]);
     setShowAudits(true);
   };
 
@@ -166,15 +159,12 @@ export default function AccountsPage() {
         )}
       </AnimatePresence>
 
-      {/* Audit log visual Modal */}
-      {showAudits && selectedAuditLog && (
+      {/* Audit log modal — real listTrafficAudits data (incl. manual-power actions) */}
+      {showAudits && selectedAccount && (
         <AuditLogModal
-          accountName={selectedAccount?.name ?? ''}
-          logs={selectedAuditLog}
-          onClose={() => {
-            setShowAudits(false);
-            setSelectedAuditLog(null);
-          }}
+          accountId={selectedAccount.id}
+          accountName={selectedAccount.name}
+          onClose={() => setShowAudits(false)}
         />
       )}
 

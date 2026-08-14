@@ -139,6 +139,27 @@ describe('InstanceCard cdt-region-shared branch', () => {
   });
 });
 
+describe('InstanceCard region and status badges', () => {
+  it('renders the region badge without brackets and with pill styling', () => {
+    renderCard({regionId: 'ap-southeast-1'});
+
+    const badge = screen.getByText('新加坡');
+    expect(screen.queryByText('[新加坡]')).not.toBeInTheDocument();
+    expect(badge.className).toContain('rounded-full');
+    expect(badge.className).toContain('border-hairline-divider');
+    expect(badge.className).toContain('bg-section-layer');
+    expect(badge.className).toContain('text-secondary-ink');
+  });
+
+  it('renders the status badge with pill styling', () => {
+    renderCard();
+
+    const statusBadge = screen.getByText('运行中');
+    expect(statusBadge.className).toContain('rounded-full');
+    expect(statusBadge.className).toContain('font-bold');
+  });
+});
+
 describe('InstanceCard legacy cdt-* compatibility', () => {
   it('still renders the legacy copy for cdt-no-data', () => {
     renderCard({trafficUsageSource: 'cdt-no-data'});

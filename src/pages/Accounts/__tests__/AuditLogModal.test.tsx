@@ -75,7 +75,7 @@ describe('AuditLogModal', () => {
     render(<AuditLogModal accountId="acc-1" accountName="Account A" onClose={vi.fn()} />);
 
     expect(screen.getByText(/API 操作审计日志 — Account A/)).toBeInTheDocument();
-    expect(screen.getByText('2026-06-16 10:14 UTC')).toBeInTheDocument();
+    expect(screen.getByText('2026-06-16 18:14 UTC+8')).toBeInTheDocument();
     expect(screen.getAllByText('停止实例').length).toBeGreaterThan(0);
     expect(screen.getByText('启动实例')).toBeInTheDocument();
     expect(screen.getByText('i-001')).toBeInTheDocument();

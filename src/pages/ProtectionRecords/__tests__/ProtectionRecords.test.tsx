@@ -136,9 +136,9 @@ describe('ProtectionRecordsPage', () => {
 
     expect(screen.getByRole('heading', {name: /保护记录/})).toBeInTheDocument();
     const table = within(screen.getByRole('table'));
-    // Time (TriggeredAt, UTC label) + completed time
-    expect(table.getByText('2026-06-16 10:14 UTC')).toBeInTheDocument();
-    expect(table.getByText(/完成 2026-06-16 10:14 UTC/)).toBeInTheDocument();
+    // Time (TriggeredAt, UTC+8 label) + completed time
+    expect(table.getByText('2026-06-16 18:14 UTC+8')).toBeInTheDocument();
+    expect(table.getByText(/完成 2026-06-16 18:14 UTC\+8/)).toBeInTheDocument();
     // Account, instance, action (Chinese label), status badge, message
     // acc-1 contributes two rows (both Account A), acc-2 one row (Account B)
     expect(table.getAllByText('Account A')).toHaveLength(2);

@@ -6,6 +6,7 @@ import {runtimeKeys, useAccountsQuery} from '../../features/runtime/hooks';
 import {listTrafficAudits, type ApiActionAudit, type TrafficAuditFilters} from '../../lib/api/client';
 import {ACTION_OPTIONS, actionLabelZh} from '../../utils/actionLabels';
 import {formatDateLabel} from '../../utils/dateFormat';
+import {regionNameZh} from '../../utils/regionNames';
 
 /**
  * Protection actions shown by default: the governed-scan and traffic-policy
@@ -168,6 +169,7 @@ export default function ProtectionRecordsPage() {
                 <th className="px-4 py-3 font-bold">时间</th>
                 <th className="px-4 py-3 font-bold">账号</th>
                 <th className="px-4 py-3 font-bold">实例</th>
+                <th className="px-4 py-3 font-bold">地区</th>
                 <th className="px-4 py-3 font-bold">动作</th>
                 <th className="px-4 py-3 font-bold">状态</th>
                 <th className="px-4 py-3 font-bold">消息</th>
@@ -184,6 +186,7 @@ export default function ProtectionRecordsPage() {
                   </td>
                   <td className="px-4 py-3 text-primary-ink">{audit.accountName}</td>
                   <td className="px-4 py-3 font-mono text-[11px] text-primary-ink">{audit.targetId || '-'}</td>
+                  <td className="px-4 py-3 text-primary-ink">{audit.regionId ? regionNameZh(audit.regionId) : '-'}</td>
                   <td className="px-4 py-3 text-primary-ink">{actionLabelZh(audit.action)}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[10px] font-bold ${statusBadgeClass(audit.status)}`}>

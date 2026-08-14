@@ -60,6 +60,7 @@ describe('SettingsPage', () => {
       maximumTrafficGb: 200,
       overflowAction: 'notify',
       monitoringEnabled: true,
+      overflowThresholdGb: 0,
     };
     const user = userEvent.setup();
 
@@ -67,8 +68,8 @@ describe('SettingsPage', () => {
 
     expect(screen.getByText('默认累计流量上限（GB）')).toBeInTheDocument();
 
-    await user.clear(screen.getByDisplayValue('200'));
-    await user.type(screen.getByRole('spinbutton'), '300');
+    await user.clear(screen.getByLabelText('默认累计流量上限（GB）'));
+    await user.type(screen.getByLabelText('默认累计流量上限（GB）'), '300');
     await user.selectOptions(screen.getByRole('combobox'), 'keepalive-job');
     await user.click(screen.getByText('保存默认值'));
     await user.click(screen.getByText('应用到现有账号'));
@@ -77,8 +78,52 @@ describe('SettingsPage', () => {
       maximumTrafficGb: 300,
       overflowAction: 'keepalive-job',
       monitoringEnabled: true,
+      overflowThresholdGb: undefined,
     });
     expect(applyMutate).toHaveBeenCalled();
+  });
+
+  it('renders full overflow action options and threshold input', () => {
+    platformDefaultsValue = {
+      maximumTrafficGb: 200,
+      overflowAction: 'notify',
+      monitoringEnabled: true,
+      overflowThresholdGb: 0,
+    };
+
+    renderSettings();
+
+    const actionSelect = screen.getByRole('combobox');
+    const optionValues = Array.from(actionSelect.querySelectorAll('option')).map((option) => (option as HTMLOptionElement).value);
+    expect(optionValues).toEqual(['notify', 'keepalive-job', 'stop-instance', 'start-instance', 'detach-eip', 'release-instance']);
+    expect(screen.getByRole('option', {name: '停止实例'})).toBeInTheDocument();
+    expect(screen.getByRole('option', {name: '释放实例'})).toBeInTheDocument();
+
+    expect(screen.getByLabelText('溢出停止阈值（GB）')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('空则按上限判定')).toBeInTheDocument();
+  });
+
+  it('prefills threshold from defaults and submits overflowThresholdGb with stop-instance', async () => {
+    platformDefaultsValue = {
+      maximumTrafficGb: 200,
+      overflowAction: 'stop-instance',
+      monitoringEnabled: true,
+      overflowThresholdGb: 195,
+    };
+    const user = userEvent.setup();
+
+    renderSettings();
+
+    expect(screen.getByLabelText('溢出停止阈值（GB）')).toHaveValue(195);
+
+    await user.click(screen.getByText('保存默认值'));
+
+    expect(saveMutate).toHaveBeenCalledWith({
+      maximumTrafficGb: 200,
+      overflowAction: 'stop-instance',
+      monitoringEnabled: true,
+      overflowThresholdGb: 195,
+    });
   });
 });
 

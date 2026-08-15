@@ -48,6 +48,9 @@ const runtimeData = {
 vi.mock('../features/runtime/hooks', () => ({
   useRuntimeDashboard: () => runtimeData,
   useAccountsQuery: () => ({data: [], isLoading: false}),
+  useJobsQuery: () => ({data: [], isLoading: false}),
+  useRegionsQuery: () => ({data: [], isLoading: false}),
+  useCreateOneClickDeploymentMutation: () => ({mutate: vi.fn(), isPending: false, error: null}),
   useSaveAccountMutation: () => ({mutateAsync: vi.fn(), isPending: false}),
   useDeleteAccountMutation: () => ({mutate: vi.fn(), isPending: false}),
   useCdtPermissionQuery: () => ({data: undefined, isLoading: false}),
@@ -102,6 +105,9 @@ describe('App routing', () => {
     router.navigate('/workflows');
     expect(await screen.findByRole('heading', {name: /自动化工作流中心/})).toBeInTheDocument();
 
+    router.navigate('/deployment');
+    expect(await screen.findByRole('heading', {name: /一键部署 ECS/})).toBeInTheDocument();
+
     router.navigate('/protection-records');
     expect(await screen.findByRole('heading', {name: /保护记录/})).toBeInTheDocument();
 
@@ -149,5 +155,18 @@ describe('App routing', () => {
     await user.click(within(screen.getByRole('navigation')).getByRole('button', {name: /保护记录/}));
     expect(router.state.location.pathname).toBe('/protection-records');
     expect(await screen.findByRole('heading', {name: /保护记录/})).toBeInTheDocument();
+  });
+
+  it('navigates to the one-click deployment page from the sidebar menu and the deploy button', async () => {
+    const user = userEvent.setup();
+    const router = renderApp('/dashboard');
+
+    await user.click(within(screen.getByRole('navigation')).getByRole('button', {name: /一键部署/}));
+    expect(router.state.location.pathname).toBe('/deployment');
+    expect(await screen.findByRole('heading', {name: /一键部署 ECS/})).toBeInTheDocument();
+
+    await user.click(within(screen.getByRole('navigation')).getByRole('button', {name: /部署新资源/}));
+    expect(router.state.location.pathname).toBe('/deployment');
+    expect(screen.getByRole('heading', {name: /一键部署 ECS/})).toBeInTheDocument();
   });
 });

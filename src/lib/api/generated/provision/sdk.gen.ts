@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { BootstrapNetworkData, BootstrapNetworkErrors, BootstrapNetworkResponses, EnsureFirewallRuleData, EnsureFirewallRuleErrors, EnsureFirewallRuleResponses, ListFirewallOperationsData, ListFirewallOperationsErrors, ListFirewallOperationsResponses, ProvisionData, ProvisionErrors, ProvisionResponses } from './types.gen';
+import type { BootstrapNetworkData, BootstrapNetworkErrors, BootstrapNetworkResponses, CreateOneClickDeploymentData, CreateOneClickDeploymentErrors, CreateOneClickDeploymentResponses, EnsureFirewallRuleData, EnsureFirewallRuleErrors, EnsureFirewallRuleResponses, ListFirewallOperationsData, ListFirewallOperationsErrors, ListFirewallOperationsResponses, ProvisionData, ProvisionErrors, ProvisionResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -31,6 +31,15 @@ export const listFirewallOperations = <ThrowOnError extends boolean = false>(opt
 
 export const ensureFirewallRule = <ThrowOnError extends boolean = false>(options: Options<EnsureFirewallRuleData, ThrowOnError>): RequestResult<EnsureFirewallRuleResponses, EnsureFirewallRuleErrors, ThrowOnError> => (options.client ?? client).post<EnsureFirewallRuleResponses, EnsureFirewallRuleErrors, ThrowOnError>({
     url: '/api/accounts/{accountId}/firewall',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const createOneClickDeployment = <ThrowOnError extends boolean = false>(options: Options<CreateOneClickDeploymentData, ThrowOnError>): RequestResult<CreateOneClickDeploymentResponses, CreateOneClickDeploymentErrors, ThrowOnError> => (options.client ?? client).post<CreateOneClickDeploymentResponses, CreateOneClickDeploymentErrors, ThrowOnError>({
+    url: '/api/accounts/{accountId}/one-click-deployments',
     ...options,
     headers: {
         'Content-Type': 'application/json',

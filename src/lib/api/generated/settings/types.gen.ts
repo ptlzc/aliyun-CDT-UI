@@ -301,6 +301,27 @@ export type MessageResponse = {
     message: string;
 };
 
+export type OneClickDeploymentBody = {
+    attachGovernance?: boolean;
+    imageId?: string;
+    imagePath?: string;
+    installSingBox?: boolean;
+    installTailscale?: boolean;
+    instanceName?: string;
+    instanceType?: string;
+    objectKey?: string;
+    regionId?: string;
+    singBoxConfig?: string;
+    spotPriceLimit?: number;
+    tailscaleAuthKey?: string;
+    zoneId?: string;
+};
+
+export type OneClickDeploymentResponse = {
+    job: Job;
+    password: string;
+};
+
 export type PlatformTrafficGovernance = {
     defaults: TrafficGovernanceDefaults;
     regionGroups?: Array<RegionGroupTrafficRule> | null;

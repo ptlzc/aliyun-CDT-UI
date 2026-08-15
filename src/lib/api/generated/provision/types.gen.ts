@@ -301,6 +301,27 @@ export type MessageResponse = {
     message: string;
 };
 
+export type OneClickDeploymentBody = {
+    attachGovernance?: boolean;
+    imageId?: string;
+    imagePath?: string;
+    installSingBox?: boolean;
+    installTailscale?: boolean;
+    instanceName?: string;
+    instanceType?: string;
+    objectKey?: string;
+    regionId?: string;
+    singBoxConfig?: string;
+    spotPriceLimit?: number;
+    tailscaleAuthKey?: string;
+    zoneId?: string;
+};
+
+export type OneClickDeploymentResponse = {
+    job: Job;
+    password: string;
+};
+
 export type PlatformTrafficGovernance = {
     defaults: TrafficGovernanceDefaults;
     regionGroups?: Array<RegionGroupTrafficRule> | null;
@@ -579,6 +600,33 @@ export type EnsureFirewallRuleResponses = {
 };
 
 export type EnsureFirewallRuleResponse = EnsureFirewallRuleResponses[keyof EnsureFirewallRuleResponses];
+
+export type CreateOneClickDeploymentData = {
+    body: OneClickDeploymentBody;
+    path: {
+        accountId: string;
+    };
+    query?: never;
+    url: '/api/accounts/{accountId}/one-click-deployments';
+};
+
+export type CreateOneClickDeploymentErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type CreateOneClickDeploymentError = CreateOneClickDeploymentErrors[keyof CreateOneClickDeploymentErrors];
+
+export type CreateOneClickDeploymentResponses = {
+    /**
+     * OK
+     */
+    200: OneClickDeploymentResponse;
+};
+
+export type CreateOneClickDeploymentResponse = CreateOneClickDeploymentResponses[keyof CreateOneClickDeploymentResponses];
 
 export type ProvisionData = {
     body: ProvisionBody;

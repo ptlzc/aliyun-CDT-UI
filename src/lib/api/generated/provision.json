@@ -1090,6 +1090,68 @@
         ],
         "type": "object"
       },
+      "OneClickDeploymentBody": {
+        "additionalProperties": false,
+        "properties": {
+          "attachGovernance": {
+            "type": "boolean"
+          },
+          "imageId": {
+            "type": "string"
+          },
+          "imagePath": {
+            "type": "string"
+          },
+          "installSingBox": {
+            "type": "boolean"
+          },
+          "installTailscale": {
+            "type": "boolean"
+          },
+          "instanceName": {
+            "type": "string"
+          },
+          "instanceType": {
+            "type": "string"
+          },
+          "objectKey": {
+            "type": "string"
+          },
+          "regionId": {
+            "type": "string"
+          },
+          "singBoxConfig": {
+            "type": "string"
+          },
+          "spotPriceLimit": {
+            "format": "double",
+            "type": "number"
+          },
+          "tailscaleAuthKey": {
+            "type": "string"
+          },
+          "zoneId": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "OneClickDeploymentResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "job": {
+            "$ref": "#/components/schemas/Job"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "job",
+          "password"
+        ],
+        "type": "object"
+      },
       "PlatformTrafficGovernance": {
         "additionalProperties": false,
         "properties": {
@@ -1986,6 +2048,56 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/FirewallOperation"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "tags": [
+          "provision"
+        ]
+      }
+    },
+    "/api/accounts/{accountId}/one-click-deployments": {
+      "post": {
+        "operationId": "createOneClickDeployment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OneClickDeploymentBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OneClickDeploymentResponse"
                 }
               }
             },

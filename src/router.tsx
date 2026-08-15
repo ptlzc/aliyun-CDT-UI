@@ -3,6 +3,7 @@ import {createBrowserRouter, Navigate, type RouteObject} from 'react-router-dom'
 import App from './App';
 import AccountsPage from './pages/Accounts';
 import DashboardPage from './pages/Dashboard';
+import DeploymentPage from './pages/Deployment';
 import InstancesPage from './pages/Instances';
 import ProtectionRecordsPage from './pages/ProtectionRecords';
 import SettingsPage from './pages/Settings';
@@ -28,6 +29,7 @@ export const appRoutes: RouteObject[] = [
       {path: 'accounts/:accountId', element: <AccountsPage />},
       {path: 'instances', element: <InstancesPage />},
       {path: 'protection-records', element: <ProtectionRecordsPage />},
+      {path: 'deployment', element: <DeploymentPage />},
       {path: 'workflows', element: <WorkflowsPage />},
       {path: 'settings', element: <SettingsPage />},
       {path: '*', element: <Navigate to="/dashboard" replace />},

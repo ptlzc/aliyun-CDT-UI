@@ -43,7 +43,7 @@ export default function App() {
   };
 
   const handleDeployTrigger = () => {
-    navigate('/workflows');
+    navigate('/deployment');
     setMobileMenuOpen(false);
     if (runtime.workflows.length > 0) {
       setNotificationCount((count) => Math.max(0, count - 1));

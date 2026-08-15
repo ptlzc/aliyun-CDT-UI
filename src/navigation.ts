@@ -1,4 +1,4 @@
-import {Cpu, History, KeyRound, LayoutDashboard, Server, Settings, type LucideIcon} from 'lucide-react';
+import {Cpu, History, KeyRound, LayoutDashboard, Rocket, Server, Settings, type LucideIcon} from 'lucide-react';
 
 export interface NavItem {
   /** Route path for the page. */
@@ -19,6 +19,7 @@ export const menuItems: NavItem[] = [
   {path: '/accounts', label: '账户管理', icon: KeyRound},
   {path: '/instances', label: 'ECS 实例列表', icon: Server},
   {path: '/protection-records', label: '保护记录', icon: History},
+  {path: '/deployment', label: '一键部署', icon: Rocket},
   {path: '/workflows', label: '自动化工作流', icon: Cpu},
   {path: '/settings', label: '系统设置', icon: Settings},
 ];

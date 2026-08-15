@@ -46,6 +46,33 @@ const finishedWorkflow: WorkflowRun = {
   logs: [],
 };
 
+const manualRequiredWorkflow: WorkflowRun = {
+  id: 'job-3',
+  name: 'one-click-deployment - acc-3',
+  status: 'Manual Required',
+  activeStepIndex: 1,
+  initiatedBy: 'acc-3',
+  targetRegion: 'us-west-1',
+  startedAt: '2026-06-17 12:00:00 UTC',
+  duration: '刚刚',
+  vncUrl: 'https://vnc.aliyun.com/instance/abc',
+  tasks: [
+    {
+      id: 'job-3-0',
+      name: '初始化网络',
+      status: 'Completed',
+      description: '网络已就绪',
+    },
+    {
+      id: 'job-3-1',
+      name: '安装软件',
+      status: 'Manual Required',
+      description: 'SSH 不可达, 请通过 VNC 手动安装',
+    },
+  ],
+  logs: [],
+};
+
 let workflowsData: WorkflowRun[] = [];
 
 vi.mock('../../../features/runtime/hooks', () => ({
@@ -133,5 +160,19 @@ describe('WorkflowsPage', () => {
 
     // Log lines stay rendered after toggling
     expect(screen.getByText(/INFO 开始发现/)).toBeInTheDocument();
+  });
+
+  it('renders the manual-required degradation badge and VNC guidance for ssh-failed jobs', () => {
+    workflowsData = [manualRequiredWorkflow];
+    renderWorkflows();
+
+    // Workflow status badge shows the degradation label
+    expect(screen.getByText('状态: 需手动操作')).toBeInTheDocument();
+    // Step badge shows the manual-required label on the degraded step
+    expect(screen.getAllByText('需手动操作').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText(/SSH 不可达, 请通过 VNC 手动安装/)).toBeInTheDocument();
+    // VNC guidance link is rendered from workflow.vncUrl
+    const vncLink = screen.getByRole('link', {name: /打开 VNC 连接/});
+    expect(vncLink).toHaveAttribute('href', 'https://vnc.aliyun.com/instance/abc');
   });
 });

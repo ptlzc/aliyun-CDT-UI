@@ -5,6 +5,7 @@ import {
   deleteAccount as deleteAccountRequest,
   listAccounts as listAccountsRequest,
   listRegions as listRegionsRequest,
+  listRegionsForAccount as listRegionsForAccountRequest,
   updateAccount as updateAccountRequest,
   validateAccountById as validateAccountByIdRequest,
 } from './generated/accounts/sdk.gen';
@@ -37,8 +38,8 @@ import {client as jobsClient} from './generated/jobs/client.gen';
 import {getCdtFreeQuota as getCdtFreeQuotaRequest, listJobs as listJobsRequest, listTrafficAudits as listTrafficAuditsRequest, listTrafficPolicies as listTrafficPoliciesRequest, saveTrafficPolicy as saveTrafficPolicyRequest} from './generated/jobs/sdk.gen';
 import type {ActionAuditListResponse, Job, JobListResponse, ListTrafficAuditsData, TrafficPolicy, TrafficPolicyListResponse, TrafficPolicyRequest} from './generated/jobs/types.gen';
 import {client as provisionClient} from './generated/provision/client.gen';
-import {provision as provisionRequest} from './generated/provision/sdk.gen';
-import type {ProvisionBody, ProvisionResponse2} from './generated/provision/types.gen';
+import {createOneClickDeployment as createOneClickDeploymentRequest, provision as provisionRequest} from './generated/provision/sdk.gen';
+import type {OneClickDeploymentBody, OneClickDeploymentResponse, ProvisionBody, ProvisionResponse2} from './generated/provision/types.gen';
 import {client as settingsClient} from './generated/settings/client.gen';
 import {
   applyPlatformTrafficGovernanceDefaultsToAccounts as applyPlatformTrafficGovernanceDefaultsToAccountsRequest,
@@ -97,6 +98,8 @@ export type ApiECSTrafficGovernanceOverride = EcsTrafficGovernanceOverride;
 export type ApiECSMetricsSnapshot = EcsMetricsSnapshot;
 export type ApiEffectiveTrafficGovernance = EffectiveTrafficGovernance;
 export type ApiJob = Job;
+export type ApiOneClickDeploymentBody = OneClickDeploymentBody;
+export type ApiOneClickDeploymentResponse = OneClickDeploymentResponse;
 export type ApiPlatformTrafficGovernance = PlatformTrafficGovernance;
 export type ApiPlatformTrafficGovernanceRolloutResult = PlatformTrafficGovernanceRolloutResult;
 export type ApiProvisionRequest = ProvisionBody;
@@ -322,6 +325,32 @@ export async function provision(accountId: string, payload: ApiProvisionRequest)
     path: {accountId},
     body: payload,
   })) as GeneratedResult<ProvisionResponse2>);
+}
+
+/**
+ * Region options for an already-managed account (GET /api/accounts/{accountId}/regions).
+ * Used by the one-click deployment form to offer the regions the account can
+ * actually reach, instead of hardcoding the account's default region.
+ *
+ * @when 一键部署页账号选定后加载地域下拉
+ */
+export async function listRegionsForAccount(accountId: string): Promise<ApiAccountRegion[]> {
+  const response = unwrapData((await listRegionsForAccountRequest({path: {accountId}})) as GeneratedResult<AccountRegionListResponse>);
+  return response.items ?? [];
+}
+
+/**
+ * Kicks off the 7-step one-click deployment job. The response carries the
+ * one-time root password at the top level — the caller must show it to the
+ * user immediately (it is never persisted and never returned again).
+ *
+ * @when 一键部署页表单提交
+ */
+export async function createOneClickDeployment(accountId: string, body: ApiOneClickDeploymentBody): Promise<ApiOneClickDeploymentResponse> {
+  return unwrapData((await createOneClickDeploymentRequest({
+    path: {accountId},
+    body,
+  })) as GeneratedResult<ApiOneClickDeploymentResponse>);
 }
 
 export async function listRegionGroups(): Promise<ApiRegionGroup[]> {

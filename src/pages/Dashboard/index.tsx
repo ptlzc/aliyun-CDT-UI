@@ -10,6 +10,7 @@ const WORKFLOW_STATUS_LABELS: Record<WorkflowRun['status'], string> = {
   'Success': '成功',
   'Failed': '失败',
   'Idle': '空闲',
+  'Manual Required': '需手动操作',
 };
 
 export default function DashboardPage() {

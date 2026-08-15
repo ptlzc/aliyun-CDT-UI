@@ -5,6 +5,7 @@ import {
   applyPlatformTrafficGovernanceToAccounts,
   checkCdtPermission,
   createAccount,
+  createOneClickDeployment,
   createRegionGroup,
   deleteAccount,
   deleteRegionGroup,
@@ -15,6 +16,7 @@ import {
   listGraph,
   listJobs,
   listRegionGroups,
+  listRegionsForAccount,
   listTrafficAudits,
   listTrafficPolicies,
   saveECSTrafficGovernance,
@@ -28,12 +30,15 @@ import {
   updateAccount,
   updateRegionGroup,
   type ApiAccount,
+  type ApiAccountRegion,
   type ApiActionAudit,
   type ApiCreateAccountRequest,
   type ApiECSTrafficGovernance,
   type ApiECSMetricsSnapshot,
   type ApiEffectiveTrafficGovernance,
   type ApiJob,
+  type ApiOneClickDeploymentBody,
+  type ApiOneClickDeploymentResponse,
   type ApiPlatformTrafficGovernance,
   type ApiRegionGroup,
   type ApiResourceGraph,
@@ -58,6 +63,7 @@ export const runtimeKeys = {
   policies: (accountId: string) => ['runtime', 'traffic-policies', accountId] as const,
   audits: (accountId: string, filters: TrafficAuditFilters) => ['runtime', 'traffic-audits', accountId, filters] as const,
   cdtPermission: (accountId: string) => ['runtime', 'cdt-permission', accountId] as const,
+  regions: (accountId: string) => ['runtime', 'regions', accountId] as const,
 };
 
 /**
@@ -128,6 +134,9 @@ function taskStatusFromJob(job: ApiJob, step: ApiJob['steps'][number], index: nu
     status = 'Completed';
   } else if (normalized === 'failed') {
     status = 'Failed';
+  } else if (normalized === 'manual-required') {
+    // SSH 降级态: 后端无法自动完成, 需人工经 VNC 操作。
+    status = 'Manual Required';
   } else if (index === 0 && job.status === 'succeeded') {
     status = 'Completed';
   }
@@ -140,18 +149,19 @@ function taskStatusFromJob(job: ApiJob, step: ApiJob['steps'][number], index: nu
   };
 }
 
-function mapJobToWorkflow(job: ApiJob): WorkflowRun {
+export function mapJobToWorkflow(job: ApiJob): WorkflowRun {
   const tasks = (job.steps || []).map((step, index) => taskStatusFromJob(job, step, index));
   const activeStepIndex = Math.max(0, tasks.findIndex((task) => task.status === 'In Progress'));
   return {
     id: job.id,
     name: `${job.type} - ${job.accountId}`,
-    status: job.status === 'running' ? 'Running' : job.status === 'succeeded' ? 'Success' : job.status === 'failed' ? 'Failed' : 'Idle',
+    status: job.status === 'running' ? 'Running' : job.status === 'succeeded' ? 'Success' : job.status === 'failed' ? 'Failed' : job.status === 'manual-required' ? 'Manual Required' : 'Idle',
     activeStepIndex: activeStepIndex === -1 ? Math.max(0, tasks.length - 1) : activeStepIndex,
     initiatedBy: job.accountId,
     targetRegion: job.metadata?.regionId || job.accountId,
     startedAt: formatDateLabel(job.startedAt),
     duration: relativeTimeLabel(job.updatedAt),
+    vncUrl: job.result?.vncUrl || undefined,
     tasks,
     logs: (job.logs || []).map((entry) => `[${formatDateLabel(entry.timestamp)}] ${entry.level?.toUpperCase() || 'INFO'} ${entry.message}`),
   };
@@ -532,6 +542,42 @@ export function useCdtPermissionQuery(accountId: string | null) {
     queryFn: () => checkCdtPermission(accountId!),
     enabled: Boolean(accountId),
     refetchInterval: 120_000,
+  });
+}
+
+/**
+ * Regions reachable by a managed account (GET /api/accounts/{accountId}/regions).
+ * Drives the region dropdown of the one-click deployment form.
+ *
+ * @when 一键部署页选定账号后加载地域列表
+ */
+export function useRegionsQuery(accountId: string | null) {
+  return useQuery<ApiAccountRegion[]>({
+    queryKey: runtimeKeys.regions(accountId || ''),
+    queryFn: () => listRegionsForAccount(accountId!),
+    enabled: Boolean(accountId),
+  });
+}
+
+/**
+ * Kicks off the one-click deployment job. The response contains the one-time
+ * root password and the full job; the job is seeded into the jobs cache so
+ * the step list renders immediately, then WS job.updated events keep it live.
+ *
+ * @when 一键部署页表单提交
+ */
+export function useCreateOneClickDeploymentMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({accountId, body}: {accountId: string; body: ApiOneClickDeploymentBody}) => createOneClickDeployment(accountId, body),
+    onSuccess: (response: ApiOneClickDeploymentResponse) => {
+      queryClient.setQueryData(runtimeKeys.jobs, (previous: unknown) => {
+        const items = Array.isArray(previous) ? previous : [];
+        const next = items.filter((item: {id: string}) => item.id !== response.job.id);
+        return [response.job, ...next];
+      });
+      void queryClient.invalidateQueries({queryKey: runtimeKeys.jobs});
+    },
   });
 }
 

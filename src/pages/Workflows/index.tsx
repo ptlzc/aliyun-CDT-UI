@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Download, Layers, RefreshCw, Terminal } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Download, Layers, RefreshCw, Terminal } from 'lucide-react';
 
 import {useRuntimeDashboard} from '../../features/runtime/hooks';
 import { WorkflowRun, WorkflowTask } from '../../types';
@@ -10,6 +10,7 @@ const WORKFLOW_STATUS_LABELS: Record<WorkflowRun['status'], string> = {
   'Success': '成功',
   'Failed': '失败',
   'Idle': '空闲',
+  'Manual Required': '需手动操作',
 };
 
 const TASK_STATUS_LABELS: Record<WorkflowTask['status'], string> = {
@@ -18,6 +19,7 @@ const TASK_STATUS_LABELS: Record<WorkflowTask['status'], string> = {
   'Pending': '待执行',
   'Success': '成功',
   'Failed': '失败',
+  'Manual Required': '需手动操作',
 };
 
 export default function WorkflowsPage() {
@@ -132,7 +134,7 @@ export default function WorkflowsPage() {
           </div>
 
           <span className="text-xs text-secondary-ink flex items-center gap-1.5 bg-workspace-canvas px-3 py-1.5 border rounded-full">
-            <span className={`w-2 h-2 rounded-full ${activeWorkflow.status === 'Running' ? 'bg-signal-amber animate-pulse' : activeWorkflow.status === 'Success' ? 'bg-healthy-green' : activeWorkflow.status === 'Failed' ? 'bg-recovery-red' : 'bg-outline'}`} />
+            <span className={`w-2 h-2 rounded-full ${activeWorkflow.status === 'Running' ? 'bg-signal-amber animate-pulse' : activeWorkflow.status === 'Success' ? 'bg-healthy-green' : activeWorkflow.status === 'Failed' ? 'bg-recovery-red' : activeWorkflow.status === 'Manual Required' ? 'bg-signal-amber' : 'bg-outline'}`} />
             <span>状态: {WORKFLOW_STATUS_LABELS[activeWorkflow.status]}</span>
             <span className="font-mono text-primary font-bold pl-1">更新: {activeWorkflow.duration}</span>
           </span>
@@ -152,6 +154,7 @@ export default function WorkflowsPage() {
                 const isActive = task.id === focusedTaskId;
                 const isTaskDone = task.status === 'Completed' || task.status === 'Success';
                 const isTaskActive = task.status === 'In Progress';
+                const isManualRequired = task.status === 'Manual Required';
                 return (
                   <button
                     key={task.id}
@@ -165,6 +168,11 @@ export default function WorkflowsPage() {
                       <span className={`font-mono text-xs font-bold ${isActive ? 'text-primary' : 'text-primary-ink'}`}>{task.name}</span>
                       {isTaskDone ? (
                         <CheckCircle2 className="w-4 h-4 text-healthy-green" />
+                      ) : isManualRequired ? (
+                        <span className="text-[10px] text-signal-amber font-bold flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          需手动操作
+                        </span>
                       ) : isTaskActive ? (
                         <span className="text-[10px] text-signal-amber font-semibold flex items-center gap-1">
                           <RefreshCw className="w-3 h-3 animate-spin" />
@@ -175,6 +183,14 @@ export default function WorkflowsPage() {
                       )}
                     </div>
                     <p className="text-[11px] text-[#667085] leading-relaxed">{task.description}</p>
+                    {isManualRequired && activeWorkflow.vncUrl && (
+                      <p className="mt-2 text-[11px] text-signal-amber leading-relaxed">
+                        SSH 不可达, 请通过 VNC 连接实例完成手动安装。
+                        <a href={activeWorkflow.vncUrl} target="_blank" rel="noreferrer" className="ml-1 font-bold underline">
+                          打开 VNC 连接
+                        </a>
+                      </p>
+                    )}
                     {task.progress !== undefined && (
                       <div className="mt-3 bg-white p-2.5 border rounded-sm font-mono text-[10px] text-[#424751] flex flex-col gap-1.5 shadow-2xs">
                         <div className="w-full bg-[#FAFBFD] rounded-full h-1 overflow-hidden border">

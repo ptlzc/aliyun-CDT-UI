@@ -71,12 +71,12 @@ export interface DashboardSummary {
   monitoredInstanceCount: number;
 }
 
-export type WorkflowStatus = 'Running' | 'Success' | 'Failed' | 'Idle';
+export type WorkflowStatus = 'Running' | 'Success' | 'Failed' | 'Idle' | 'Manual Required';
 
 export interface WorkflowTask {
   id: string;
   name: string;
-  status: 'Completed' | 'In Progress' | 'Pending' | 'Success' | 'Failed';
+  status: 'Completed' | 'In Progress' | 'Pending' | 'Success' | 'Failed' | 'Manual Required';
   description: string;
   properties?: {[key: string]: string | number};
   progress?: number;
@@ -91,6 +91,8 @@ export interface WorkflowRun {
   targetRegion: string;
   startedAt: string;
   duration: string;
+  /** VNC fallback link for manual-required (SSH 降级) jobs, from job.result.vncUrl. */
+  vncUrl?: string;
   tasks: WorkflowTask[];
   logs: string[];
 }

@@ -10,6 +10,8 @@ import {
 } from '../../features/runtime/hooks';
 import type {ApiJob, ApiOneClickDeploymentBody, ApiOneClickDeploymentResponse} from '../../lib/api/client';
 
+import S3ConfigFields from './S3ConfigFields';
+
 // 后端 job.step.title 是英文 step key（枚举值不翻译），仅显示层映射为中文。
 const DEPLOYMENT_STEP_LABELS: Record<string, string> = {
   'ensure-network': '初始化网络',
@@ -305,86 +307,22 @@ export default function DeploymentPage() {
             )}
 
             {storageProvider === 's3' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded border border-hairline-divider bg-section-layer/40 p-3">
-                <div>
-                  <label htmlFor="deploy-s3-bucket" className={labelClass}>S3 Bucket</label>
-                  <input
-                    id="deploy-s3-bucket"
-                    aria-label="S3 Bucket"
-                    type="text"
-                    value={s3Bucket}
-                    onChange={(event) => setS3Bucket(event.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="deploy-s3-region" className={labelClass}>S3 Region</label>
-                  <input
-                    id="deploy-s3-region"
-                    aria-label="S3 Region"
-                    type="text"
-                    value={s3Region}
-                    onChange={(event) => setS3Region(event.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="deploy-s3-endpoint" className={labelClass}>S3 Endpoint（可选）</label>
-                  <input
-                    id="deploy-s3-endpoint"
-                    aria-label="S3 Endpoint"
-                    type="text"
-                    value={s3Endpoint}
-                    onChange={(event) => setS3Endpoint(event.target.value)}
-                    placeholder="https://s3.example.com"
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="deploy-s3-access-key-id" className={labelClass}>S3 AccessKey ID</label>
-                  <input
-                    id="deploy-s3-access-key-id"
-                    aria-label="S3 AccessKey ID"
-                    type="text"
-                    value={s3AccessKeyId}
-                    onChange={(event) => setS3AccessKeyId(event.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="deploy-s3-access-key-secret" className={labelClass}>S3 AccessKey Secret</label>
-                  <input
-                    id="deploy-s3-access-key-secret"
-                    aria-label="S3 AccessKey Secret"
-                    type="password"
-                    value={s3AccessKeySecret}
-                    onChange={(event) => setS3AccessKeySecret(event.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="deploy-s3-object-key" className={labelClass}>S3 ObjectKey</label>
-                  <input
-                    id="deploy-s3-object-key"
-                    aria-label="S3 ObjectKey"
-                    type="text"
-                    value={s3ObjectKey}
-                    onChange={(event) => setS3ObjectKey(event.target.value)}
-                    placeholder="path/to/alpine.raw"
-                    className={inputClass}
-                  />
-                </div>
-                <label className="flex items-center gap-2 text-sm cursor-pointer sm:col-span-2">
-                  <input
-                    type="checkbox"
-                    aria-label="S3 ForcePathStyle"
-                    checked={s3ForcePathStyle}
-                    onChange={(event) => setS3ForcePathStyle(event.target.checked)}
-                    className="rounded text-primary"
-                  />
-                  S3 ForcePathStyle（兼容 MinIO/Ceph 等自定义 endpoint）
-                </label>
-              </div>
+              <S3ConfigFields
+                bucket={s3Bucket}
+                region={s3Region}
+                endpoint={s3Endpoint}
+                accessKeyId={s3AccessKeyId}
+                accessKeySecret={s3AccessKeySecret}
+                objectKey={s3ObjectKey}
+                forcePathStyle={s3ForcePathStyle}
+                onBucketChange={setS3Bucket}
+                onRegionChange={setS3Region}
+                onEndpointChange={setS3Endpoint}
+                onAccessKeyIdChange={setS3AccessKeyId}
+                onAccessKeySecretChange={setS3AccessKeySecret}
+                onObjectKeyChange={setS3ObjectKey}
+                onForcePathStyleChange={setS3ForcePathStyle}
+              />
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

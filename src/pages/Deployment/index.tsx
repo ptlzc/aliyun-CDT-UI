@@ -3,6 +3,7 @@ import {AlertTriangle, Check, CheckCircle2, Circle, Copy, Loader2, Rocket, XCirc
 
 import {
   useAccountsQuery,
+  useContinueOneClickDeploymentMutation,
   useCreateOneClickDeploymentMutation,
   useJobsQuery,
   useRegionsQuery,
@@ -16,6 +17,7 @@ const DEPLOYMENT_STEP_LABELS: Record<string, string> = {
   'create-instance': '创建实例',
   'wait-running': '等待实例运行',
   'bind-eip': '绑定弹性 IP',
+  'vnc-install-system': 'VNC 安装系统',
   'install-software': '安装软件',
   'attach-governance': '挂载保活治理',
 };
@@ -26,6 +28,7 @@ const STEP_STATUS_LABELS: Record<string, string> = {
   succeeded: '已完成',
   failed: '失败',
   'manual-required': '需手动操作',
+  'awaiting_user': '等待用户操作',
 };
 
 const inputClass =
@@ -42,7 +45,7 @@ function StepStatusIcon({status}: {status: string}) {
   if (status === 'running') {
     return <Loader2 className="w-4 h-4 text-signal-amber animate-spin shrink-0" />;
   }
-  if (status === 'manual-required') {
+  if (status === 'manual-required' || status === 'awaiting_user') {
     return <AlertTriangle className="w-4 h-4 text-signal-amber shrink-0" />;
   }
   return <Circle className="w-4 h-4 text-outline/50 shrink-0" />;
@@ -62,10 +65,20 @@ export default function DeploymentPage() {
   const [accountId, setAccountId] = useState('');
   const regionsQuery = useRegionsQuery(accountId || null);
   const createMutation = useCreateOneClickDeploymentMutation();
+  const continueMutation = useContinueOneClickDeploymentMutation();
 
   const [regionId, setRegionId] = useState('');
   const [zoneId, setZoneId] = useState('');
   const [instanceType, setInstanceType] = useState('ecs.e-c4m1.large');
+  const [imageType, setImageType] = useState('system');
+  const [storageProvider, setStorageProvider] = useState('aliyun_oss');
+  const [s3Bucket, setS3Bucket] = useState('');
+  const [s3Region, setS3Region] = useState('');
+  const [s3Endpoint, setS3Endpoint] = useState('');
+  const [s3AccessKeyId, setS3AccessKeyId] = useState('');
+  const [s3AccessKeySecret, setS3AccessKeySecret] = useState('');
+  const [s3ObjectKey, setS3ObjectKey] = useState('');
+  const [s3ForcePathStyle, setS3ForcePathStyle] = useState(false);
   const [spotPriceLimit, setSpotPriceLimit] = useState('');
   const [installSingBox, setInstallSingBox] = useState(false);
   const [singBoxConfig, setSingBoxConfig] = useState('');
@@ -88,6 +101,10 @@ export default function DeploymentPage() {
   }, [deployment, jobsQuery.data]);
 
   const canSubmit = Boolean(accountId && regionId) && !createMutation.isPending;
+  const isAwaitingVnc = Boolean(
+    job?.status === 'awaiting_user' &&
+      (job.phase === 'vnc-install-system' || (job.steps || []).some((step) => step.title === 'vnc-install-system' && step.status === 'awaiting_user')),
+  );
 
   const handleAccountChange = (value: string) => {
     setAccountId(value);
@@ -102,6 +119,19 @@ export default function DeploymentPage() {
       regionId,
       zoneId: zoneId.trim() || undefined,
       instanceType,
+      imageType,
+      storageProvider,
+      ...(storageProvider === 's3'
+        ? {
+            s3Bucket,
+            s3Region,
+            s3Endpoint: s3Endpoint.trim() || undefined,
+            s3AccessKeyId,
+            s3AccessKeySecret,
+            s3ObjectKey,
+            s3ForcePathStyle,
+          }
+        : {}),
       spotPriceLimit: spotPriceLimit.trim() !== '' ? Number(spotPriceLimit) : undefined,
       installSingBox: installSingBox || undefined,
       singBoxConfig: installSingBox && singBoxConfig.trim() !== '' ? singBoxConfig : undefined,
@@ -115,6 +145,24 @@ export default function DeploymentPage() {
         onSuccess: (response) => {
           setDeployment(response);
           setCopiedPassword(false);
+        },
+      },
+    );
+  };
+
+  const handleContinue = () => {
+    if (!job || !accountId) {
+      return;
+    }
+    continueMutation.mutate(
+      {
+        accountId,
+        jobId: job.id,
+        body: {action: 'vnc_setup_alpine_complete'},
+      },
+      {
+        onSuccess: (response) => {
+          setDeployment((current) => (current ? {...current, job: response.job} : current));
         },
       },
     );
@@ -216,6 +264,128 @@ export default function DeploymentPage() {
                 <p className="mt-1 text-[11px] text-recovery-red">地域列表加载失败：{(regionsQuery.error as Error).message}</p>
               )}
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="deploy-image-type" className={labelClass}>镜像类型</label>
+                <select
+                  id="deploy-image-type"
+                  aria-label="镜像类型"
+                  value={imageType}
+                  onChange={(event) => setImageType(event.target.value)}
+                  className={inputClass}
+                >
+                  <option value="system">system（现有系统镜像）</option>
+                  <option value="installer">installer（Alpine 安装器，需 VNC 安装）</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="deploy-storage-provider" className={labelClass}>存储类型</label>
+                <select
+                  id="deploy-storage-provider"
+                  aria-label="存储类型"
+                  value={storageProvider}
+                  onChange={(event) => setStorageProvider(event.target.value)}
+                  className={inputClass}
+                >
+                  <option value="aliyun_oss">aliyun_oss（阿里云 OSS）</option>
+                  <option value="s3">s3（S3 兼容存储）</option>
+                </select>
+              </div>
+            </div>
+
+            {imageType === 'installer' && (
+              <div className="rounded border border-signal-amber/40 bg-amber-50/60 p-3 text-xs leading-relaxed text-secondary-ink">
+                <p className="font-bold text-primary-ink">VNC 安装系统阶段</p>
+                <p className="mt-1">
+                  选择 installer 镜像后，实例创建并绑定 EIP 后会暂停在 VNC 安装阶段。请打开 VNC 连接，登录 Alpine 安装器并执行{' '}
+                  <code className="font-mono text-[11px]">setup-alpine</code>，选择磁盘安装 sys 后 reboot，再回到本页点击继续。
+                </p>
+              </div>
+            )}
+
+            {storageProvider === 's3' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded border border-hairline-divider bg-section-layer/40 p-3">
+                <div>
+                  <label htmlFor="deploy-s3-bucket" className={labelClass}>S3 Bucket</label>
+                  <input
+                    id="deploy-s3-bucket"
+                    aria-label="S3 Bucket"
+                    type="text"
+                    value={s3Bucket}
+                    onChange={(event) => setS3Bucket(event.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="deploy-s3-region" className={labelClass}>S3 Region</label>
+                  <input
+                    id="deploy-s3-region"
+                    aria-label="S3 Region"
+                    type="text"
+                    value={s3Region}
+                    onChange={(event) => setS3Region(event.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="deploy-s3-endpoint" className={labelClass}>S3 Endpoint（可选）</label>
+                  <input
+                    id="deploy-s3-endpoint"
+                    aria-label="S3 Endpoint"
+                    type="text"
+                    value={s3Endpoint}
+                    onChange={(event) => setS3Endpoint(event.target.value)}
+                    placeholder="https://s3.example.com"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="deploy-s3-access-key-id" className={labelClass}>S3 AccessKey ID</label>
+                  <input
+                    id="deploy-s3-access-key-id"
+                    aria-label="S3 AccessKey ID"
+                    type="text"
+                    value={s3AccessKeyId}
+                    onChange={(event) => setS3AccessKeyId(event.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="deploy-s3-access-key-secret" className={labelClass}>S3 AccessKey Secret</label>
+                  <input
+                    id="deploy-s3-access-key-secret"
+                    aria-label="S3 AccessKey Secret"
+                    type="password"
+                    value={s3AccessKeySecret}
+                    onChange={(event) => setS3AccessKeySecret(event.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="deploy-s3-object-key" className={labelClass}>S3 ObjectKey</label>
+                  <input
+                    id="deploy-s3-object-key"
+                    aria-label="S3 ObjectKey"
+                    type="text"
+                    value={s3ObjectKey}
+                    onChange={(event) => setS3ObjectKey(event.target.value)}
+                    placeholder="path/to/alpine.raw"
+                    className={inputClass}
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-sm cursor-pointer sm:col-span-2">
+                  <input
+                    type="checkbox"
+                    aria-label="S3 ForcePathStyle"
+                    checked={s3ForcePathStyle}
+                    onChange={(event) => setS3ForcePathStyle(event.target.checked)}
+                    className="rounded text-primary"
+                  />
+                  S3 ForcePathStyle（兼容 MinIO/Ceph 等自定义 endpoint）
+                </label>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -377,27 +547,61 @@ export default function DeploymentPage() {
               </div>
             )}
 
+            {isAwaitingVnc && (
+              <div className="mb-4 bg-amber-50 border border-signal-amber/40 rounded p-4 text-xs leading-relaxed text-secondary-ink">
+                <p className="text-sm font-bold text-primary-ink mb-2">VNC 安装系统</p>
+                <p className="text-signal-amber font-semibold mb-2">实例已暂停在安装系统阶段，请通过 VNC 完成以下步骤：</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>使用上方密码登录 VNC</li>
+                  <li>在 Alpine 安装器执行 <code className="font-mono text-[11px]">setup-alpine</code></li>
+                  <li>选择磁盘安装 sys 并 reboot</li>
+                  <li>完成后回到本页点击“我已安装完成，继续”</li>
+                </ol>
+                {job.result?.vncUrl && (
+                  <a href={job.result.vncUrl} target="_blank" rel="noreferrer" className="inline-block mt-3 font-bold text-primary underline">
+                    打开 VNC 连接
+                  </a>
+                )}
+                <div className="mt-3 flex flex-col gap-2">
+                  <button
+                    onClick={handleContinue}
+                    disabled={continueMutation.isPending}
+                    className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-container disabled:opacity-40 text-white px-4 py-2 rounded text-xs font-bold cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    {continueMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    我已安装完成，继续
+                  </button>
+                  {continueMutation.error && (
+                    <p className="text-recovery-red">
+                      继续失败：{continueMutation.error instanceof Error ? continueMutation.error.message : String(continueMutation.error)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
             <ol className="flex flex-col gap-2.5">
               {(job.steps || []).map((step, index) => {
                 const label = DEPLOYMENT_STEP_LABELS[step.title] || step.title;
                 const statusLabel = STEP_STATUS_LABELS[step.status] || step.status;
                 const isFailed = step.status === 'failed';
                 const isManualRequired = step.status === 'manual-required';
+                const isAwaitingUser = step.status === 'awaiting_user';
                 return (
                   <li
                     key={`${job.id}-${index}`}
-                    className={`flex items-start gap-3 p-3 border rounded ${isFailed ? 'border-recovery-red/40 bg-red-50/40' : isManualRequired ? 'border-signal-amber/40 bg-amber-50/40' : 'border-hairline-divider bg-section-layer/40'}`}
+                    className={`flex items-start gap-3 p-3 border rounded ${isFailed ? 'border-recovery-red/40 bg-red-50/40' : isManualRequired || isAwaitingUser ? 'border-signal-amber/40 bg-amber-50/40' : 'border-hairline-divider bg-section-layer/40'}`}
                   >
                     <StepStatusIcon status={step.status} />
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center gap-2">
                         <span className="text-xs font-bold text-primary-ink">{label}</span>
-                        <span className={`text-[10px] font-semibold shrink-0 ${isFailed ? 'text-recovery-red' : isManualRequired || step.status === 'running' ? 'text-signal-amber' : step.status === 'succeeded' ? 'text-healthy-green' : 'text-outline'}`}>
+                        <span className={`text-[10px] font-semibold shrink-0 ${isFailed ? 'text-recovery-red' : isManualRequired || isAwaitingUser || step.status === 'running' ? 'text-signal-amber' : step.status === 'succeeded' ? 'text-healthy-green' : 'text-outline'}`}>
                           {statusLabel}
                         </span>
                       </div>
-                      {step.message && <p className={`mt-0.5 text-[11px] leading-relaxed ${isFailed ? 'text-recovery-red' : isManualRequired ? 'text-signal-amber' : 'text-[#667085]'}`}>{step.message}</p>}
-                      {isManualRequired && job.result?.vncUrl && (
+                      {step.message && <p className={`mt-0.5 text-[11px] leading-relaxed ${isFailed ? 'text-recovery-red' : isManualRequired || isAwaitingUser ? 'text-signal-amber' : 'text-[#667085]'}`}>{step.message}</p>}
+                      {(isManualRequired || isAwaitingUser) && job.result?.vncUrl && (
                         <p className="mt-1 text-[11px] text-signal-amber">
                           <a href={job.result.vncUrl} target="_blank" rel="noreferrer" className="font-bold underline">
                             打开 VNC 连接

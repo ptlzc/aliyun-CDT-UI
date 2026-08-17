@@ -38,8 +38,8 @@ import {client as jobsClient} from './generated/jobs/client.gen';
 import {getCdtFreeQuota as getCdtFreeQuotaRequest, listJobs as listJobsRequest, listTrafficAudits as listTrafficAuditsRequest, listTrafficPolicies as listTrafficPoliciesRequest, saveTrafficPolicy as saveTrafficPolicyRequest} from './generated/jobs/sdk.gen';
 import type {ActionAuditListResponse, Job, JobListResponse, ListTrafficAuditsData, TrafficPolicy, TrafficPolicyListResponse, TrafficPolicyRequest} from './generated/jobs/types.gen';
 import {client as provisionClient} from './generated/provision/client.gen';
-import {createOneClickDeployment as createOneClickDeploymentRequest, provision as provisionRequest} from './generated/provision/sdk.gen';
-import type {OneClickDeploymentBody, OneClickDeploymentResponse, ProvisionBody, ProvisionResponse2} from './generated/provision/types.gen';
+import {continueOneClickDeployment as continueOneClickDeploymentRequest, createOneClickDeployment as createOneClickDeploymentRequest, provision as provisionRequest} from './generated/provision/sdk.gen';
+import type {ContinueOneClickDeploymentBody, ContinueOneClickDeploymentResponse, OneClickDeploymentBody, OneClickDeploymentResponse, ProvisionBody, ProvisionResponse2} from './generated/provision/types.gen';
 import {client as settingsClient} from './generated/settings/client.gen';
 import {
   applyPlatformTrafficGovernanceDefaultsToAccounts as applyPlatformTrafficGovernanceDefaultsToAccountsRequest,
@@ -100,6 +100,8 @@ export type ApiEffectiveTrafficGovernance = EffectiveTrafficGovernance;
 export type ApiJob = Job;
 export type ApiOneClickDeploymentBody = OneClickDeploymentBody;
 export type ApiOneClickDeploymentResponse = OneClickDeploymentResponse;
+export type ApiContinueOneClickDeploymentBody = ContinueOneClickDeploymentBody;
+export type ApiContinueOneClickDeploymentResponse = ContinueOneClickDeploymentResponse;
 export type ApiPlatformTrafficGovernance = PlatformTrafficGovernance;
 export type ApiPlatformTrafficGovernanceRolloutResult = PlatformTrafficGovernanceRolloutResult;
 export type ApiProvisionRequest = ProvisionBody;
@@ -351,6 +353,24 @@ export async function createOneClickDeployment(accountId: string, body: ApiOneCl
     path: {accountId},
     body,
   })) as GeneratedResult<ApiOneClickDeploymentResponse>);
+}
+
+/**
+ * Resumes an installer-mode one-click deployment that is paused at
+ * vnc-install-system / awaiting_user. The backend verifies the job belongs to
+ * the account and is waiting for the VNC setup-alpine completion action.
+ *
+ * @when 进度页 installer 流程用户点击“我已安装完成，继续”
+ */
+export async function continueOneClickDeployment(
+  accountId: string,
+  jobId: string,
+  body: ApiContinueOneClickDeploymentBody,
+): Promise<ApiContinueOneClickDeploymentResponse> {
+  return unwrapData((await continueOneClickDeploymentRequest({
+    path: {accountId, jobId},
+    body,
+  })) as GeneratedResult<ApiContinueOneClickDeploymentResponse>);
 }
 
 export async function listRegionGroups(): Promise<ApiRegionGroup[]> {

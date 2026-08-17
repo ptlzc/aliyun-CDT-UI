@@ -51,6 +51,7 @@ vi.mock('../features/runtime/hooks', () => ({
   useJobsQuery: () => ({data: [], isLoading: false}),
   useRegionsQuery: () => ({data: [], isLoading: false}),
   useCreateOneClickDeploymentMutation: () => ({mutate: vi.fn(), isPending: false, error: null}),
+  useContinueOneClickDeploymentMutation: () => ({mutate: vi.fn(), isPending: false, error: null}),
   useSaveAccountMutation: () => ({mutateAsync: vi.fn(), isPending: false}),
   useDeleteAccountMutation: () => ({mutate: vi.fn(), isPending: false}),
   useCdtPermissionQuery: () => ({data: undefined, isLoading: false}),

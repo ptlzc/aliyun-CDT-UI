@@ -1130,7 +1130,12 @@
             "type": "string"
           },
           "imageType": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "system",
+              "installer",
+              "auto-installer"
+            ]
           },
           "installSingBox": {
             "type": "boolean"

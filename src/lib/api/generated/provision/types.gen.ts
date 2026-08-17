@@ -314,7 +314,7 @@ export type OneClickDeploymentBody = {
     attachGovernance?: boolean;
     imageId?: string;
     imagePath?: string;
-    imageType?: string;
+    imageType?: 'system' | 'installer' | 'auto-installer';
     installSingBox?: boolean;
     installTailscale?: boolean;
     instanceName?: string;

@@ -446,6 +446,30 @@
         ],
         "type": "object"
       },
+      "ContinueOneClickDeploymentBody": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "type": "object"
+      },
+      "ContinueOneClickDeploymentResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "job": {
+            "$ref": "#/components/schemas/Job"
+          }
+        },
+        "required": [
+          "job"
+        ],
+        "type": "object"
+      },
       "CreateAccountRequest": {
         "additionalProperties": false,
         "properties": {
@@ -896,6 +920,9 @@
           "bootMode": {
             "type": "string"
           },
+          "format": {
+            "type": "string"
+          },
           "imageName": {
             "type": "string"
           },
@@ -1102,6 +1129,9 @@
           "imagePath": {
             "type": "string"
           },
+          "imageType": {
+            "type": "string"
+          },
           "installSingBox": {
             "type": "boolean"
           },
@@ -1120,12 +1150,36 @@
           "regionId": {
             "type": "string"
           },
+          "s3AccessKeyId": {
+            "type": "string"
+          },
+          "s3AccessKeySecret": {
+            "type": "string"
+          },
+          "s3Bucket": {
+            "type": "string"
+          },
+          "s3Endpoint": {
+            "type": "string"
+          },
+          "s3ForcePathStyle": {
+            "type": "boolean"
+          },
+          "s3ObjectKey": {
+            "type": "string"
+          },
+          "s3Region": {
+            "type": "string"
+          },
           "singBoxConfig": {
             "type": "string"
           },
           "spotPriceLimit": {
             "format": "double",
             "type": "number"
+          },
+          "storageProvider": {
+            "type": "string"
           },
           "tailscaleAuthKey": {
             "type": "string"
@@ -2098,6 +2152,64 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OneClickDeploymentResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "tags": [
+          "provision"
+        ]
+      }
+    },
+    "/api/accounts/{accountId}/one-click-deployments/{jobId}/continue": {
+      "post": {
+        "operationId": "continueOneClickDeployment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "jobId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContinueOneClickDeploymentBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContinueOneClickDeploymentResponse"
                 }
               }
             },

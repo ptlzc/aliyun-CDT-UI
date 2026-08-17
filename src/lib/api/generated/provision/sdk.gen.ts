@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { BootstrapNetworkData, BootstrapNetworkErrors, BootstrapNetworkResponses, CreateOneClickDeploymentData, CreateOneClickDeploymentErrors, CreateOneClickDeploymentResponses, EnsureFirewallRuleData, EnsureFirewallRuleErrors, EnsureFirewallRuleResponses, ListFirewallOperationsData, ListFirewallOperationsErrors, ListFirewallOperationsResponses, ProvisionData, ProvisionErrors, ProvisionResponses } from './types.gen';
+import type { BootstrapNetworkData, BootstrapNetworkErrors, BootstrapNetworkResponses, ContinueOneClickDeploymentData, ContinueOneClickDeploymentErrors, ContinueOneClickDeploymentResponses, CreateOneClickDeploymentData, CreateOneClickDeploymentErrors, CreateOneClickDeploymentResponses, EnsureFirewallRuleData, EnsureFirewallRuleErrors, EnsureFirewallRuleResponses, ListFirewallOperationsData, ListFirewallOperationsErrors, ListFirewallOperationsResponses, ProvisionData, ProvisionErrors, ProvisionResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -40,6 +40,15 @@ export const ensureFirewallRule = <ThrowOnError extends boolean = false>(options
 
 export const createOneClickDeployment = <ThrowOnError extends boolean = false>(options: Options<CreateOneClickDeploymentData, ThrowOnError>): RequestResult<CreateOneClickDeploymentResponses, CreateOneClickDeploymentErrors, ThrowOnError> => (options.client ?? client).post<CreateOneClickDeploymentResponses, CreateOneClickDeploymentErrors, ThrowOnError>({
     url: '/api/accounts/{accountId}/one-click-deployments',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const continueOneClickDeployment = <ThrowOnError extends boolean = false>(options: Options<ContinueOneClickDeploymentData, ThrowOnError>): RequestResult<ContinueOneClickDeploymentResponses, ContinueOneClickDeploymentErrors, ThrowOnError> => (options.client ?? client).post<ContinueOneClickDeploymentResponses, ContinueOneClickDeploymentErrors, ThrowOnError>({
+    url: '/api/accounts/{accountId}/one-click-deployments/{jobId}/continue',
     ...options,
     headers: {
         'Content-Type': 'application/json',

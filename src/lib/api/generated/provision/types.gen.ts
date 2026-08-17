@@ -123,6 +123,14 @@ export type CdtPermissionResult = {
     permitted: boolean;
 };
 
+export type ContinueOneClickDeploymentBody = {
+    action: string;
+};
+
+export type ContinueOneClickDeploymentResponse = {
+    job: Job;
+};
+
 export type CreateAccountRequest = {
     accessKeyId: string;
     accessKeySecret: string;
@@ -242,6 +250,7 @@ export type HealthResponse = {
 export type ImportImageBody = {
     architecture?: string;
     bootMode?: string;
+    format?: string;
     imageName?: string;
     imagePath?: string;
     objectKey?: string;
@@ -305,14 +314,23 @@ export type OneClickDeploymentBody = {
     attachGovernance?: boolean;
     imageId?: string;
     imagePath?: string;
+    imageType?: string;
     installSingBox?: boolean;
     installTailscale?: boolean;
     instanceName?: string;
     instanceType?: string;
     objectKey?: string;
     regionId?: string;
+    s3AccessKeyId?: string;
+    s3AccessKeySecret?: string;
+    s3Bucket?: string;
+    s3Endpoint?: string;
+    s3ForcePathStyle?: boolean;
+    s3ObjectKey?: string;
+    s3Region?: string;
     singBoxConfig?: string;
     spotPriceLimit?: number;
+    storageProvider?: string;
     tailscaleAuthKey?: string;
     zoneId?: string;
 };
@@ -627,6 +645,34 @@ export type CreateOneClickDeploymentResponses = {
 };
 
 export type CreateOneClickDeploymentResponse = CreateOneClickDeploymentResponses[keyof CreateOneClickDeploymentResponses];
+
+export type ContinueOneClickDeploymentData = {
+    body: ContinueOneClickDeploymentBody;
+    path: {
+        accountId: string;
+        jobId: string;
+    };
+    query?: never;
+    url: '/api/accounts/{accountId}/one-click-deployments/{jobId}/continue';
+};
+
+export type ContinueOneClickDeploymentErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ContinueOneClickDeploymentError = ContinueOneClickDeploymentErrors[keyof ContinueOneClickDeploymentErrors];
+
+export type ContinueOneClickDeploymentResponses = {
+    /**
+     * OK
+     */
+    200: ContinueOneClickDeploymentResponse;
+};
+
+export type ContinueOneClickDeploymentResponse2 = ContinueOneClickDeploymentResponses[keyof ContinueOneClickDeploymentResponses];
 
 export type ProvisionData = {
     body: ProvisionBody;

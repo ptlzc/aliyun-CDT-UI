@@ -8,6 +8,7 @@ import type {ApiAccount, ApiJob} from '../../../lib/api/client';
 
 const h = vi.hoisted(() => ({
   mutateImpl: vi.fn(),
+  continueImpl: vi.fn(),
 }));
 
 const accounts: ApiAccount[] = [
@@ -59,6 +60,7 @@ vi.mock('../../../features/runtime/hooks', () => ({
   useRegionsQuery: () => ({data: regions, isLoading: false}),
   useJobsQuery: () => ({data: jobsData, isLoading: false}),
   useCreateOneClickDeploymentMutation: () => ({mutate: h.mutateImpl, isPending: false, error: null}),
+  useContinueOneClickDeploymentMutation: () => ({mutate: h.continueImpl, isPending: false, error: null}),
 }));
 
 function renderPage() {
@@ -86,6 +88,7 @@ function setupUser() {
 describe('DeploymentPage form', () => {
   beforeEach(() => {
     h.mutateImpl.mockReset();
+    h.continueImpl.mockReset();
     jobsData = [];
     writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', {
@@ -100,6 +103,9 @@ describe('DeploymentPage form', () => {
     expect(screen.getByRole('heading', {name: /一键部署 ECS/})).toBeInTheDocument();
     expect(screen.getByRole('combobox', {name: /托管账号/})).toBeInTheDocument();
     expect(screen.getByRole('combobox', {name: /地域/})).toBeInTheDocument();
+    expect(screen.getByRole('combobox', {name: /镜像类型/})).toHaveValue('system');
+    expect(screen.getByRole('combobox', {name: /存储类型/})).toHaveValue('aliyun_oss');
+    expect(screen.queryByRole('textbox', {name: /S3 Bucket/})).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', {name: /可用区/})).toBeInTheDocument();
     expect(screen.getByRole('textbox', {name: /实例规格/})).toHaveValue('ecs.e-c4m1.large');
     expect(screen.getByRole('spinbutton', {name: /最高出价/})).toBeInTheDocument();
@@ -142,6 +148,8 @@ describe('DeploymentPage form', () => {
           regionId: 'us-west-1',
           zoneId: 'us-west-1a',
           instanceType: 'ecs.g7.large',
+          imageType: 'system',
+          storageProvider: 'aliyun_oss',
           spotPriceLimit: 0.1,
           installSingBox: true,
           singBoxConfig: '{"log":{"level":"info"}}',
@@ -171,12 +179,74 @@ describe('DeploymentPage form', () => {
         accountId: 'acc-1',
         body: {
           regionId: 'cn-hangzhou',
+          imageType: 'system',
+          storageProvider: 'aliyun_oss',
           instanceType: 'ecs.e-c4m1.large',
           attachGovernance: false,
         },
       },
       expect.anything(),
     );
+  });
+
+  it('shows S3 config when storage provider is s3 and submits S3 fields only in S3 mode', async () => {
+    const user = setupUser();
+    renderPage();
+
+    await user.selectOptions(screen.getByRole('combobox', {name: /托管账号/}), 'acc-1');
+    await user.selectOptions(screen.getByRole('combobox', {name: /地域/}), 'us-west-1');
+    await user.selectOptions(screen.getByRole('combobox', {name: /存储类型/}), 's3');
+
+    expect(screen.getByRole('textbox', {name: /S3 Bucket/})).toBeInTheDocument();
+    expect(screen.getByRole('textbox', {name: /S3 Region/})).toBeInTheDocument();
+    expect(screen.getByRole('textbox', {name: /S3 Endpoint/})).toBeInTheDocument();
+    expect(screen.getByRole('textbox', {name: /S3 AccessKey ID/})).toBeInTheDocument();
+    expect(screen.getByLabelText(/S3 AccessKey Secret/)).toBeInTheDocument();
+    expect(screen.getByRole('textbox', {name: /S3 ObjectKey/})).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', {name: /S3 ForcePathStyle/})).not.toBeChecked();
+
+    await user.type(screen.getByRole('textbox', {name: /S3 Bucket/}), 'my-bucket');
+    await user.type(screen.getByRole('textbox', {name: /S3 Region/}), 'us-east-1');
+    await user.type(screen.getByRole('textbox', {name: /S3 Endpoint/}), 'https://s3.example.com');
+    await user.type(screen.getByRole('textbox', {name: /S3 AccessKey ID/}), 'AKID');
+    await user.type(screen.getByLabelText(/S3 AccessKey Secret/), 'SECRET');
+    await user.type(screen.getByRole('textbox', {name: /S3 ObjectKey/}), 'alpine.raw');
+    await user.click(screen.getByRole('checkbox', {name: /S3 ForcePathStyle/}));
+    await user.click(screen.getByRole('button', {name: /开始一键部署/}));
+
+    await waitFor(() => {
+      expect(h.mutateImpl).toHaveBeenCalledTimes(1);
+    });
+    expect(h.mutateImpl).toHaveBeenCalledWith(
+      {
+        accountId: 'acc-1',
+        body: {
+          regionId: 'us-west-1',
+          imageType: 'system',
+          storageProvider: 's3',
+          instanceType: 'ecs.e-c4m1.large',
+          s3Bucket: 'my-bucket',
+          s3Region: 'us-east-1',
+          s3Endpoint: 'https://s3.example.com',
+          s3AccessKeyId: 'AKID',
+          s3AccessKeySecret: 'SECRET',
+          s3ObjectKey: 'alpine.raw',
+          s3ForcePathStyle: true,
+          attachGovernance: true,
+        },
+      },
+      expect.anything(),
+    );
+  });
+
+  it('shows VNC flow hint when image type is installer', async () => {
+    const user = setupUser();
+    renderPage();
+
+    await user.selectOptions(screen.getByRole('combobox', {name: /镜像类型/}), 'installer');
+
+    expect(screen.getByText(/VNC 安装系统阶段/)).toBeInTheDocument();
+    expect(screen.getByText(/setup-alpine/)).toBeInTheDocument();
   });
 
   it('shows the one-time password after submission with copy button and a save-now warning', async () => {
@@ -248,6 +318,77 @@ describe('DeploymentPage form', () => {
     for (const link of vncLinks) {
       expect(link).toHaveAttribute('href', 'https://vnc.aliyun.com/instance/xyz');
     }
+  });
+
+  it('renders awaiting_user installer progress with VNC guidance and continue button that resumes job', async () => {
+    const user = setupUser();
+    const installerJob: ApiJob = {
+      ...runningJob,
+      status: 'awaiting_user',
+      phase: 'vnc-install-system',
+      result: {vncUrl: 'https://vnc.aliyun.com/instance/installer'},
+      metadata: {regionId: 'us-west-1', imageType: 'installer', awaitingAction: 'vnc_setup_alpine_complete'},
+      steps: [
+        ...runningJob.steps!.slice(0, 5),
+        {title: 'vnc-install-system', status: 'awaiting_user', timestamp: '2026-06-17T10:02:00Z', message: '请通过 VNC 完成 Alpine 安装'},
+        {title: 'install-software', status: 'pending', timestamp: '2026-06-17T10:02:00Z', message: ''},
+        {title: 'attach-governance', status: 'pending', timestamp: '2026-06-17T10:02:00Z', message: ''},
+      ],
+    };
+    const resumedJob: ApiJob = {
+      ...installerJob,
+      status: 'running',
+      phase: 'install-software',
+      steps: installerJob.steps!.map((step) =>
+        step.title === 'vnc-install-system'
+          ? {...step, status: 'succeeded'}
+          : step.title === 'install-software'
+            ? {...step, status: 'running', message: '正在安装软件'}
+            : step,
+      ),
+    };
+    jobsData = [installerJob];
+    h.mutateImpl.mockImplementation((_variables, options) => {
+      options?.onSuccess?.({job: installerJob, password: 'Abc123Xyz789Def4'});
+    });
+    h.continueImpl.mockImplementation((_variables, options) => {
+      jobsData = [resumedJob];
+      options?.onSuccess?.({job: resumedJob});
+    });
+    renderPage();
+
+    await user.selectOptions(screen.getByRole('combobox', {name: /托管账号/}), 'acc-1');
+    await user.selectOptions(screen.getByRole('combobox', {name: /地域/}), 'us-west-1');
+    await user.click(screen.getByRole('button', {name: /开始一键部署/}));
+
+    const progress = await screen.findByRole('region', {name: /部署进度/});
+    expect(within(progress).getAllByText('VNC 安装系统').length).toBeGreaterThan(0);
+    expect(within(progress).getByText('等待用户操作')).toBeInTheDocument();
+    const vncLinks = within(progress).getAllByRole('link', {name: /打开 VNC 连接/});
+    expect(vncLinks.length).toBeGreaterThanOrEqual(1);
+    for (const link of vncLinks) {
+      expect(link).toHaveAttribute('href', 'https://vnc.aliyun.com/instance/installer');
+    }
+    expect(within(progress).getAllByText(/登录/).length).toBeGreaterThan(0);
+    expect(within(progress).getAllByText(/setup-alpine/).length).toBeGreaterThan(0);
+    expect(within(progress).getAllByText(/选择磁盘安装 sys/).length).toBeGreaterThan(0);
+    expect(within(progress).getAllByText(/reboot/).length).toBeGreaterThan(0);
+
+    await user.click(within(progress).getByRole('button', {name: /我已安装完成，继续/}));
+    await waitFor(() => {
+      expect(h.continueImpl).toHaveBeenCalledTimes(1);
+    });
+    expect(h.continueImpl).toHaveBeenCalledWith(
+      {
+        accountId: 'acc-1',
+        jobId: 'job-abc123',
+        body: {action: 'vnc_setup_alpine_complete'},
+      },
+      expect.anything(),
+    );
+
+    expect(await within(progress).findByText('进行中')).toBeInTheDocument();
+    expect(within(progress).queryByRole('button', {name: /我已安装完成，继续/})).not.toBeInTheDocument();
   });
 
   it('shows the failed step message when a step fails', async () => {

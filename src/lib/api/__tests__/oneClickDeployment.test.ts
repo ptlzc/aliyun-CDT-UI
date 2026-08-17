@@ -2,18 +2,20 @@ import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 const h = vi.hoisted(() => ({
   createOneClickDeploymentMock: vi.fn(),
+  continueOneClickDeploymentMock: vi.fn(),
   listRegionsForAccountMock: vi.fn(),
 }));
 
 vi.mock('../generated/provision/sdk.gen', () => ({
   createOneClickDeployment: h.createOneClickDeploymentMock,
+  continueOneClickDeployment: h.continueOneClickDeploymentMock,
 }));
 
 vi.mock('../generated/accounts/sdk.gen', () => ({
   listRegionsForAccount: h.listRegionsForAccountMock,
 }));
 
-import {createOneClickDeployment, listRegionsForAccount} from '../client';
+import {continueOneClickDeployment, createOneClickDeployment, listRegionsForAccount} from '../client';
 
 const job = {
   id: 'job-9',
@@ -28,6 +30,7 @@ const job = {
 describe('createOneClickDeployment client wrapper', () => {
   beforeEach(() => {
     h.createOneClickDeploymentMock.mockReset();
+    h.continueOneClickDeploymentMock.mockReset();
     h.listRegionsForAccountMock.mockReset();
   });
 
@@ -72,9 +75,33 @@ describe('createOneClickDeployment client wrapper', () => {
   });
 });
 
+describe('continueOneClickDeployment client wrapper', () => {
+  beforeEach(() => {
+    h.continueOneClickDeploymentMock.mockReset();
+  });
+
+  it('passes accountId/jobId path and the action body and returns the latest job', async () => {
+    const continuedJob = {...job, status: 'running', phase: 'install-software'};
+    h.continueOneClickDeploymentMock.mockResolvedValue({
+      data: {job: continuedJob},
+    });
+
+    const response = await continueOneClickDeployment('acc-1', 'job-9', {
+      action: 'vnc_setup_alpine_complete',
+    });
+
+    expect(response).toEqual({job: continuedJob});
+    expect(h.continueOneClickDeploymentMock).toHaveBeenCalledWith({
+      path: {accountId: 'acc-1', jobId: 'job-9'},
+      body: {action: 'vnc_setup_alpine_complete'},
+    });
+  });
+});
+
 describe('listRegionsForAccount client wrapper', () => {
   beforeEach(() => {
     h.listRegionsForAccountMock.mockReset();
+    h.continueOneClickDeploymentMock.mockReset();
   });
 
   it('passes the accountId path and returns the region items', async () => {

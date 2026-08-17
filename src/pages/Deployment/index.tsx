@@ -13,6 +13,8 @@ import type {ApiJob, ApiOneClickDeploymentBody, ApiOneClickDeploymentResponse} f
 import S3ConfigFields from './S3ConfigFields';
 
 // 后端 job.step.title 是英文 step key（枚举值不翻译），仅显示层映射为中文。
+type DeploymentImageType = 'system' | 'installer' | 'auto-installer';
+
 const DEPLOYMENT_STEP_LABELS: Record<string, string> = {
   'ensure-network': '初始化网络',
   'ensure-image': '准备镜像',
@@ -72,7 +74,7 @@ export default function DeploymentPage() {
   const [regionId, setRegionId] = useState('');
   const [zoneId, setZoneId] = useState('');
   const [instanceType, setInstanceType] = useState('ecs.e-c4m1.large');
-  const [imageType, setImageType] = useState('system');
+  const [imageType, setImageType] = useState<DeploymentImageType>('system');
   const [storageProvider, setStorageProvider] = useState('aliyun_oss');
   const [s3Bucket, setS3Bucket] = useState('');
   const [s3Region, setS3Region] = useState('');
@@ -106,6 +108,20 @@ export default function DeploymentPage() {
   const isAwaitingVnc = Boolean(
     job?.status === 'awaiting_user' &&
       (job.phase === 'vnc-install-system' || (job.steps || []).some((step) => step.title === 'vnc-install-system' && step.status === 'awaiting_user')),
+  );
+  const isAutoInstaller = useMemo(
+    () => job?.metadata?.imageType === 'auto-installer' || imageType === 'auto-installer',
+    [job, imageType],
+  );
+  const isAutoInstalling = Boolean(
+    isAutoInstaller &&
+      job?.status === 'running' &&
+      (job.phase === 'vnc-install-system' || (job.steps || []).some((step) => step.title === 'vnc-install-system' && step.status === 'running')),
+  );
+  const isAutoInstallTimeout = Boolean(
+    isAutoInstaller &&
+      job?.status === 'awaiting_user' &&
+      (job.metadata?.fallbackReason === 'auto-install-timeout' || job.result?.fallbackReason === 'auto-install-timeout'),
   );
 
   const handleAccountChange = (value: string) => {
@@ -274,11 +290,12 @@ export default function DeploymentPage() {
                   id="deploy-image-type"
                   aria-label="镜像类型"
                   value={imageType}
-                  onChange={(event) => setImageType(event.target.value)}
+                  onChange={(event) => setImageType(event.target.value as DeploymentImageType)}
                   className={inputClass}
                 >
                   <option value="system">system（现有系统镜像）</option>
                   <option value="installer">installer（Alpine 安装器，需 VNC 安装）</option>
+                  <option value="auto-installer">auto-installer（Alpine 自动安装器，自动等待 SSH）</option>
                 </select>
               </div>
               <div>
@@ -302,6 +319,15 @@ export default function DeploymentPage() {
                 <p className="mt-1">
                   选择 installer 镜像后，实例创建并绑定 EIP 后会暂停在 VNC 安装阶段。请打开 VNC 连接，登录 Alpine 安装器并执行{' '}
                   <code className="font-mono text-[11px]">setup-alpine</code>，选择磁盘安装 sys 后 reboot，再回到本页点击继续。
+                </p>
+              </div>
+            )}
+
+            {imageType === 'auto-installer' && (
+              <div className="rounded border border-primary/30 bg-primary/5 p-3 text-xs leading-relaxed text-secondary-ink">
+                <p className="font-bold text-primary-ink">自动安装器 (auto-installer)</p>
+                <p className="mt-1">
+                  将使用自定义 Alpine 自动安装器镜像，系统会自动 setup-alpine 并重启，无需 VNC 人工操作。
                 </p>
               </div>
             )}
@@ -485,10 +511,19 @@ export default function DeploymentPage() {
               </div>
             )}
 
+            {isAutoInstalling && (
+              <div className="mb-4 bg-blue-50 border border-primary/30 rounded p-4 text-xs leading-relaxed text-secondary-ink">
+                <p className="text-sm font-bold text-primary-ink mb-2">自动安装系统</p>
+                <p>系统正在自动安装，预计 5-10 分钟，请稍候…</p>
+              </div>
+            )}
+
             {isAwaitingVnc && (
               <div className="mb-4 bg-amber-50 border border-signal-amber/40 rounded p-4 text-xs leading-relaxed text-secondary-ink">
                 <p className="text-sm font-bold text-primary-ink mb-2">VNC 安装系统</p>
-                <p className="text-signal-amber font-semibold mb-2">实例已暂停在安装系统阶段，请通过 VNC 完成以下步骤：</p>
+                <p className="text-signal-amber font-semibold mb-2">
+                  {isAutoInstallTimeout ? '自动安装超时，请通过 VNC 手动完成以下步骤：' : '实例已暂停在安装系统阶段，请通过 VNC 完成以下步骤：'}
+                </p>
                 <ol className="list-decimal list-inside space-y-1">
                   <li>使用上方密码登录 VNC</li>
                   <li>在 Alpine 安装器执行 <code className="font-mono text-[11px]">setup-alpine</code></li>

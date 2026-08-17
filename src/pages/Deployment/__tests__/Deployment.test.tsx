@@ -450,7 +450,6 @@ describe('DeploymentPage form', () => {
     expect(within(progress).queryByRole('button', {name: /我已安装完成，继续/})).not.toBeInTheDocument();
   });
 
-
   it('hides continue button and shows auto-install waiting hint while auto-installer is running in vnc-install-system', async () => {
     const user = setupUser();
     const autoInstallingJob: ApiJob = {
@@ -512,7 +511,7 @@ describe('DeploymentPage form', () => {
     await user.click(screen.getByRole('button', {name: /开始一键部署/}));
 
     const progress = await screen.findByRole('region', {name: /部署进度/});
-    expect(within(progress).getByText(/自动安装超时/)).toBeInTheDocument();
+    expect(within(progress).getByText(/自动安装超时，请通过 VNC 手动完成以下步骤/)).toBeInTheDocument();
     expect(within(progress).getByText(/setup-alpine/)).toBeInTheDocument();
     expect(within(progress).getByRole('button', {name: /我已安装完成，继续/})).toBeInTheDocument();
   });

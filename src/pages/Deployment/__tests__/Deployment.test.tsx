@@ -249,6 +249,65 @@ describe('DeploymentPage form', () => {
     expect(screen.getByText(/setup-alpine/)).toBeInTheDocument();
   });
 
+  it('shows auto-installer option and hint when selected', async () => {
+    const user = setupUser();
+    renderPage();
+
+    const imageTypeSelect = screen.getByRole('combobox', {name: /镜像类型/});
+    expect(within(imageTypeSelect).getByRole('option', {name: /auto-installer/})).toBeInTheDocument();
+
+    await user.selectOptions(imageTypeSelect, 'auto-installer');
+
+    expect(screen.getByText(/自定义 Alpine 自动安装器镜像/)).toBeInTheDocument();
+    expect(screen.getByText(/setup-alpine/)).toBeInTheDocument();
+    expect(screen.getByText(/无需 VNC 人工操作/)).toBeInTheDocument();
+  });
+
+  it('submits auto-installer imageType with S3 fields when storage provider is s3', async () => {
+    const user = setupUser();
+    renderPage();
+
+    await user.selectOptions(screen.getByRole('combobox', {name: /托管账号/}), 'acc-1');
+    await user.selectOptions(screen.getByRole('combobox', {name: /地域/}), 'us-west-1');
+    await user.selectOptions(screen.getByRole('combobox', {name: /镜像类型/}), 'auto-installer');
+    await user.selectOptions(screen.getByRole('combobox', {name: /存储类型/}), 's3');
+
+    expect(screen.getByRole('textbox', {name: /S3 Bucket/})).toBeInTheDocument();
+
+    await user.type(screen.getByRole('textbox', {name: /S3 Bucket/}), 'auto-bucket');
+    await user.type(screen.getByRole('textbox', {name: /S3 Region/}), 'us-east-1');
+    await user.type(screen.getByRole('textbox', {name: /S3 Endpoint/}), 'https://s3.example.com');
+    await user.type(screen.getByRole('textbox', {name: /S3 AccessKey ID/}), 'AKID');
+    await user.type(screen.getByLabelText(/S3 AccessKey Secret/), 'SECRET');
+    await user.type(screen.getByRole('textbox', {name: /S3 ObjectKey/}), 'alpine-auto.raw');
+    await user.click(screen.getByRole('checkbox', {name: /S3 ForcePathStyle/}));
+    await user.click(screen.getByRole('button', {name: /开始一键部署/}));
+
+    await waitFor(() => {
+      expect(h.mutateImpl).toHaveBeenCalledTimes(1);
+    });
+    expect(h.mutateImpl).toHaveBeenCalledWith(
+      {
+        accountId: 'acc-1',
+        body: {
+          regionId: 'us-west-1',
+          imageType: 'auto-installer',
+          storageProvider: 's3',
+          instanceType: 'ecs.e-c4m1.large',
+          s3Bucket: 'auto-bucket',
+          s3Region: 'us-east-1',
+          s3Endpoint: 'https://s3.example.com',
+          s3AccessKeyId: 'AKID',
+          s3AccessKeySecret: 'SECRET',
+          s3ObjectKey: 'alpine-auto.raw',
+          s3ForcePathStyle: true,
+          attachGovernance: true,
+        },
+      },
+      expect.anything(),
+    );
+  });
+
   it('shows the one-time password after submission with copy button and a save-now warning', async () => {
     const user = setupUser();
     h.mutateImpl.mockImplementation((_variables, options) => {
@@ -389,6 +448,73 @@ describe('DeploymentPage form', () => {
 
     expect(await within(progress).findByText('进行中')).toBeInTheDocument();
     expect(within(progress).queryByRole('button', {name: /我已安装完成，继续/})).not.toBeInTheDocument();
+  });
+
+
+  it('hides continue button and shows auto-install waiting hint while auto-installer is running in vnc-install-system', async () => {
+    const user = setupUser();
+    const autoInstallingJob: ApiJob = {
+      ...runningJob,
+      status: 'running',
+      phase: 'vnc-install-system',
+      metadata: {regionId: 'us-west-1', imageType: 'auto-installer', autoInstall: 'true'},
+      steps: [
+        ...runningJob.steps!.slice(0, 5),
+        {title: 'vnc-install-system', status: 'running', timestamp: '2026-06-17T10:02:00Z', message: '等待 SSH 可达'},
+        {title: 'install-software', status: 'pending', timestamp: '2026-06-17T10:02:00Z', message: ''},
+        {title: 'attach-governance', status: 'pending', timestamp: '2026-06-17T10:02:00Z', message: ''},
+      ],
+    };
+    jobsData = [autoInstallingJob];
+    h.mutateImpl.mockImplementation((_variables, options) => {
+      options?.onSuccess?.({job: autoInstallingJob, password: 'Abc123Xyz789Def4'});
+    });
+    renderPage();
+
+    await user.selectOptions(screen.getByRole('combobox', {name: /托管账号/}), 'acc-1');
+    await user.selectOptions(screen.getByRole('combobox', {name: /地域/}), 'us-west-1');
+    await user.click(screen.getByRole('button', {name: /开始一键部署/}));
+
+    const progress = await screen.findByRole('region', {name: /部署进度/});
+    expect(within(progress).getByText(/系统正在自动安装/)).toBeInTheDocument();
+    expect(within(progress).getByText(/预计 5-10 分钟/)).toBeInTheDocument();
+    expect(within(progress).queryByRole('button', {name: /我已安装完成，继续/})).not.toBeInTheDocument();
+  });
+
+  it('renders auto-installer timeout fallback with VNC guidance and continue button', async () => {
+    const user = setupUser();
+    const timeoutJob: ApiJob = {
+      ...runningJob,
+      status: 'awaiting_user',
+      phase: 'vnc-install-system',
+      result: {vncUrl: 'https://vnc.aliyun.com/instance/auto-timeout'},
+      metadata: {
+        regionId: 'us-west-1',
+        imageType: 'auto-installer',
+        fallbackReason: 'auto-install-timeout',
+        awaitingAction: 'vnc_setup_alpine_complete',
+      },
+      steps: [
+        ...runningJob.steps!.slice(0, 5),
+        {title: 'vnc-install-system', status: 'awaiting_user', timestamp: '2026-06-17T10:02:00Z', message: '自动安装超时，请通过 VNC 完成 Alpine 安装'},
+        {title: 'install-software', status: 'pending', timestamp: '2026-06-17T10:02:00Z', message: ''},
+        {title: 'attach-governance', status: 'pending', timestamp: '2026-06-17T10:02:00Z', message: ''},
+      ],
+    };
+    jobsData = [timeoutJob];
+    h.mutateImpl.mockImplementation((_variables, options) => {
+      options?.onSuccess?.({job: timeoutJob, password: 'Abc123Xyz789Def4'});
+    });
+    renderPage();
+
+    await user.selectOptions(screen.getByRole('combobox', {name: /托管账号/}), 'acc-1');
+    await user.selectOptions(screen.getByRole('combobox', {name: /地域/}), 'us-west-1');
+    await user.click(screen.getByRole('button', {name: /开始一键部署/}));
+
+    const progress = await screen.findByRole('region', {name: /部署进度/});
+    expect(within(progress).getByText(/自动安装超时/)).toBeInTheDocument();
+    expect(within(progress).getByText(/setup-alpine/)).toBeInTheDocument();
+    expect(within(progress).getByRole('button', {name: /我已安装完成，继续/})).toBeInTheDocument();
   });
 
   it('shows the failed step message when a step fails', async () => {

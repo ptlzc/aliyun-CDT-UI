@@ -18,7 +18,8 @@ React 19 + TypeScript 5.8 + Vite + Tailwind CSS 4 + TanStack Query 5 + react-rou
 
 - `src/router.tsx` is the single routing table (react-router v7, `createBrowserRouter`).
 - `src/navigation.ts` is the single source of truth for `menuItems`; Sidebar and mobile drawer render from it, so menu entries cannot drift apart.
-- Route inventory: `/dashboard`, `/accounts`, `/accounts/:accountId` (value `new` renders the create form), `/instances`, `/workflows`, `/settings`; unknown paths redirect to `/dashboard`.
+- Route inventory: `/dashboard`, `/accounts`, `/accounts/:accountId` (value `new` renders the create form), `/deployment`, `/instances`, `/workflows`, `/settings`; unknown paths redirect to `/dashboard`.
+- The `/deployment` page is the one-click ECS deployment UI. It must keep the installer image format guidance consistent: Aliyun ECS does **not** support direct ISO import; installer images must be `raw`/`vhd`/`qcow2`/`vmdk` (Alpine virt/rescue installer images, not `.iso`). If the user only has an ISO, show that it must be converted first.
 - `App.tsx` is the layout shell (Sidebar + `<Outlet/>` + InstanceGovernanceDrawer); it holds no page logic.
 
 ## Line limit

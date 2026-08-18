@@ -1,7 +1,7 @@
 import {createMemoryRouter, Outlet, RouterProvider} from 'react-router-dom';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {describe, expect, it, vi} from 'vitest';
+import {afterEach, describe, expect, it, vi} from 'vitest';
 
 import InstancesPage from '../index';
 import CdtFreeQuotaCard from '../components/CdtFreeQuotaCard';
@@ -70,6 +70,10 @@ vi.mock('@tanstack/react-query', () => ({
 
 // The page reads its openInstance callback from the layout Outlet context,
 // mirroring the production layout shell wiring.
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 function renderInstances() {
   const router = createMemoryRouter(
     [
@@ -192,6 +196,60 @@ describe('InstancesPage', () => {
     expect(screen.getByRole('button', {name: '停止'})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /连接 VNC/})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: '状态'})).toBeInTheDocument();
+  });
+
+  it('opens the SSH terminal modal when SSH login is clicked', async () => {
+    const user = userEvent.setup();
+    class FakeWebSocket {
+      static instances: FakeWebSocket[] = [];
+      readyState = 0;
+      url: string;
+      onopen: (() => void) | null = null;
+      onmessage: (() => void) | null = null;
+      onclose: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+
+      constructor(url: string) {
+        this.url = url;
+        FakeWebSocket.instances.push(this);
+      }
+
+      send() {}
+      close() {}
+    }
+    vi.stubGlobal('WebSocket', FakeWebSocket);
+    cdtData = null;
+    governanceData = null;
+    instancesData = [
+      {
+        id: 'i-1',
+        accountId: 'acc-1',
+        accountName: 'Account A',
+        name: 'ecs-a',
+        status: 'Running',
+        type: 'ecs.g6.large',
+        zone: 'cn-hangzhou-i',
+        regionId: 'cn-hangzhou-i',
+        publicIp: '1.1.1.1',
+        privateIp: '10.0.0.1',
+        trafficUsage: 180,
+        trafficUsageUnit: 'GB',
+        trafficRate: 22.5,
+        trafficRateUnit: 'Mbps',
+        trafficLimit: 200,
+        monitoringEnabled: true,
+        overflowAction: 'notify',
+        inherited: true,
+        alerts: [],
+      },
+    ];
+
+    renderInstances();
+
+    await user.click(screen.getByRole('button', {name: /SSH 登录/}));
+
+    expect(screen.getByText('连接中')).toBeInTheDocument();
+    expect(FakeWebSocket.instances).toHaveLength(1);
   });
 
   it('opens the shared auth policy modal when a permission notice is clicked', async () => {

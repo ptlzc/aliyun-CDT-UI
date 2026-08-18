@@ -11,7 +11,11 @@ import InstanceCard from '../components/InstanceCard';
  *
  * @when InstanceCard 累计流量监测分支测试
  */
-function renderCard(overrides: Partial<ECSInstance> = {}, onViewPolicy: (instance: ECSInstance) => void = vi.fn()) {
+function renderCard(
+  overrides: Partial<ECSInstance> = {},
+  onViewPolicy: (instance: ECSInstance) => void = vi.fn(),
+  onOpenSsh: (instance: ECSInstance) => void = vi.fn(),
+) {
   const instance: ECSInstance = {
     id: 'i-1',
     accountId: 'acc-1',
@@ -45,6 +49,7 @@ function renderCard(overrides: Partial<ECSInstance> = {}, onViewPolicy: (instanc
       onToggleStateModal={vi.fn()}
       onManageInstance={vi.fn()}
       onViewPolicy={onViewPolicy}
+      onOpenSsh={onOpenSsh}
     />,
   );
   return onViewPolicy;
@@ -168,6 +173,21 @@ describe('InstanceCard region and status badges', () => {
     expect(classes.has('px-2')).toBe(true);
     expect(classes.has('py-0.5')).toBe(true);
     expect(statusBadge.className).toContain('font-bold');
+  });
+});
+
+describe('InstanceCard SSH action', () => {
+  it('renders the SSH login button and calls onOpenSsh on click', async () => {
+    const user = userEvent.setup();
+    const onOpenSsh = vi.fn();
+    renderCard({}, vi.fn(), onOpenSsh);
+
+    const sshButton = screen.getByRole('button', {name: /SSH 登录/});
+    expect(sshButton).toBeInTheDocument();
+
+    await user.click(sshButton);
+
+    expect(onOpenSsh).toHaveBeenCalledWith(expect.objectContaining({id: 'i-1', accountId: 'acc-1'}));
   });
 });
 

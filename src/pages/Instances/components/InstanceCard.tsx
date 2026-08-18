@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Activity, AlertTriangle, Check, Copy, Monitor, RefreshCw} from 'lucide-react';
+import {Activity, AlertTriangle, Check, Copy, Monitor, RefreshCw, Terminal} from 'lucide-react';
 
 import type {ECSInstance} from '../../../types';
 import {regionNameZh} from '../../../utils/regionNames';
@@ -14,6 +14,7 @@ interface InstanceCardProps {
   powerError: string | null;
   onTogglePower: (instance: ECSInstance, effectiveStatus: ECSInstance['status']) => void;
   onOpenVnc: (instance: ECSInstance) => void;
+  onOpenSsh: (instance: ECSInstance) => void;
   onToggleStateModal: (instance: ECSInstance) => void;
   onManageInstance: (instance: ECSInstance) => void;
   /** Opens the shared auth policy modal for the instance account (permission errors). */
@@ -146,6 +147,7 @@ export default function InstanceCard({
   powerError,
   onTogglePower,
   onOpenVnc,
+  onOpenSsh,
   onToggleStateModal,
   onManageInstance,
   onViewPolicy,
@@ -423,6 +425,16 @@ export default function InstanceCard({
               {loadingStatus === 'stopping' ? '停止中...' : '停止'}
             </button>
           )}
+
+          {/* SSH login button */}
+          <button
+            onClick={() => onOpenSsh(instance)}
+            className="cursor-pointer rounded border border-hairline-divider px-3 py-1 text-xs font-medium text-secondary-ink transition-colors hover:bg-emphasis-layer hover:text-primary-ink"
+            title="SSH 登录远程终端"
+          >
+            <Terminal className="mr-1 inline h-3.5 w-3.5" />
+            SSH 登录
+          </button>
 
           {/* VNC connection button */}
           <button

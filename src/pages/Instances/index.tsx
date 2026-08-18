@@ -22,6 +22,7 @@ import CdtFreeQuotaCard from './components/CdtFreeQuotaCard';
 import InstanceCard from './components/InstanceCard';
 import InstanceMetricsModal from './components/InstanceMetricsModal';
 import OverQuotaConfirmModal from './components/OverQuotaConfirmModal';
+import SshModal from './components/SshModal';
 import VncModal from './components/VncModal';
 import {INSTANCE_STATUS_LABELS, SOURCE_LAYER_LABELS, sourceLayerBadgeClass} from './components/instanceLabels';
 
@@ -44,9 +45,10 @@ export default function InstancesPage() {
   const [filterText, setFilterText] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | ECSInstance['status']>('ALL');
 
-  // Interactive UI states per instance (VNC + state modal, power via backend API)
+  // Interactive UI states per instance (SSH + VNC + state modal, power via backend API)
   const [activeStateModalId, setActiveStateModalId] = useState<string | null>(null);
   const [activeVncId, setActiveVncId] = useState<string | null>(null);
+  const [activeSshId, setActiveSshId] = useState<string | null>(null);
   const [pendingStartInstance, setPendingStartInstance] = useState<ECSInstance | null>(null);
   const [tempState, setTempState] = useState<{[key: string]: 'starting' | 'stopping' | null}>({});
   const [statusOverride, setStatusOverride] = useState<{[key: string]: ECSInstance['status']}>({});
@@ -61,6 +63,7 @@ export default function InstancesPage() {
   // VNC URL and instance metrics queries — only enabled for the active instance
   const activeInstance = instances.find((inst) => inst.id === activeVncId) || null;
   const vncUrlQuery = useECSVncUrlQuery(activeInstance?.accountId || null, activeVncId, Boolean(activeVncId));
+  const activeSshInstance = instances.find((inst) => inst.id === activeSshId) || null;
   const stateModalInstance = instances.find((inst) => inst.id === activeStateModalId) || null;
   const metricsQuery = useECSMetricsQuery(stateModalInstance?.accountId || null, activeStateModalId, Boolean(activeStateModalId));
 
@@ -127,6 +130,11 @@ export default function InstancesPage() {
   // Open VNC connection in new window
   const openVnc = (instance: ECSInstance) => {
     setActiveVncId(instance.id);
+  };
+
+  // Open SSH terminal modal for the selected instance
+  const openSsh = (instance: ECSInstance) => {
+    setActiveSshId(instance.id);
   };
 
   // Permission notices on instance cards open the shared auth policy modal for
@@ -225,6 +233,7 @@ export default function InstancesPage() {
                 powerError={powerError[instance.id]}
                 onTogglePower={togglePower}
                 onOpenVnc={openVnc}
+                onOpenSsh={openSsh}
                 onToggleStateModal={(inst) => setActiveStateModalId(activeStateModalId === inst.id ? null : inst.id)}
                 onManageInstance={openInstance}
                 onViewPolicy={openPolicyModal}
@@ -238,6 +247,11 @@ export default function InstancesPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* SSH Terminal Modal */}
+      {activeSshId && activeSshInstance && (
+        <SshModal instance={activeSshInstance} onClose={() => setActiveSshId(null)} />
       )}
 
       {/* VNC URL Modal */}

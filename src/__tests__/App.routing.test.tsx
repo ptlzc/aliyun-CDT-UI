@@ -1,6 +1,6 @@
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {createMemoryRouter, RouterProvider} from 'react-router-dom';
-import {render, screen, within} from '@testing-library/react';
+import {act, render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, it, vi} from 'vitest';
 
@@ -97,22 +97,22 @@ describe('App routing', () => {
     const router = renderApp('/dashboard');
     expect(screen.getByRole('heading', {name: /控制台概览/})).toBeInTheDocument();
 
-    router.navigate('/accounts');
+    await act(() => router.navigate('/accounts'));
     expect(await screen.findByRole('heading', {name: /账户管理/})).toBeInTheDocument();
 
-    router.navigate('/instances');
+    await act(() => router.navigate('/instances'));
     expect(await screen.findByRole('heading', {name: /ECS 实例列表/})).toBeInTheDocument();
 
-    router.navigate('/workflows');
+    await act(() => router.navigate('/workflows'));
     expect(await screen.findByRole('heading', {name: /自动化工作流中心/})).toBeInTheDocument();
 
-    router.navigate('/deployment');
+    await act(() => router.navigate('/deployment'));
     expect(await screen.findByRole('heading', {name: /一键部署 ECS/})).toBeInTheDocument();
 
-    router.navigate('/protection-records');
+    await act(() => router.navigate('/protection-records'));
     expect(await screen.findByRole('heading', {name: /保护记录/})).toBeInTheDocument();
 
-    router.navigate('/settings');
+    await act(() => router.navigate('/settings'));
     expect(await screen.findByRole('heading', {name: /系统设置/})).toBeInTheDocument();
   });
 
@@ -140,7 +140,7 @@ describe('App routing', () => {
     expect(router.state.location.pathname).toBe('/accounts/acc-1');
     expect(await screen.findByRole('heading', {name: /凭据配置详情/})).toBeInTheDocument();
 
-    router.navigate(-1);
+    await act(() => router.navigate(-1));
     expect(await screen.findByRole('heading', {name: /账户管理/})).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/accounts');
   });

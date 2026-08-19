@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest';
 
 import {mapJobToWorkflow} from '../hooks';
-import type {ApiJob} from '@/src/lib/api/client';
+import type {ApiJob} from '@/lib/api/client';
 
 const baseJob: ApiJob = {
   id: 'job-1',

@@ -13,6 +13,7 @@ React 19 + TypeScript 5.8 + Vite + Tailwind CSS 4 + TanStack Query 5 + react-rou
 - `src/components/` is reserved for components shared across pages: currently Sidebar, RegionGroupEditor, InstanceGovernanceDrawer, AuthPolicyModal.
 - Shared helpers used by shared components live in `src/components/` too (e.g. `accountPolicy.ts`, the RAM policy document rendered by AuthPolicyModal).
 - Page-private helpers (e.g. `instanceLabels.ts`) sit next to the page `index.tsx` and are subject to the same no-cross-page-import rule.
+- The `@` alias maps directly to `src/`; use `@/lib/...`, `@/types`, etc. for cross-directory source imports (never `@/src/...`).
 
 ## Routing
 

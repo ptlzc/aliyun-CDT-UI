@@ -1,14 +1,97 @@
 import {act, render, screen} from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import {afterEach, describe, expect, it, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
-import type {ECSInstance} from '../../../types';
-import SshModal from '../components/SshModal';
+import {API_BASE_URL} from '@/lib/api/baseUrl';
+import type {ECSInstance} from '@/types';
+import SshModal from '@/pages/Instances/components/SshModal';
 
-/**
- * Minimal WebSocket double used to assert the SSH modal's connection lifecycle
- * without relying on jsdom's missing WebSocket implementation.
- */
+interface TerminalAddonDouble {
+  activate?: (terminal: any) => void;
+  dispose: () => void;
+}
+
+const terminalDoubles = vi.hoisted(() => {
+  const terminals: FakeTerminal[] = [];
+  const attachAddons: FakeAttachAddon[] = [];
+  const fitAddons: FakeFitAddon[] = [];
+
+  class FakeTerminal {
+    options: Record<string, unknown>;
+    rows = 32;
+    cols = 120;
+    loadedAddons: TerminalAddonDouble[] = [];
+    writes: string[] = [];
+    dataListeners = new Set<(data: string) => void>();
+    open = vi.fn();
+    focus = vi.fn();
+    dispose = vi.fn();
+
+    constructor(options: Record<string, unknown> = {}) {
+      this.options = {...options};
+      terminals.push(this);
+    }
+
+    loadAddon(addon: TerminalAddonDouble) {
+      this.loadedAddons.push(addon);
+      addon.activate?.(this);
+    }
+
+    write(data: string) {
+      this.writes.push(data);
+    }
+
+    onData(listener: (data: string) => void) {
+      this.dataListeners.add(listener);
+      return {dispose: () => this.dataListeners.delete(listener)};
+    }
+
+    emitData(data: string) {
+      for (const listener of this.dataListeners) listener(data);
+    }
+  }
+
+  class FakeAttachAddon implements TerminalAddonDouble {
+    socket: FakeWebSocket;
+    disposed = false;
+    messageHandler?: (event: MessageEvent) => void;
+    dataDisposable?: {dispose: () => void};
+
+    constructor(socket: FakeWebSocket) {
+      this.socket = socket;
+      attachAddons.push(this);
+    }
+
+    activate(terminal: FakeTerminal) {
+      this.messageHandler = (event) => terminal.write(String(event.data));
+      this.socket.addEventListener('message', this.messageHandler);
+      this.dataDisposable = terminal.onData((data) => {
+        if (this.socket.readyState === FakeWebSocket.OPEN) this.socket.send(data);
+      });
+    }
+
+    dispose = vi.fn(() => {
+      this.disposed = true;
+      if (this.messageHandler) this.socket.removeEventListener('message', this.messageHandler);
+      this.dataDisposable?.dispose();
+    });
+  }
+
+  class FakeFitAddon implements TerminalAddonDouble {
+    fit = vi.fn();
+    dispose = vi.fn();
+
+    constructor() {
+      fitAddons.push(this);
+    }
+  }
+
+  return {terminals, attachAddons, fitAddons, FakeTerminal, FakeAttachAddon, FakeFitAddon};
+});
+
+vi.mock('@xterm/xterm', () => ({Terminal: terminalDoubles.FakeTerminal}));
+vi.mock('@xterm/addon-attach', () => ({AttachAddon: terminalDoubles.FakeAttachAddon}));
+vi.mock('@xterm/addon-fit', () => ({FitAddon: terminalDoubles.FakeFitAddon}));
+
 class FakeWebSocket {
   static instances: FakeWebSocket[] = [];
   static CONNECTING = 0;
@@ -21,13 +104,23 @@ class FakeWebSocket {
   sent: string[] = [];
   closed = false;
   onopen: ((event: Event) => void) | null = null;
-  onmessage: ((event: MessageEvent) => void) | null = null;
-  onclose: ((event: Event) => void) | null = null;
+  onclose: ((event: CloseEvent) => void) | null = null;
   onerror: ((event: Event) => void) | null = null;
+  private listeners = new Map<string, Set<(event: MessageEvent) => void>>();
 
   constructor(url: string) {
     this.url = url;
     FakeWebSocket.instances.push(this);
+  }
+
+  addEventListener(type: string, listener: (event: MessageEvent) => void) {
+    const listeners = this.listeners.get(type) ?? new Set();
+    listeners.add(listener);
+    this.listeners.set(type, listeners);
+  }
+
+  removeEventListener(type: string, listener: (event: MessageEvent) => void) {
+    this.listeners.get(type)?.delete(listener);
   }
 
   send(data: string) {
@@ -37,7 +130,7 @@ class FakeWebSocket {
   close() {
     this.closed = true;
     this.readyState = FakeWebSocket.CLOSED;
-    this.onclose?.(new Event('close'));
+    this.onclose?.(new CloseEvent('close'));
   }
 
   open() {
@@ -46,12 +139,29 @@ class FakeWebSocket {
   }
 
   receive(data: string) {
-    this.onmessage?.({data} as MessageEvent);
+    const event = {data} as MessageEvent;
+    for (const listener of this.listeners.get('message') ?? []) listener(event);
   }
 
   fail() {
     this.readyState = FakeWebSocket.CLOSED;
     this.onerror?.(new Event('error'));
+  }
+}
+
+class FakeResizeObserver {
+  static instances: FakeResizeObserver[] = [];
+  callback: ResizeObserverCallback;
+  observe = vi.fn();
+  disconnect = vi.fn();
+
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+    FakeResizeObserver.instances.push(this);
+  }
+
+  trigger() {
+    this.callback([], this as unknown as ResizeObserver);
   }
 }
 
@@ -80,81 +190,105 @@ const defaultInstance: ECSInstance = {
 function renderSsh(instance: ECSInstance = defaultInstance) {
   const onClose = vi.fn();
   const utils = render(<SshModal instance={instance} onClose={onClose} />);
-  const ws = FakeWebSocket.instances[FakeWebSocket.instances.length - 1];
-  return {onClose, ws, ...utils};
+  const ws = FakeWebSocket.instances.at(-1)!;
+  const terminal = terminalDoubles.terminals.at(-1)!;
+  const attachAddon = terminalDoubles.attachAddons.at(-1)!;
+  const fitAddon = terminalDoubles.fitAddons.at(-1)!;
+  const resizeObserver = FakeResizeObserver.instances.at(-1)!;
+  return {onClose, ws, terminal, attachAddon, fitAddon, resizeObserver, ...utils};
 }
+
+beforeEach(() => {
+  vi.stubGlobal('WebSocket', FakeWebSocket);
+  vi.stubGlobal('ResizeObserver', FakeResizeObserver);
+  FakeWebSocket.instances = [];
+  FakeResizeObserver.instances = [];
+  terminalDoubles.terminals.length = 0;
+  terminalDoubles.attachAddons.length = 0;
+  terminalDoubles.fitAddons.length = 0;
+});
 
 afterEach(() => {
   vi.unstubAllGlobals();
-  FakeWebSocket.instances = [];
 });
 
 describe('SshModal', () => {
-  it('opens a WebSocket to the SSH endpoint and starts in connecting state', () => {
-    vi.stubGlobal('WebSocket', FakeWebSocket);
+  it('opens a fitted xterm terminal and connects with its initial PTY dimensions', () => {
+    const {ws, terminal, attachAddon, fitAddon, resizeObserver} = renderSsh();
 
-    renderSsh();
+    const host = screen.getByRole('application', {name: 'SSH 交互终端'});
+    expect(terminal.open).toHaveBeenCalledWith(host);
+    expect(fitAddon.fit).toHaveBeenCalledOnce();
+    expect(resizeObserver.observe).toHaveBeenCalledWith(host);
+    expect(terminal.loadedAddons).toEqual([fitAddon, attachAddon]);
 
-    const ws = FakeWebSocket.instances[0];
     const parsed = new URL(ws.url);
     expect(parsed.protocol).toBe('ws:');
+    expect(parsed.host).toBe(new URL(API_BASE_URL).host);
     expect(parsed.pathname).toBe('/api/accounts/acc-1/ecs/i-1/ssh/ws');
     expect(parsed.searchParams.get('host')).toBe('1.1.1.1');
     expect(parsed.searchParams.get('port')).toBe('22');
     expect(parsed.searchParams.get('user')).toBe('root');
+    expect(parsed.searchParams.get('term')).toBe('xterm-256color');
+    expect(parsed.searchParams.get('rows')).toBe('32');
+    expect(parsed.searchParams.get('cols')).toBe('120');
     expect(screen.getByText('连接中')).toBeInTheDocument();
   });
 
-  it('sends the typed command with a trailing newline and clears the input', async () => {
-    const user = userEvent.setup();
-    vi.stubGlobal('WebSocket', FakeWebSocket);
+  it('bridges raw terminal input and ANSI server output through the attach addon', () => {
+    const {ws, terminal} = renderSsh();
+    act(() => ws.open());
 
-    renderSsh();
-    const ws = FakeWebSocket.instances[0];
-    await act(async () => ws.open());
+    act(() => terminal.emitData('ls\t'));
+    act(() => ws.receive('\u001b[31merror\u001b[0m\r\n'));
 
-    const input = screen.getByPlaceholderText(/输入命令/);
-    await user.type(input, 'ls -la{enter}');
-
-    expect(ws.sent).toEqual(['ls -la\n']);
-    expect(input).toHaveValue('');
+    expect(ws.sent).toEqual(['ls\t']);
+    expect(terminal.writes).toEqual(['\u001b[31merror\u001b[0m\r\n']);
+    expect(screen.queryByRole('textbox', {name: 'SSH 命令输入'})).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', {name: '发送'})).not.toBeInTheDocument();
   });
 
-  it('appends server stdout messages to the terminal output', async () => {
-    vi.stubGlobal('WebSocket', FakeWebSocket);
+  it('enables and focuses terminal input only after the socket opens', () => {
+    const {ws, terminal} = renderSsh();
+    expect(terminal.options.disableStdin).toBe(true);
 
-    renderSsh();
-    const ws = FakeWebSocket.instances[0];
-    await act(async () => ws.open());
+    act(() => ws.open());
 
-    act(() => ws.receive('hello\r\n'));
-    act(() => ws.receive('world'));
-
-    expect(screen.getByText(/hello/)).toBeInTheDocument();
-    expect(screen.getByText(/world/)).toBeInTheDocument();
+    expect(terminal.options.disableStdin).toBe(false);
+    expect(terminal.focus).toHaveBeenCalledOnce();
+    expect(screen.getByText('已连接')).toBeInTheDocument();
   });
 
-  it('closes the WebSocket when the modal is unmounted', () => {
-    vi.stubGlobal('WebSocket', FakeWebSocket);
+  it('refits when the terminal container changes size', () => {
+    const {fitAddon, resizeObserver} = renderSsh();
+    fitAddon.fit.mockClear();
 
-    const {unmount} = renderSsh();
-    const ws = FakeWebSocket.instances[0];
+    act(() => resizeObserver.trigger());
+
+    expect(fitAddon.fit).toHaveBeenCalledOnce();
+  });
+
+  it('shows disconnected and error connection states', () => {
+    const disconnected = renderSsh();
+    act(() => disconnected.ws.open());
+    act(() => disconnected.ws.close());
+    expect(screen.getByText('已断开')).toBeInTheDocument();
+
+    disconnected.unmount();
+    const failed = renderSsh();
+    act(() => failed.ws.fail());
+    expect(screen.getByText('错误')).toBeInTheDocument();
+  });
+
+  it('closes the socket and disposes terminal resources on unmount', () => {
+    const {unmount, ws, terminal, attachAddon, fitAddon, resizeObserver} = renderSsh();
 
     unmount();
 
     expect(ws.closed).toBe(true);
-  });
-
-  it('shows connected after the socket opens and disconnected after it closes', async () => {
-    vi.stubGlobal('WebSocket', FakeWebSocket);
-
-    renderSsh();
-    const ws = FakeWebSocket.instances[0];
-
-    await act(async () => ws.open());
-    expect(screen.getByText('已连接')).toBeInTheDocument();
-
-    act(() => ws.close());
-    expect(screen.getByText('已断开')).toBeInTheDocument();
+    expect(resizeObserver.disconnect).toHaveBeenCalledOnce();
+    expect(attachAddon.dispose).toHaveBeenCalledOnce();
+    expect(fitAddon.dispose).toHaveBeenCalledOnce();
+    expect(terminal.dispose).toHaveBeenCalledOnce();
   });
 });

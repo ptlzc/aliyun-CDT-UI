@@ -50,9 +50,9 @@ import {
   type CdtPermissionResult,
   type TrafficAuditFilters,
   validateAccount,
-} from '@/src/lib/api/client';
-import type {CloudAccount, DashboardSummary, ECSInstance, WorkflowRun, WorkflowTask} from '@/src/types';
-import {formatDateLabel} from '@/src/utils/dateFormat';
+} from '@/lib/api/client';
+import type {CloudAccount, DashboardSummary, ECSInstance, WorkflowRun, WorkflowTask} from '@/types';
+import {formatDateLabel} from '@/utils/dateFormat';
 
 export const runtimeKeys = {
   accounts: ['runtime', 'accounts'] as const,

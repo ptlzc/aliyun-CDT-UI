@@ -66,12 +66,7 @@ import type {
   TrafficGovernanceDefaultsRequest,
   TrafficQuotaSnapshot,
 } from './generated/settings/types.gen';
-
-const API_BASE_URL = (
-  import.meta.env.NEXT_PUBLIC_API_BASE_URL ||
-  import.meta.env.VITE_API_BASE_URL ||
-  'http://localhost:8080'
-).replace(/\/$/, '');
+import {API_BASE_URL, apiWebSocketUrl} from '@/lib/api/baseUrl';
 
 for (const client of [accountsClient, graphClient, importClient, instancesClient, jobsClient, provisionClient, settingsClient]) {
   client.setConfig({
@@ -138,8 +133,7 @@ export type RuntimeEvent = {
 };
 
 export function runtimeWebSocketUrl(filters?: {accountId?: string; jobId?: string}): string {
-  const httpUrl = new URL(`${API_BASE_URL}/api/runtime/ws`);
-  httpUrl.protocol = httpUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+  const httpUrl = apiWebSocketUrl('/api/runtime/ws');
   if (filters?.accountId) {
     httpUrl.searchParams.set('accountId', filters.accountId);
   }

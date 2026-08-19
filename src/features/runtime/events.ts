@@ -1,7 +1,7 @@
 import {useEffect, useRef} from 'react';
 import type {QueryClient} from '@tanstack/react-query';
 
-import {runtimeWebSocketUrl, type RuntimeEvent} from '@/src/lib/api/client';
+import {runtimeWebSocketUrl, type RuntimeEvent} from '@/lib/api/client';
 import {runtimeKeys} from './hooks';
 
 // Graph data is persisted in the backend store and only changes when a

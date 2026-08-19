@@ -4,7 +4,7 @@ import {
   continueOneClickDeployment,
   type ApiContinueOneClickDeploymentBody,
   type ApiContinueOneClickDeploymentResponse,
-} from '@/src/lib/api/client';
+} from '@/lib/api/client';
 
 /**
  * Resumes an installer-mode one-click deployment after the user finishes the

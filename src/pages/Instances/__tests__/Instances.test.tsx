@@ -68,10 +68,22 @@ vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({invalidateQueries: invalidateQueriesMock}),
 }));
 
+const {sshModalRenderMock} = vi.hoisted(() => ({sshModalRenderMock: vi.fn()}));
+
+// The page test owns only the "open SSH" state transition. SshModal's
+// imperative xterm.js/WebSocket lifecycle is covered by SshModal.test.tsx.
+vi.mock('../components/SshModal', () => ({
+  default: (props: any) => {
+    sshModalRenderMock(props);
+    return <div role="dialog" aria-label="SSH 终端"><span>连接中</span></div>;
+  },
+}));
+
 // The page reads its openInstance callback from the layout Outlet context,
 // mirroring the production layout shell wiring.
 afterEach(() => {
   vi.unstubAllGlobals();
+  sshModalRenderMock.mockClear();
 });
 
 function renderInstances() {
@@ -200,24 +212,6 @@ describe('InstancesPage', () => {
 
   it('opens the SSH terminal modal when SSH login is clicked', async () => {
     const user = userEvent.setup();
-    class FakeWebSocket {
-      static instances: FakeWebSocket[] = [];
-      readyState = 0;
-      url: string;
-      onopen: (() => void) | null = null;
-      onmessage: (() => void) | null = null;
-      onclose: (() => void) | null = null;
-      onerror: (() => void) | null = null;
-
-      constructor(url: string) {
-        this.url = url;
-        FakeWebSocket.instances.push(this);
-      }
-
-      send() {}
-      close() {}
-    }
-    vi.stubGlobal('WebSocket', FakeWebSocket);
     cdtData = null;
     governanceData = null;
     instancesData = [
@@ -249,7 +243,12 @@ describe('InstancesPage', () => {
     await user.click(screen.getByRole('button', {name: /SSH 登录/}));
 
     expect(screen.getByText('连接中')).toBeInTheDocument();
-    expect(FakeWebSocket.instances).toHaveLength(1);
+    expect(sshModalRenderMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        instance: expect.objectContaining({id: 'i-1', accountId: 'acc-1'}),
+        onClose: expect.any(Function),
+      }),
+    );
   });
 
   it('opens the shared auth policy modal when a permission notice is clicked', async () => {

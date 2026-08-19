@@ -10,7 +10,7 @@ vi.mock('@tanstack/react-query', () => ({
   useQuery: h.useQueryMock,
 }));
 
-vi.mock('@/src/lib/api/client', () => ({
+vi.mock('@/lib/api/client', () => ({
   listTrafficAudits: h.listTrafficAuditsMock,
 }));
 

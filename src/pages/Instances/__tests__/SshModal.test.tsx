@@ -223,7 +223,8 @@ describe('SshModal', () => {
     expect(terminal.loadedAddons).toEqual([fitAddon, attachAddon]);
 
     const parsed = new URL(ws.url);
-    expect(parsed.protocol).toBe('ws:');
+    const apiProtocol = new URL(API_BASE_URL).protocol;
+    expect(parsed.protocol).toBe(apiProtocol === 'https:' ? 'wss:' : 'ws:');
     expect(parsed.host).toBe(new URL(API_BASE_URL).host);
     expect(parsed.pathname).toBe('/api/accounts/acc-1/ecs/i-1/ssh/ws');
     expect(parsed.searchParams.get('host')).toBe('1.1.1.1');

@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DiscoverTopologyData, DiscoverTopologyErrors, DiscoverTopologyResponses, GetGraphData, GetGraphErrors, GetGraphResponses } from './types.gen';
+import type { DiscoverTopologyData, DiscoverTopologyErrors, DiscoverTopologyResponses, GetGraphData, GetGraphErrors, GetGraphResponses, GetInventoryGraphData, GetInventoryGraphErrors, GetInventoryGraphResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -21,3 +21,5 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 export const discoverTopology = <ThrowOnError extends boolean = false>(options: Options<DiscoverTopologyData, ThrowOnError>): RequestResult<DiscoverTopologyResponses, DiscoverTopologyErrors, ThrowOnError> => (options.client ?? client).post<DiscoverTopologyResponses, DiscoverTopologyErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/discover', ...options });
 
 export const getGraph = <ThrowOnError extends boolean = false>(options: Options<GetGraphData, ThrowOnError>): RequestResult<GetGraphResponses, GetGraphErrors, ThrowOnError> => (options.client ?? client).get<GetGraphResponses, GetGraphErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/graph', ...options });
+
+export const getInventoryGraph = <ThrowOnError extends boolean = false>(options: Options<GetInventoryGraphData, ThrowOnError>): RequestResult<GetInventoryGraphResponses, GetInventoryGraphErrors, ThrowOnError> => (options.client ?? client).get<GetInventoryGraphResponses, GetInventoryGraphErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/graph/inventory', ...options });

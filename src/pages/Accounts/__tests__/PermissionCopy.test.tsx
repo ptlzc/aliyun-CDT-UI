@@ -1,4 +1,5 @@
 import {render, screen, within} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {describe, expect, it, vi} from 'vitest';
 
 import type {CdtPermissionResult} from '../../../lib/api/client';
@@ -16,16 +17,21 @@ const notPermitted: CdtPermissionResult = {permitted: false, errorType: 'permiss
  */
 function getMissingPermissionParagraph(): HTMLElement {
   return screen.getByText((content, element) => {
-    return element?.tagName === 'P' && content.includes('该账号缺少') && content.includes('权限');
+    return element?.tagName === 'P' && content.includes('当前检测至少缺少') && content.includes('权限');
   });
 }
 
-describe('missing-permission copy mentions CDT and BSS actions', () => {
-  it('PermissionStatusCard names cdt:ListCdtInternetTraffic and bss:QueryInstanceBill in one sentence', () => {
-    render(<PermissionStatusCard cdtPermission={notPermitted} isLoading={false} onOpenAuthModal={vi.fn()} />);
+describe('missing-permission copy opens the full policy guide', () => {
+  it('names the detected CDT action and opens the policy modal from the prompt', async () => {
+    const onOpenAuthModal = vi.fn();
+    const user = userEvent.setup();
+    render(<PermissionStatusCard cdtPermission={notPermitted} isLoading={false} onOpenAuthModal={onOpenAuthModal} />);
 
     const paragraph = getMissingPermissionParagraph();
     expect(within(paragraph).getByText('cdt:ListCdtInternetTraffic')).toBeInTheDocument();
-    expect(within(paragraph).getByText('bss:QueryInstanceBill')).toBeInTheDocument();
+    expect(paragraph.textContent).not.toContain('bss:QueryInstanceBill');
+
+    await user.click(screen.getByRole('button', {name: '查看所需权限 JSON'}));
+    expect(onOpenAuthModal).toHaveBeenCalledTimes(1);
   });
 });

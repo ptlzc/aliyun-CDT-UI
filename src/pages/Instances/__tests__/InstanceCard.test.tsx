@@ -1,4 +1,5 @@
 import {act, fireEvent, render, screen} from '@testing-library/react';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import userEvent from '@testing-library/user-event';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
@@ -15,6 +16,8 @@ function renderCard(
   overrides: Partial<ECSInstance> = {},
   onViewPolicy: (instance: ECSInstance) => void = vi.fn(),
   onOpenSsh: (instance: ECSInstance) => void = vi.fn(),
+  detailsLoading = false,
+  onOpenFirewall: (instance: ECSInstance) => void = vi.fn(),
 ) {
   const instance: ECSInstance = {
     id: 'i-1',
@@ -38,22 +41,39 @@ function renderCard(
     alerts: [],
     ...overrides,
   };
+  const queryClient = new QueryClient({defaultOptions: {queries: {retry: false}, mutations: {retry: false}}});
   render(
-    <InstanceCard
-      instance={instance}
-      loadingStatus={null}
-      effectiveStatus="Running"
-      powerError={null}
-      onTogglePower={vi.fn()}
-      onOpenVnc={vi.fn()}
-      onToggleStateModal={vi.fn()}
-      onManageInstance={vi.fn()}
-      onViewPolicy={onViewPolicy}
-      onOpenSsh={onOpenSsh}
-    />,
+    <QueryClientProvider client={queryClient}>
+      <InstanceCard
+        instance={instance}
+        detailsLoading={detailsLoading}
+        loadingStatus={null}
+        effectiveStatus="Running"
+        powerError={null}
+        onTogglePower={vi.fn()}
+        onOpenVnc={vi.fn()}
+        onToggleStateModal={vi.fn()}
+        onManageInstance={vi.fn()}
+        onViewPolicy={onViewPolicy}
+        onOpenSsh={onOpenSsh}
+        onOpenFirewall={onOpenFirewall}
+      />
+    </QueryClientProvider>,
   );
   return onViewPolicy;
 }
+
+describe('InstanceCard progressive detail loading', () => {
+  it('keeps the instance and actions visible while only traffic details load', () => {
+    renderCard({}, vi.fn(), vi.fn(), true);
+
+    expect(screen.getByRole('heading', {name: 'cn-hangzhou-i'})).toBeInTheDocument();
+    expect(screen.getByText('1.1.1.1')).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: '停止'})).toBeEnabled();
+    expect(screen.getByRole('status', {name: '正在加载流量详情'})).toBeInTheDocument();
+    expect(screen.queryByText('当前速率: 22.5 Mbps')).not.toBeInTheDocument();
+  });
+});
 
 describe('InstanceCard bss-* cumulative traffic usage branches', () => {
   it('renders the billing-delay copy for bss-no-data', () => {
@@ -145,6 +165,13 @@ describe('InstanceCard cdt-region-shared branch', () => {
 });
 
 describe('InstanceCard region and status badges', () => {
+  it('does not render instance ID or account name subtitle rows', () => {
+    renderCard();
+
+    expect(screen.queryByText('i-1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Account A')).not.toBeInTheDocument();
+  });
+
   it('renders the region name as the card title without a pill badge', () => {
     renderCard({regionId: 'ap-southeast-1'});
 
@@ -188,6 +215,18 @@ describe('InstanceCard SSH action', () => {
     await user.click(sshButton);
 
     expect(onOpenSsh).toHaveBeenCalledWith(expect.objectContaining({id: 'i-1', accountId: 'acc-1'}));
+  });
+});
+
+describe('InstanceCard firewall action', () => {
+  it('opens security-group configuration for the selected instance', async () => {
+    const user = userEvent.setup();
+    const onOpenFirewall = vi.fn();
+    renderCard({}, vi.fn(), vi.fn(), false, onOpenFirewall);
+
+    await user.click(screen.getByRole('button', {name: '安全组/防火墙'}));
+
+    expect(onOpenFirewall).toHaveBeenCalledWith(expect.objectContaining({id: 'i-1', accountId: 'acc-1'}));
   });
 });
 

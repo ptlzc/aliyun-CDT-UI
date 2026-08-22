@@ -26,8 +26,10 @@ const accountA: CloudAccount = {
 
 const mocks = vi.hoisted(() => ({
   saveMutate: vi.fn(),
+  validateMutate: vi.fn(),
   listRegions: vi.fn(),
   deleteMutate: vi.fn(),
+  permissionResult: undefined as undefined | {permitted: boolean; errorType?: 'permission' | 'credential' | 'network'; error?: string},
 }));
 
 let runtimeAccounts: CloudAccount[] = [];
@@ -54,8 +56,8 @@ vi.mock('../../../features/runtime/hooks', () => ({
   }),
   useSaveAccountMutation: () => ({mutateAsync: mocks.saveMutate, isPending: false}),
   useDeleteAccountMutation: () => ({mutate: mocks.deleteMutate, isPending: false}),
-  useCdtPermissionQuery: () => ({data: undefined, isLoading: false}),
-  useValidateAccountMutation: () => ({mutateAsync: vi.fn()}),
+  useCdtPermissionQuery: () => ({data: mocks.permissionResult, isLoading: false}),
+  useValidateAccountMutation: () => ({mutateAsync: mocks.validateMutate}),
   useTrafficAuditsQuery: () => ({
     data: {items: auditLogs, total: auditLogs.length},
     isLoading: false,
@@ -86,7 +88,9 @@ function renderAccounts(initialPath = '/accounts') {
 describe('AccountsPage create flow', () => {
   beforeEach(() => {
     mocks.saveMutate.mockReset();
+    mocks.validateMutate.mockReset();
     mocks.listRegions.mockReset();
+    mocks.permissionResult = undefined;
     runtimeAccounts = [accountA];
     auditLogs = [];
   });
@@ -110,6 +114,8 @@ describe('AccountsPage create flow', () => {
     // 责任人 input is removed; site type defaults to domestic
     expect(screen.queryByLabelText('责任人')).not.toBeInTheDocument();
     expect(screen.getByRole('radio', {name: /国内 \(domestic\)/})).toBeChecked();
+    expect(screen.queryByText('主注册地域')).not.toBeInTheDocument();
+    expect(screen.queryByText('注册主拓扑宿地域')).not.toBeInTheDocument();
     // No real createdAt exists for a draft — the metadata card must not show
     // a fabricated import date row (the mock today-based date was removed)
     expect(screen.queryByText('关联导入日期')).not.toBeInTheDocument();
@@ -140,7 +146,6 @@ describe('AccountsPage create flow', () => {
       siteType: 'domestic',
     });
 
-    await user.selectOptions(screen.getByRole('combobox', {name: /主注册地域/}), 'cn-hangzhou');
     await user.click(screen.getByRole('checkbox', {name: /cn-hangzhou/}));
     await user.click(screen.getByRole('checkbox', {name: /cn-beijing/}));
     await user.click(screen.getByRole('button', {name: '保存'}));
@@ -153,7 +158,7 @@ describe('AccountsPage create flow', () => {
       accessKeySecret: 'secret123',
       regions: ['cn-hangzhou', 'cn-beijing'],
       regionId: 'cn-hangzhou',
-      zoneId: 'cn-hangzhou',
+      zoneId: '',
       ossBucket: '',
       ossEndpoint: 'oss-cn-hangzhou.aliyuncs.com',
     });
@@ -208,7 +213,9 @@ describe('AccountsPage required-field validation', () => {
 
   beforeEach(() => {
     mocks.saveMutate.mockReset();
+    mocks.validateMutate.mockReset();
     mocks.listRegions.mockReset();
+    mocks.permissionResult = undefined;
     runtimeAccounts = [accountA];
     auditLogs = [];
   });
@@ -232,6 +239,9 @@ describe('AccountsPage required-field validation', () => {
 
     expect(alertSpy).not.toHaveBeenCalled();
     expect(mocks.saveMutate).toHaveBeenCalledTimes(1);
+    expect(mocks.saveMutate).toHaveBeenCalledWith(
+      expect.objectContaining({regions: [], regionId: '', zoneId: ''}),
+    );
   });
 
   it('shows the required-field alert when only part of the fields are filled', async () => {
@@ -281,7 +291,9 @@ describe('AccountsPage managed region select-all and instance counts', () => {
 
   beforeEach(() => {
     mocks.saveMutate.mockReset();
+    mocks.validateMutate.mockReset();
     mocks.listRegions.mockReset();
+    mocks.permissionResult = undefined;
     runtimeAccounts = [accountA];
     auditLogs = [];
   });
@@ -374,19 +386,21 @@ describe('AccountsPage managed region select-all and instance counts', () => {
     ]);
 
     expect(screen.getByText('—')).toBeInTheDocument();
-    expect(screen.queryByText(/台/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^\d+ 台$/)).not.toBeInTheDocument();
   });
 });
 
 describe('AccountsPage edit flow', () => {
   beforeEach(() => {
     mocks.saveMutate.mockReset();
+    mocks.validateMutate.mockReset();
     mocks.listRegions.mockReset();
+    mocks.permissionResult = undefined;
     runtimeAccounts = [accountA];
     auditLogs = [];
   });
 
-  it('backfills managed regions from the stored string and keeps no owner field', async () => {
+  it('backfills managed regions from the stored string and keeps no primary-region or owner field', async () => {
     const user = userEvent.setup();
     const router = renderAccounts();
 
@@ -397,8 +411,8 @@ describe('AccountsPage edit flow', () => {
     expect(router.state.location.pathname).toBe('/accounts/acc-1');
     // acc.managedRegions 'cn-hangzhou' → checked checkbox without a fetch
     expect(screen.getByRole('checkbox', {name: /cn-hangzhou/})).toBeChecked();
-    // Main region select keeps the stored region visible
-    expect(screen.getByRole('combobox', {name: /主注册地域/})).toHaveValue('cn-hangzhou');
+    expect(screen.queryByText('主注册地域')).not.toBeInTheDocument();
+    expect(screen.queryByText('注册主拓扑宿地域')).not.toBeInTheDocument();
     // The 责任人 input is gone from the edit form as well
     expect(screen.queryByLabelText('责任人')).not.toBeInTheDocument();
     // Metadata card shows only real fields: no fake sync status / owner rows,
@@ -425,7 +439,6 @@ describe('AccountsPage edit flow', () => {
     // Switching to international drops the domestic selections and requires
     // a fresh SDK fetch for the new site
     await user.click(screen.getByRole('radio', {name: /国际 \(international\)/}));
-    expect(screen.getByRole('combobox', {name: /主注册地域/})).toHaveValue('');
     expect(screen.queryByRole('checkbox', {name: /cn-hangzhou/})).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', {name: /获取可用地域/}));
@@ -487,8 +500,10 @@ describe('AccountsPage edit flow', () => {
 describe('AccountsPage delete account flow', () => {
   beforeEach(() => {
     mocks.saveMutate.mockReset();
+    mocks.validateMutate.mockReset();
     mocks.listRegions.mockReset();
     mocks.deleteMutate.mockReset();
+    mocks.permissionResult = undefined;
     runtimeAccounts = [accountA];
     auditLogs = [];
   });

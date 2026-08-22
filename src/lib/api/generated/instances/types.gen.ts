@@ -231,7 +231,13 @@ export type FirewallRuleSpec = {
     direction: string;
     policy: string;
     portRange: string;
+    priority?: number;
     protocol: string;
+};
+
+export type FirewallTemplateResult = {
+    operations: Array<FirewallOperation> | null;
+    status: string;
 };
 
 export type GraphSummary = {
@@ -267,6 +273,39 @@ export type ImportImageResponse = {
     result: {
         [key: string]: string;
     };
+};
+
+export type InstanceFirewallRuleRequest = {
+    cidr: string;
+    description?: string;
+    direction: string;
+    policy: string;
+    portRange: string;
+    priority: number;
+    protocol: string;
+};
+
+export type InstanceSecurityGroup = {
+    egressRules: Array<SecurityGroupRule> | null;
+    id: string;
+    ingressRules: Array<SecurityGroupRule> | null;
+    name: string;
+    regionId: string;
+};
+
+export type InstanceSecurityGroupSnapshot = {
+    instanceId: string;
+    securityGroups: Array<InstanceSecurityGroup> | null;
+};
+
+export type InstanceSoftwareInspectBody = {
+    sshPassword?: string;
+    sshUser?: string;
+};
+
+export type InstanceSoftwareRuntime = {
+    singBox: SingBoxRuntimeInfo;
+    tailscale: TailscaleRuntimeInfo;
 };
 
 export type Job = {
@@ -314,13 +353,14 @@ export type OneClickDeploymentBody = {
     attachGovernance?: boolean;
     imageId?: string;
     imagePath?: string;
-    imageType?: string;
+    imageType?: 'system' | 'installer' | 'auto-installer';
     installSingBox?: boolean;
     installTailscale?: boolean;
     instanceName?: string;
     instanceType?: string;
     objectKey?: string;
     regionId?: string;
+    rootPassword?: string;
     s3AccessKeyId?: string;
     s3AccessKeySecret?: string;
     s3Bucket?: string;
@@ -329,8 +369,12 @@ export type OneClickDeploymentBody = {
     s3ObjectKey?: string;
     s3Region?: string;
     singBoxConfig?: string;
+    sourceInstanceId?: string;
     spotPriceLimit?: number;
     storageProvider?: string;
+    systemDiskCategory?: string;
+    systemDiskPerformanceLevel?: string;
+    systemDiskSize?: number;
     tailscaleAuthKey?: string;
     zoneId?: string;
 };
@@ -377,6 +421,7 @@ export type ProvisionBody = {
     spotInterruptionMode?: string;
     spotStrategy?: string;
     systemDiskCategory?: string;
+    systemDiskPerformanceLevel?: string;
     systemDiskSize?: number;
     vswitchId?: string;
     zoneId?: string;
@@ -442,6 +487,48 @@ export type RuntimeLogEntry = {
     level?: string;
     message: string;
     timestamp: string;
+};
+
+export type SecurityGroupRule = {
+    cidr: string;
+    description?: string;
+    direction: string;
+    policy: string;
+    portRange: string;
+    priority: number;
+    protocol: string;
+    ruleId?: string;
+};
+
+export type SingBoxConfigureBody = {
+    bindInterface?: string;
+    listen: string;
+    listenPort: number;
+    password: string;
+    sshPassword?: string;
+    sshUser?: string;
+    username: string;
+};
+
+export type SingBoxManagedInbound = {
+    bindInterface?: string;
+    listen: string;
+    listenPort: number;
+    username: string;
+};
+
+export type SingBoxRuntimeInfo = {
+    installed: boolean;
+    managedInbound?: SingBoxManagedInbound;
+    running: boolean;
+    version?: string;
+};
+
+export type TailscaleRuntimeInfo = {
+    hostname?: string;
+    installed: boolean;
+    ips?: Array<string> | null;
+    running: boolean;
 };
 
 export type TrafficEvaluation = {
@@ -563,6 +650,124 @@ export type ListAccessMetadataResponses = {
 
 export type ListAccessMetadataResponse = ListAccessMetadataResponses[keyof ListAccessMetadataResponses];
 
+export type ListInstanceSecurityGroupsData = {
+    body?: never;
+    path: {
+        accountId: string;
+        instanceId: string;
+    };
+    query?: never;
+    url: '/api/accounts/{accountId}/ecs/{instanceId}/firewall';
+};
+
+export type ListInstanceSecurityGroupsErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ListInstanceSecurityGroupsError = ListInstanceSecurityGroupsErrors[keyof ListInstanceSecurityGroupsErrors];
+
+export type ListInstanceSecurityGroupsResponses = {
+    /**
+     * OK
+     */
+    200: InstanceSecurityGroupSnapshot;
+};
+
+export type ListInstanceSecurityGroupsResponse = ListInstanceSecurityGroupsResponses[keyof ListInstanceSecurityGroupsResponses];
+
+export type CreateInstanceSecurityGroupRuleData = {
+    body: InstanceFirewallRuleRequest;
+    path: {
+        accountId: string;
+        instanceId: string;
+        securityGroupId: string;
+    };
+    query?: never;
+    url: '/api/accounts/{accountId}/ecs/{instanceId}/firewall/security-groups/{securityGroupId}/rules';
+};
+
+export type CreateInstanceSecurityGroupRuleErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type CreateInstanceSecurityGroupRuleError = CreateInstanceSecurityGroupRuleErrors[keyof CreateInstanceSecurityGroupRuleErrors];
+
+export type CreateInstanceSecurityGroupRuleResponses = {
+    /**
+     * OK
+     */
+    200: FirewallOperation;
+};
+
+export type CreateInstanceSecurityGroupRuleResponse = CreateInstanceSecurityGroupRuleResponses[keyof CreateInstanceSecurityGroupRuleResponses];
+
+export type DeleteInstanceSecurityGroupRuleData = {
+    body?: never;
+    path: {
+        accountId: string;
+        instanceId: string;
+        securityGroupId: string;
+        ruleId: string;
+    };
+    query?: {
+        direction?: 'ingress' | 'egress';
+    };
+    url: '/api/accounts/{accountId}/ecs/{instanceId}/firewall/security-groups/{securityGroupId}/rules/{ruleId}';
+};
+
+export type DeleteInstanceSecurityGroupRuleErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type DeleteInstanceSecurityGroupRuleError = DeleteInstanceSecurityGroupRuleErrors[keyof DeleteInstanceSecurityGroupRuleErrors];
+
+export type DeleteInstanceSecurityGroupRuleResponses = {
+    /**
+     * OK
+     */
+    200: FirewallOperation;
+};
+
+export type DeleteInstanceSecurityGroupRuleResponse = DeleteInstanceSecurityGroupRuleResponses[keyof DeleteInstanceSecurityGroupRuleResponses];
+
+export type ApplyTailscaleDirectFirewallData = {
+    body?: never;
+    path: {
+        accountId: string;
+        instanceId: string;
+        securityGroupId: string;
+    };
+    query?: never;
+    url: '/api/accounts/{accountId}/ecs/{instanceId}/firewall/security-groups/{securityGroupId}/tailscale-direct';
+};
+
+export type ApplyTailscaleDirectFirewallErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ApplyTailscaleDirectFirewallError = ApplyTailscaleDirectFirewallErrors[keyof ApplyTailscaleDirectFirewallErrors];
+
+export type ApplyTailscaleDirectFirewallResponses = {
+    /**
+     * OK
+     */
+    200: FirewallTemplateResult;
+};
+
+export type ApplyTailscaleDirectFirewallResponse = ApplyTailscaleDirectFirewallResponses[keyof ApplyTailscaleDirectFirewallResponses];
+
 export type GetEcsMetricsData = {
     body?: never;
     path: {
@@ -590,6 +795,62 @@ export type GetEcsMetricsResponses = {
 };
 
 export type GetEcsMetricsResponse = GetEcsMetricsResponses[keyof GetEcsMetricsResponses];
+
+export type InspectInstanceSoftwareData = {
+    body: InstanceSoftwareInspectBody;
+    path: {
+        accountId: string;
+        instanceId: string;
+    };
+    query?: never;
+    url: '/api/accounts/{accountId}/ecs/{instanceId}/software-runtime/inspect';
+};
+
+export type InspectInstanceSoftwareErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type InspectInstanceSoftwareError = InspectInstanceSoftwareErrors[keyof InspectInstanceSoftwareErrors];
+
+export type InspectInstanceSoftwareResponses = {
+    /**
+     * OK
+     */
+    200: InstanceSoftwareRuntime;
+};
+
+export type InspectInstanceSoftwareResponse = InspectInstanceSoftwareResponses[keyof InspectInstanceSoftwareResponses];
+
+export type ConfigureSingBoxData = {
+    body: SingBoxConfigureBody;
+    path: {
+        accountId: string;
+        instanceId: string;
+    };
+    query?: never;
+    url: '/api/accounts/{accountId}/ecs/{instanceId}/software-runtime/sing-box';
+};
+
+export type ConfigureSingBoxErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ConfigureSingBoxError = ConfigureSingBoxErrors[keyof ConfigureSingBoxErrors];
+
+export type ConfigureSingBoxResponses = {
+    /**
+     * OK
+     */
+    200: SingBoxRuntimeInfo;
+};
+
+export type ConfigureSingBoxResponse = ConfigureSingBoxResponses[keyof ConfigureSingBoxResponses];
 
 export type StartEcsInstanceData = {
     body?: never;

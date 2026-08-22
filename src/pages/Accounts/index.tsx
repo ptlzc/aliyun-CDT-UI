@@ -7,7 +7,6 @@ import type {CloudAccount} from '../../types';
 import AccountList from './components/AccountList';
 import AccountDetailEditor from './components/AccountDetailEditor';
 import AuditLogModal from './components/AuditLogModal';
-import AuthPolicyModal from '../../components/AuthPolicyModal';
 import ConfirmDeleteModal from './components/ConfirmDeleteModal';
 
 /**
@@ -89,9 +88,6 @@ export default function AccountsPage() {
   // Log audit history modal trigger (data is fetched inside the modal via useTrafficAuditsQuery)
   const [showAudits, setShowAudits] = useState(false);
 
-  // Account permission authorization modal
-  const [showAuthModal, setShowAuthModal] = useState(false);
-
   // Account deletion: destructive confirmation driven by the list trash button
   const [accountToDelete, setAccountToDelete] = useState<CloudAccount | null>(null);
   const deleteAccountMutation = useDeleteAccountMutation();
@@ -152,7 +148,6 @@ export default function AccountsPage() {
               cdtPermission={cdtPermissionQuery.data}
               cdtPermissionLoading={cdtPermissionQuery.isLoading}
               onClose={handleCloseDetails}
-              onOpenAuthModal={() => setShowAuthModal(true)}
               onOpenAuditLogs={handleOpenAuditLogs}
             />
           </motion.div>
@@ -165,15 +160,6 @@ export default function AccountsPage() {
           accountId={selectedAccount.id}
           accountName={selectedAccount.name}
           onClose={() => setShowAudits(false)}
-        />
-      )}
-
-      {/* Account Authorization Modal */}
-      {showAuthModal && selectedAccount && (
-        <AuthPolicyModal
-          account={selectedAccount}
-          cdtPermission={cdtPermissionQuery.data}
-          onClose={() => setShowAuthModal(false)}
         />
       )}
 

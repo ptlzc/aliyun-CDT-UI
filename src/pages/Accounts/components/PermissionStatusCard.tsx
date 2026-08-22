@@ -86,8 +86,15 @@ export default function PermissionStatusCard({cdtPermission, isLoading, onOpenAu
             </>
           ) : (
             <>
-              <p className="font-medium text-signal-amber">该账号缺少 CDT 流量查询（<code className="font-mono bg-signal-amber/10 px-1 rounded">cdt:ListCdtInternetTraffic</code>）与 BSS 账单明细（<code className="font-mono bg-signal-amber/10 px-1 rounded">bss:QueryInstanceBill</code>）权限，ECS 卡片无法显示累计流量与账单。</p>
-              <p className="mt-1">请在阿里云 RAM 控制台为该子用户添加 CDT 只读与 BSS 账单只读权限策略（例如 <code className="font-mono bg-signal-amber/10 px-1 rounded">AliyunCDTReadOnlyAccess</code>、<code className="font-mono bg-signal-amber/10 px-1 rounded">AliyunBSSReadOnlyAccess</code>），或点击「查看授权」获取完整 RAM 策略 JSON。</p>
+              <p className="font-medium text-signal-amber">当前检测至少缺少 CDT 流量查询（<code className="font-mono bg-signal-amber/10 px-1 rounded">cdt:ListCdtInternetTraffic</code>）权限，ECS 卡片无法显示累计流量。</p>
+              <p className="mt-1">请使用平台完整策略一次补齐 ECS、VPC/EIP、CMS、CDT、BSS OpenAPI 与 OSS 权限。</p>
+              <button
+                type="button"
+                onClick={onOpenAuthModal}
+                className="mt-2 cursor-pointer rounded border border-signal-amber/40 bg-white px-2.5 py-1 text-[11px] font-medium text-signal-amber transition-colors hover:bg-signal-amber hover:text-white"
+              >
+                查看所需权限 JSON
+              </button>
             </>
           )}
           {cdtPermission?.error && (

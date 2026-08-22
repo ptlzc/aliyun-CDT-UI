@@ -1,59 +1,25 @@
 import {useMemo, useState} from 'react';
-import {AlertTriangle, Check, CheckCircle2, Circle, Copy, Loader2, Rocket, XCircle} from 'lucide-react';
+import {AlertTriangle, Loader2, Rocket} from 'lucide-react';
 
 import {
   useAccountsQuery,
   useContinueOneClickDeploymentMutation,
   useCreateOneClickDeploymentMutation,
+  useInventoryGraphQuery,
   useJobsQuery,
   useRegionsQuery,
 } from '../../features/runtime/hooks';
 import type {ApiJob, ApiOneClickDeploymentBody, ApiOneClickDeploymentResponse} from '../../lib/api/client';
 
+import DeploymentProgress from './DeploymentProgress';
 import S3ConfigFields from './S3ConfigFields';
 
 // 后端 job.step.title 是英文 step key（枚举值不翻译），仅显示层映射为中文。
 type DeploymentImageType = 'system' | 'installer' | 'auto-installer';
 
-const DEPLOYMENT_STEP_LABELS: Record<string, string> = {
-  'ensure-network': '初始化网络',
-  'ensure-image': '准备镜像',
-  'create-instance': '创建实例',
-  'wait-running': '等待实例运行',
-  'bind-eip': '绑定弹性 IP',
-  'vnc-install-system': 'VNC 安装系统',
-  'install-software': '安装软件',
-  'attach-governance': '挂载保活治理',
-};
-
-const STEP_STATUS_LABELS: Record<string, string> = {
-  pending: '待执行',
-  running: '进行中',
-  succeeded: '已完成',
-  failed: '失败',
-  'manual-required': '需手动操作',
-  'awaiting_user': '等待用户操作',
-};
-
 const inputClass =
   'w-full px-3 py-2 rounded border border-hairline-divider bg-surface-white text-sm text-primary-ink placeholder:text-outline/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary';
 const labelClass = 'block text-xs font-semibold text-secondary-ink mb-1.5';
-
-function StepStatusIcon({status}: {status: string}) {
-  if (status === 'succeeded') {
-    return <CheckCircle2 className="w-4 h-4 text-healthy-green shrink-0" />;
-  }
-  if (status === 'failed') {
-    return <XCircle className="w-4 h-4 text-recovery-red shrink-0" />;
-  }
-  if (status === 'running') {
-    return <Loader2 className="w-4 h-4 text-signal-amber animate-spin shrink-0" />;
-  }
-  if (status === 'manual-required' || status === 'awaiting_user') {
-    return <AlertTriangle className="w-4 h-4 text-signal-amber shrink-0" />;
-  }
-  return <Circle className="w-4 h-4 text-outline/50 shrink-0" />;
-}
 
 /**
  * One-click ECS deployment: account + region + instance spec + optional
@@ -68,12 +34,16 @@ export default function DeploymentPage() {
   const jobsQuery = useJobsQuery();
   const [accountId, setAccountId] = useState('');
   const regionsQuery = useRegionsQuery(accountId || null);
+  const graphQuery = useInventoryGraphQuery(accountId || null);
   const createMutation = useCreateOneClickDeploymentMutation();
   const continueMutation = useContinueOneClickDeploymentMutation();
 
   const [regionId, setRegionId] = useState('');
   const [zoneId, setZoneId] = useState('');
+  const [customZoneId, setCustomZoneId] = useState('');
   const [instanceType, setInstanceType] = useState('ecs.e-c4m1.large');
+  const [customInstanceType, setCustomInstanceType] = useState('');
+  const [sourceInstanceId, setSourceInstanceId] = useState('');
   const [imageType, setImageType] = useState<DeploymentImageType>('system');
   const [storageProvider, setStorageProvider] = useState('aliyun_oss');
   const [s3Bucket, setS3Bucket] = useState('');
@@ -94,6 +64,11 @@ export default function DeploymentPage() {
 
   const accounts = accountsQuery.data || [];
   const regions = regionsQuery.data || [];
+  const graph = graphQuery.data;
+  const ecsNodes = useMemo(() => (graph?.nodes || []).filter((node) => node.kind === 'ecs'), [graph]);
+  const regionEcsNodes = useMemo(() => ecsNodes.filter((node) => !regionId || node.regionId === regionId), [ecsNodes, regionId]);
+  const zoneOptions = useMemo(() => Array.from(new Set(regionEcsNodes.map((node) => node.zoneId).filter((value): value is string => Boolean(value)))).sort(), [regionEcsNodes]);
+  const instanceTypeOptions = useMemo(() => Array.from(new Set(regionEcsNodes.map((node) => node.metadata?.instanceType).filter((value): value is string => Boolean(value)))).sort(), [regionEcsNodes]);
 
   // Live job: WS events patch the jobs cache; fall back to the POST response
   // until the first job.updated event arrives.
@@ -127,19 +102,26 @@ export default function DeploymentPage() {
   const handleAccountChange = (value: string) => {
     setAccountId(value);
     setRegionId('');
+    setSourceInstanceId('');
+    setZoneId('');
+    setCustomZoneId('');
+    setCustomInstanceType('');
   };
 
   const handleSubmit = () => {
     if (!canSubmit) {
       return;
     }
+    const effectiveZoneId = zoneId === '__custom__' ? customZoneId.trim() : zoneId.trim();
+    const effectiveInstanceType = instanceType === '__custom__' ? (customInstanceType.trim() || 'ecs.e-c4m1.large') : instanceType;
     const body: ApiOneClickDeploymentBody = {
       regionId,
-      zoneId: zoneId.trim() || undefined,
-      instanceType,
+      zoneId: effectiveZoneId || undefined,
+      instanceType: effectiveInstanceType,
       imageType,
       storageProvider,
-      ...(storageProvider === 's3'
+      sourceInstanceId: sourceInstanceId || undefined,
+      ...(storageProvider === 's3' && !sourceInstanceId
         ? {
             s3Bucket,
             s3Region,
@@ -263,7 +245,12 @@ export default function DeploymentPage() {
                 aria-label="地域"
                 value={regionId}
                 disabled={!accountId}
-                onChange={(event) => setRegionId(event.target.value)}
+                onChange={(event) => {
+                  setRegionId(event.target.value);
+                  setSourceInstanceId('');
+                  setZoneId('');
+                  setCustomZoneId('');
+                }}
                 className={`${inputClass} disabled:bg-workspace-canvas disabled:text-outline/60`}
               >
                 <option value="">{accountId ? '请选择地域' : '请先选择账号'}</option>
@@ -290,7 +277,13 @@ export default function DeploymentPage() {
                   id="deploy-image-type"
                   aria-label="镜像类型"
                   value={imageType}
-                  onChange={(event) => setImageType(event.target.value as DeploymentImageType)}
+                  onChange={(event) => {
+                    const value = event.target.value as DeploymentImageType;
+                    setImageType(value);
+                    if (value !== 'system') {
+                      setSourceInstanceId('');
+                    }
+                  }}
                   className={inputClass}
                 >
                   <option value="system">system（现有系统镜像）</option>
@@ -313,6 +306,36 @@ export default function DeploymentPage() {
               </div>
             </div>
 
+            {imageType === 'system' && (
+              <div>
+                <label htmlFor="deploy-source-instance" className={labelClass}>系统模板来源（从已有 ECS 创建）</label>
+                <select
+                  id="deploy-source-instance"
+                  aria-label="系统模板来源"
+                  value={sourceInstanceId}
+                  onChange={(event) => setSourceInstanceId(event.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">不使用（自动准备镜像 / OSS）</option>
+                  {regionEcsNodes.map((node) => (
+                    <option key={node.id} value={node.id}>
+                      {node.name} ({node.id})
+                      {node.zoneId ? ` · ${node.zoneId}` : ''}
+                      {node.metadata?.instanceType ? ` · ${node.metadata.instanceType}` : ''}
+                    </option>
+                  ))}
+                </select>
+                {graphQuery.isLoading && (
+                  <p className="mt-1 text-[11px] text-secondary-ink flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" /> 加载可用 ECS 列表…
+                  </p>
+                )}
+                {accountId && !graphQuery.isLoading && regionEcsNodes.length === 0 && (
+                  <p className="mt-1 text-[11px] text-secondary-ink">当前地域暂无可作为模板的 ECS；可先完成资源发现，或选择自动准备镜像。</p>
+                )}
+              </div>
+            )}
+
             {imageType === 'installer' && (
               <div className="rounded border border-signal-amber/40 bg-amber-50/60 p-3 text-xs leading-relaxed text-secondary-ink">
                 <p className="font-bold text-primary-ink">VNC 安装系统阶段</p>
@@ -332,7 +355,7 @@ export default function DeploymentPage() {
               </div>
             )}
 
-            {storageProvider === 's3' && (
+            {storageProvider === 's3' && !sourceInstanceId && (
               <S3ConfigFields
                 bucket={s3Bucket}
                 region={s3Region}
@@ -354,26 +377,56 @@ export default function DeploymentPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="deploy-zone" className={labelClass}>可用区 (ZoneId)</label>
-                <input
+                <select
                   id="deploy-zone"
                   aria-label="可用区"
-                  type="text"
                   value={zoneId}
                   onChange={(event) => setZoneId(event.target.value)}
-                  placeholder="如 us-west-1a（非默认地域必填）"
                   className={inputClass}
-                />
+                >
+                  <option value="">请选择可用区</option>
+                  {zoneOptions.map((zone) => (
+                    <option key={zone} value={zone}>{zone}</option>
+                  ))}
+                  <option value="__custom__">自定义…</option>
+                </select>
+                {zoneId === '__custom__' && (
+                  <input
+                    id="deploy-custom-zone"
+                    aria-label="自定义可用区"
+                    type="text"
+                    value={customZoneId}
+                    onChange={(event) => setCustomZoneId(event.target.value)}
+                    placeholder="如 us-west-1a"
+                    className={`${inputClass} mt-2`}
+                  />
+                )}
               </div>
               <div>
                 <label htmlFor="deploy-instance-type" className={labelClass}>实例规格</label>
-                <input
+                <select
                   id="deploy-instance-type"
                   aria-label="实例规格"
-                  type="text"
                   value={instanceType}
                   onChange={(event) => setInstanceType(event.target.value)}
                   className={inputClass}
-                />
+                >
+                  {Array.from(new Set(['ecs.e-c4m1.large', ...instanceTypeOptions])).map((type) => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                  <option value="__custom__">自定义…</option>
+                </select>
+                {instanceType === '__custom__' && (
+                  <input
+                    id="deploy-custom-instance-type"
+                    aria-label="自定义实例规格"
+                    type="text"
+                    value={customInstanceType}
+                    onChange={(event) => setCustomInstanceType(event.target.value)}
+                    placeholder="如 ecs.g7.large"
+                    className={`${inputClass} mt-2`}
+                  />
+                )}
               </div>
             </div>
 
@@ -474,119 +527,18 @@ export default function DeploymentPage() {
         </section>
 
         {deployment && job && (
-          <section aria-label="部署进度" className="bg-surface-white border border-hairline-divider rounded-lg p-5 shadow-sm">
-            <div className="flex items-center justify-between border-b border-hairline-divider/40 pb-3 mb-4">
-              <h2 className="text-base font-bold text-primary-ink font-space">部署进度</h2>
-              <span className="bg-emphasis-layer border border-primary-fixed text-secondary font-mono px-2 py-0.5 rounded text-[10px] font-bold">{job.id}</span>
-            </div>
-
-            <div className="mb-5 border border-signal-amber/40 bg-amber-50 rounded p-4">
-              <p className="text-xs font-bold text-primary-ink mb-1">一次性实例密码（root）</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 font-mono text-sm font-bold text-primary bg-surface-white border border-hairline-divider rounded px-3 py-2 select-all">{deployment.password}</code>
-                <button
-                  onClick={handleCopyPassword}
-                  aria-label="复制密码"
-                  className="p-2 border border-hairline-divider rounded bg-surface-white text-secondary-ink hover:text-primary cursor-pointer"
-                >
-                  {copiedPassword ? <Check className="w-4 h-4 text-healthy-green" /> : <Copy className="w-4 h-4" />}
-                </button>
-              </div>
-              <p className="mt-2 text-[11px] text-signal-amber font-semibold flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3 shrink-0" />
-                <span>仅显示一次，请立即保存。密码不落盘，刷新或关闭后无法再次查看；丢失密码请用 VNC 登录修复。</span>
-              </p>
-            </div>
-
-            {job.status === 'manual-required' && job.result?.vncUrl && (
-              <div className="mb-4 bg-amber-50 border border-signal-amber/40 rounded p-3 text-xs text-signal-amber leading-relaxed flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>
-                  软件安装无法自动完成（SSH 不可达），需手动操作。
-                  <a href={job.result.vncUrl} target="_blank" rel="noreferrer" className="font-bold underline ml-1">
-                    打开 VNC 连接
-                  </a>
-                  完成安装，密码见上方。
-                </span>
-              </div>
-            )}
-
-            {isAutoInstalling && (
-              <div className="mb-4 bg-blue-50 border border-primary/30 rounded p-4 text-xs leading-relaxed text-secondary-ink">
-                <p className="text-sm font-bold text-primary-ink mb-2">自动安装系统</p>
-                <p>系统正在自动安装，预计 5-10 分钟，请稍候…</p>
-              </div>
-            )}
-
-            {isAwaitingVnc && (
-              <div className="mb-4 bg-amber-50 border border-signal-amber/40 rounded p-4 text-xs leading-relaxed text-secondary-ink">
-                <p className="text-sm font-bold text-primary-ink mb-2">VNC 安装系统</p>
-                <p className="text-signal-amber font-semibold mb-2">
-                  {isAutoInstallTimeout ? '自动安装超时，请通过 VNC 手动完成以下步骤：' : '实例已暂停在安装系统阶段，请通过 VNC 完成以下步骤：'}
-                </p>
-                <ol className="list-decimal list-inside space-y-1">
-                  <li>使用上方密码登录 VNC</li>
-                  <li>在 Alpine 安装器执行 <code className="font-mono text-[11px]">setup-alpine</code></li>
-                  <li>选择磁盘安装 sys 并 reboot</li>
-                  <li>完成后回到本页点击“我已安装完成，继续”</li>
-                </ol>
-                {job.result?.vncUrl && (
-                  <a href={job.result.vncUrl} target="_blank" rel="noreferrer" className="inline-block mt-3 font-bold text-primary underline">
-                    打开 VNC 连接
-                  </a>
-                )}
-                <div className="mt-3 flex flex-col gap-2">
-                  <button
-                    onClick={handleContinue}
-                    disabled={continueMutation.isPending}
-                    className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-container disabled:opacity-40 text-white px-4 py-2 rounded text-xs font-bold cursor-pointer disabled:cursor-not-allowed"
-                  >
-                    {continueMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                    我已安装完成，继续
-                  </button>
-                  {continueMutation.error && (
-                    <p className="text-recovery-red">
-                      继续失败：{continueMutation.error instanceof Error ? continueMutation.error.message : String(continueMutation.error)}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <ol className="flex flex-col gap-2.5">
-              {(job.steps || []).map((step, index) => {
-                const label = DEPLOYMENT_STEP_LABELS[step.title] || step.title;
-                const statusLabel = STEP_STATUS_LABELS[step.status] || step.status;
-                const isFailed = step.status === 'failed';
-                const isManualRequired = step.status === 'manual-required';
-                const isAwaitingUser = step.status === 'awaiting_user';
-                return (
-                  <li
-                    key={`${job.id}-${index}`}
-                    className={`flex items-start gap-3 p-3 border rounded ${isFailed ? 'border-recovery-red/40 bg-red-50/40' : isManualRequired || isAwaitingUser ? 'border-signal-amber/40 bg-amber-50/40' : 'border-hairline-divider bg-section-layer/40'}`}
-                  >
-                    <StepStatusIcon status={step.status} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-center gap-2">
-                        <span className="text-xs font-bold text-primary-ink">{label}</span>
-                        <span className={`text-[10px] font-semibold shrink-0 ${isFailed ? 'text-recovery-red' : isManualRequired || isAwaitingUser || step.status === 'running' ? 'text-signal-amber' : step.status === 'succeeded' ? 'text-healthy-green' : 'text-outline'}`}>
-                          {statusLabel}
-                        </span>
-                      </div>
-                      {step.message && <p className={`mt-0.5 text-[11px] leading-relaxed ${isFailed ? 'text-recovery-red' : isManualRequired || isAwaitingUser ? 'text-signal-amber' : 'text-[#667085]'}`}>{step.message}</p>}
-                      {(isManualRequired || isAwaitingUser) && job.result?.vncUrl && (
-                        <p className="mt-1 text-[11px] text-signal-amber">
-                          <a href={job.result.vncUrl} target="_blank" rel="noreferrer" className="font-bold underline">
-                            打开 VNC 连接
-                          </a>
-                        </p>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          </section>
+          <DeploymentProgress
+            deployment={deployment}
+            job={job}
+            isAwaitingVnc={isAwaitingVnc}
+            isAutoInstalling={isAutoInstalling}
+            isAutoInstallTimeout={isAutoInstallTimeout}
+            copiedPassword={copiedPassword}
+            continuePending={continueMutation.isPending}
+            continueError={continueMutation.error}
+            onContinue={handleContinue}
+            onCopyPassword={handleCopyPassword}
+          />
         )}
       </div>
     </div>

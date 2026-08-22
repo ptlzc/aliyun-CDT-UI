@@ -34,6 +34,13 @@ const regions = [
   {regionId: 'cn-hangzhou', localName: '华东 1 (杭州)'},
 ];
 
+const inventoryGraph = {
+  accountId: 'acc-1',
+  nodes: [],
+  edges: [],
+  summary: {ecsCount: 0, eipCount: 0, imageCount: 0, vpcCount: 0, vswitchCount: 0, securityGroupCount: 0},
+};
+
 const runningJob: ApiJob = {
   id: 'job-abc123',
   accountId: 'acc-1',
@@ -58,6 +65,7 @@ let jobsData: ApiJob[] = [];
 vi.mock('../../../features/runtime/hooks', () => ({
   useAccountsQuery: () => ({data: accounts, isLoading: false}),
   useRegionsQuery: () => ({data: regions, isLoading: false}),
+  useInventoryGraphQuery: () => ({data: inventoryGraph, isLoading: false}),
   useJobsQuery: () => ({data: jobsData, isLoading: false}),
   useCreateOneClickDeploymentMutation: () => ({mutate: h.mutateImpl, isPending: false, error: null}),
   useContinueOneClickDeploymentMutation: () => ({mutate: h.continueImpl, isPending: false, error: null}),
@@ -90,6 +98,8 @@ describe('DeploymentPage form', () => {
     h.mutateImpl.mockReset();
     h.continueImpl.mockReset();
     jobsData = [];
+    inventoryGraph.nodes = [];
+    inventoryGraph.edges = [];
     writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', {
       value: {writeText: writeTextMock},
@@ -106,8 +116,8 @@ describe('DeploymentPage form', () => {
     expect(screen.getByRole('combobox', {name: /镜像类型/})).toHaveValue('system');
     expect(screen.getByRole('combobox', {name: /存储类型/})).toHaveValue('aliyun_oss');
     expect(screen.queryByRole('textbox', {name: /S3 Bucket/})).not.toBeInTheDocument();
-    expect(screen.getByRole('textbox', {name: /可用区/})).toBeInTheDocument();
-    expect(screen.getByRole('textbox', {name: /实例规格/})).toHaveValue('ecs.e-c4m1.large');
+    expect(screen.getByRole('combobox', {name: /可用区/})).toHaveValue('');
+    expect(screen.getByRole('combobox', {name: /实例规格/})).toHaveValue('ecs.e-c4m1.large');
     expect(screen.getByRole('spinbutton', {name: /最高出价/})).toBeInTheDocument();
     expect(screen.getByRole('checkbox', {name: /挂载保活治理/})).toBeChecked();
     expect(screen.getByRole('checkbox', {name: /安装 sing-box/})).not.toBeChecked();
@@ -128,9 +138,10 @@ describe('DeploymentPage form', () => {
 
     await user.selectOptions(screen.getByRole('combobox', {name: /托管账号/}), 'acc-1');
     await user.selectOptions(screen.getByRole('combobox', {name: /地域/}), 'us-west-1');
-    await user.type(screen.getByRole('textbox', {name: /可用区/}), 'us-west-1a');
-    await user.clear(screen.getByRole('textbox', {name: /实例规格/}));
-    await user.type(screen.getByRole('textbox', {name: /实例规格/}), 'ecs.g7.large');
+    await user.selectOptions(screen.getByRole('combobox', {name: /可用区/}), '__custom__');
+    await user.type(screen.getByRole('textbox', {name: /自定义可用区/}), 'us-west-1a');
+    await user.selectOptions(screen.getByRole('combobox', {name: /实例规格/}), '__custom__');
+    await user.type(screen.getByRole('textbox', {name: /自定义实例规格/}), 'ecs.g7.large');
     await user.type(screen.getByRole('spinbutton', {name: /最高出价/}), '0.1');
     await user.click(screen.getByRole('checkbox', {name: /安装 sing-box/}));
     fireEvent.change(screen.getByRole('textbox', {name: /sing-box 配置/}), {target: {value: '{"log":{"level":"info"}}'}});
@@ -541,4 +552,5 @@ describe('DeploymentPage form', () => {
     expect(within(progress).getByText('失败')).toBeInTheDocument();
     expect(within(progress).getByText(/库存不足, 请稍后重试/)).toBeInTheDocument();
   });
+
 });

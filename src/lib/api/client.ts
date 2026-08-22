@@ -18,22 +18,49 @@ import type {
   CreateAccountRequest,
 } from './generated/accounts/types.gen';
 import {client as graphClient} from './generated/graph/client.gen';
-import {discoverTopology as discoverTopologyRequest, getGraph as getGraphRequest} from './generated/graph/sdk.gen';
+import {
+  discoverTopology as discoverTopologyRequest,
+  getGraph as getGraphRequest,
+  getInventoryGraph as getInventoryGraphRequest,
+} from './generated/graph/sdk.gen';
 import type {ResourceGraph} from './generated/graph/types.gen';
 import {client as importClient} from './generated/import/client.gen';
 import {importImage as importImageRequest} from './generated/import/sdk.gen';
 import type {ImportImageBody, ImportImageResponse2} from './generated/import/types.gen';
 import {client as instancesClient} from './generated/instances/client.gen';
 import {
+  applyTailscaleDirectFirewall as applyTailscaleDirectFirewallRequest,
+  configureSingBox as configureSingBoxRequest,
+  createInstanceSecurityGroupRule as createInstanceSecurityGroupRuleRequest,
+  deleteInstanceSecurityGroupRule as deleteInstanceSecurityGroupRuleRequest,
   getEcsTrafficGovernance as getEcsTrafficGovernanceRequest,
   getEcsInstanceState as getEcsInstanceStateRequest,
   getEcsMetrics as getEcsMetricsRequest,
   getEcsVncUrl as getEcsVncUrlRequest,
+  inspectInstanceSoftware as inspectInstanceSoftwareRequest,
+  listInstanceSecurityGroups as listInstanceSecurityGroupsRequest,
   saveEcsTrafficGovernanceOverride as saveEcsTrafficGovernanceOverrideRequest,
   startEcsInstance as startEcsInstanceRequest,
   stopEcsInstance as stopEcsInstanceRequest,
 } from './generated/instances/sdk.gen';
-import type {ActionAudit, EcsInstanceStateResponse, EcsMetricsSnapshot, EcsTrafficGovernance, EcsTrafficGovernanceOverride, EcsVncUrlResponse} from './generated/instances/types.gen';
+import type {
+  ActionAudit,
+  EcsInstanceStateResponse,
+  EcsMetricsSnapshot,
+  EcsTrafficGovernance,
+  EcsTrafficGovernanceOverride,
+  EcsVncUrlResponse,
+  FirewallOperation,
+  FirewallTemplateResult,
+  InstanceFirewallRuleRequest,
+  InstanceSecurityGroup,
+  InstanceSecurityGroupSnapshot,
+  SecurityGroupRule,
+  InstanceSoftwareInspectBody,
+  InstanceSoftwareRuntime,
+  SingBoxConfigureBody,
+  SingBoxRuntimeInfo,
+} from './generated/instances/types.gen';
 import {client as jobsClient} from './generated/jobs/client.gen';
 import {getCdtFreeQuota as getCdtFreeQuotaRequest, listJobs as listJobsRequest, listTrafficAudits as listTrafficAuditsRequest, listTrafficPolicies as listTrafficPoliciesRequest, saveTrafficPolicy as saveTrafficPolicyRequest} from './generated/jobs/sdk.gen';
 import type {ActionAuditListResponse, Job, JobListResponse, ListTrafficAuditsData, TrafficPolicy, TrafficPolicyListResponse, TrafficPolicyRequest} from './generated/jobs/types.gen';
@@ -91,6 +118,16 @@ export type ApiCreateAccountRequest = CreateAccountRequest | AccountBody;
 export type ApiECSTrafficGovernance = EcsTrafficGovernance;
 export type ApiECSTrafficGovernanceOverride = EcsTrafficGovernanceOverride;
 export type ApiECSMetricsSnapshot = EcsMetricsSnapshot;
+export type ApiFirewallOperation = FirewallOperation;
+export type ApiFirewallTemplateResult = FirewallTemplateResult;
+export type ApiInstanceFirewallRuleRequest = InstanceFirewallRuleRequest;
+export type ApiInstanceSecurityGroup = InstanceSecurityGroup;
+export type ApiInstanceSecurityGroupSnapshot = InstanceSecurityGroupSnapshot;
+export type ApiSecurityGroupRule = SecurityGroupRule;
+export type ApiInstanceSoftwareInspectRequest = InstanceSoftwareInspectBody;
+export type ApiInstanceSoftwareRuntime = InstanceSoftwareRuntime;
+export type ApiSingBoxConfigureRequest = SingBoxConfigureBody;
+export type ApiSingBoxRuntimeInfo = SingBoxRuntimeInfo;
 export type ApiEffectiveTrafficGovernance = EffectiveTrafficGovernance;
 export type ApiJob = Job;
 export type ApiOneClickDeploymentBody = OneClickDeploymentBody;
@@ -190,6 +227,10 @@ export async function deleteAccount(accountId: string): Promise<void> {
 
 export async function listGraph(accountId: string): Promise<ApiResourceGraph> {
   return unwrapData((await getGraphRequest({path: {accountId}})) as GeneratedResult<ApiResourceGraph>);
+}
+
+export async function listInventoryGraph(accountId: string): Promise<ApiResourceGraph> {
+  return unwrapData((await getInventoryGraphRequest({path: {accountId}})) as GeneratedResult<ApiResourceGraph>);
 }
 
 export async function discoverTopology(accountId: string): Promise<ApiResourceGraph> {
@@ -307,6 +348,75 @@ export async function getECSVncUrl(accountId: string, instanceId: string): Promi
 
 export async function getECSMetrics(accountId: string, instanceId: string): Promise<ApiECSMetricsSnapshot> {
   return unwrapData((await getEcsMetricsRequest({path: {accountId, instanceId}})) as GeneratedResult<EcsMetricsSnapshot>);
+}
+
+/** Inspect Tailscale and Sing-box on one graph-scoped ECS instance. */
+export async function inspectInstanceSoftware(
+  accountId: string,
+  instanceId: string,
+  payload: ApiInstanceSoftwareInspectRequest,
+): Promise<ApiInstanceSoftwareRuntime> {
+  return unwrapData((await inspectInstanceSoftwareRequest({
+    path: {accountId, instanceId},
+    body: payload,
+  })) as GeneratedResult<ApiInstanceSoftwareRuntime>);
+}
+
+/** Configure the authenticated console-managed Sing-box mixed inbound. */
+export async function configureInstanceSingBox(
+  accountId: string,
+  instanceId: string,
+  payload: ApiSingBoxConfigureRequest,
+): Promise<ApiSingBoxRuntimeInfo> {
+  return unwrapData((await configureSingBoxRequest({
+    path: {accountId, instanceId},
+    body: payload,
+  })) as GeneratedResult<ApiSingBoxRuntimeInfo>);
+}
+
+/** Load the live security-group rules attached to one graph-scoped instance. */
+export async function listInstanceSecurityGroups(accountId: string, instanceId: string): Promise<ApiInstanceSecurityGroupSnapshot> {
+  return unwrapData((await listInstanceSecurityGroupsRequest({
+    path: {accountId, instanceId},
+  })) as GeneratedResult<ApiInstanceSecurityGroupSnapshot>);
+}
+
+/** Create one validated ingress or egress security-group rule. */
+export async function createInstanceSecurityGroupRule(
+  accountId: string,
+  instanceId: string,
+  securityGroupId: string,
+  payload: ApiInstanceFirewallRuleRequest,
+): Promise<ApiFirewallOperation> {
+  return unwrapData((await createInstanceSecurityGroupRuleRequest({
+    path: {accountId, instanceId, securityGroupId},
+    body: payload,
+  })) as GeneratedResult<ApiFirewallOperation>);
+}
+
+/** Revoke one displayed security-group rule by canonical Alibaba rule ID. */
+export async function deleteInstanceSecurityGroupRule(
+  accountId: string,
+  instanceId: string,
+  securityGroupId: string,
+  ruleId: string,
+  direction: 'ingress' | 'egress',
+): Promise<ApiFirewallOperation> {
+  return unwrapData((await deleteInstanceSecurityGroupRuleRequest({
+    path: {accountId, instanceId, securityGroupId, ruleId},
+    query: {direction},
+  })) as GeneratedResult<ApiFirewallOperation>);
+}
+
+/** Apply the explicit two-rule Tailscale direct-connect template. */
+export async function applyTailscaleDirectFirewall(
+  accountId: string,
+  instanceId: string,
+  securityGroupId: string,
+): Promise<ApiFirewallTemplateResult> {
+  return unwrapData((await applyTailscaleDirectFirewallRequest({
+    path: {accountId, instanceId, securityGroupId},
+  })) as GeneratedResult<ApiFirewallTemplateResult>);
 }
 
 export async function importImage(accountId: string, payload: ImportImageBody): Promise<ImportImageResponse2> {

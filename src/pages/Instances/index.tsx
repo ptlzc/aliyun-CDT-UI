@@ -20,6 +20,7 @@ import type {CloudAccount, ECSInstance} from '../../types';
 import {actionLabelZh} from '../../utils/actionLabels';
 import CdtFreeQuotaCard from './components/CdtFreeQuotaCard';
 import InstanceCard from './components/InstanceCard';
+import InstanceFirewallModal from './components/InstanceFirewallModal';
 import InstanceMetricsModal from './components/InstanceMetricsModal';
 import OverQuotaConfirmModal from './components/OverQuotaConfirmModal';
 import SshModal from './components/SshModal';
@@ -38,7 +39,7 @@ export default function InstancesPage() {
   const runtime = useRuntimeDashboard();
   const {openInstance} = useOutletContext<{openInstance: (instance: ECSInstance) => void}>();
   const instances = runtime.instances;
-  const isLoading = runtime.isLoading;
+  const inventoryLoading = runtime.inventoryLoading;
   const accountId = null;
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
@@ -49,6 +50,7 @@ export default function InstancesPage() {
   const [activeStateModalId, setActiveStateModalId] = useState<string | null>(null);
   const [activeVncId, setActiveVncId] = useState<string | null>(null);
   const [activeSshId, setActiveSshId] = useState<string | null>(null);
+  const [activeFirewallId, setActiveFirewallId] = useState<string | null>(null);
   const [pendingStartInstance, setPendingStartInstance] = useState<ECSInstance | null>(null);
   const [tempState, setTempState] = useState<{[key: string]: 'starting' | 'stopping' | null}>({});
   const [statusOverride, setStatusOverride] = useState<{[key: string]: ECSInstance['status']}>({});
@@ -64,6 +66,7 @@ export default function InstancesPage() {
   const activeInstance = instances.find((inst) => inst.id === activeVncId) || null;
   const vncUrlQuery = useECSVncUrlQuery(activeInstance?.accountId || null, activeVncId, Boolean(activeVncId));
   const activeSshInstance = instances.find((inst) => inst.id === activeSshId) || null;
+  const activeFirewallInstance = instances.find((inst) => inst.id === activeFirewallId) || null;
   const stateModalInstance = instances.find((inst) => inst.id === activeStateModalId) || null;
   const metricsQuery = useECSMetricsQuery(stateModalInstance?.accountId || null, activeStateModalId, Boolean(activeStateModalId));
 
@@ -219,7 +222,7 @@ export default function InstancesPage() {
       )}
 
       {/* Bento Grid Layout */}
-      {isLoading && instances.length === 0 ? (
+      {inventoryLoading && instances.length === 0 ? (
         <InstanceSkeletonGrid />
       ) : (
         <>
@@ -228,12 +231,14 @@ export default function InstancesPage() {
               <InstanceCard
                 key={instance.id}
                 instance={instance}
+                detailsLoading={runtime.instanceDetailsLoading[instance.accountId] ?? false}
                 loadingStatus={tempState[instance.id]}
                 effectiveStatus={statusOverride[instance.id] || instance.status}
                 powerError={powerError[instance.id]}
                 onTogglePower={togglePower}
                 onOpenVnc={openVnc}
                 onOpenSsh={openSsh}
+                onOpenFirewall={(inst) => setActiveFirewallId(inst.id)}
                 onToggleStateModal={(inst) => setActiveStateModalId(activeStateModalId === inst.id ? null : inst.id)}
                 onManageInstance={openInstance}
                 onViewPolicy={openPolicyModal}
@@ -252,6 +257,14 @@ export default function InstancesPage() {
       {/* SSH Terminal Modal */}
       {activeSshId && activeSshInstance && (
         <SshModal instance={activeSshInstance} onClose={() => setActiveSshId(null)} />
+      )}
+
+      {activeFirewallInstance && (
+        <InstanceFirewallModal
+          instance={activeFirewallInstance}
+          onClose={() => setActiveFirewallId(null)}
+          onViewPolicy={() => openPolicyModal(activeFirewallInstance)}
+        />
       )}
 
       {/* VNC URL Modal */}
@@ -288,7 +301,11 @@ export default function InstancesPage() {
 
       {/* Shared Auth Policy Modal — opened from a permission error notice */}
       {activePolicyAccount && (
-        <AuthPolicyModal account={activePolicyAccount} onClose={() => setActivePolicyAccount(null)} />
+        <AuthPolicyModal
+          accountName={activePolicyAccount.name}
+          siteType={activePolicyAccount.providerRegion === 'Aliyun International' ? 'international' : 'domestic'}
+          onClose={() => setActivePolicyAccount(null)}
+        />
       )}
     </div>
   );
@@ -328,7 +345,7 @@ function EffectiveGovernanceCard({data}: {data: ApiEffectiveTrafficGovernance}) 
  */
 function InstanceSkeletonGrid() {
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
+    <div role="status" aria-label="正在加载实例列表" className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
       {Array.from({length: 6}).map((_, idx) => (
         <div
           key={idx}

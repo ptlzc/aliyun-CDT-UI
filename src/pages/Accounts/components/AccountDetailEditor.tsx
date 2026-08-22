@@ -15,6 +15,9 @@ import {
 import {listRegions, type ApiAccountRegion, type CdtPermissionResult} from '../../../lib/api/client';
 import {useSaveAccountMutation, useValidateAccountMutation} from '../../../features/runtime/hooks';
 import type {CloudAccount} from '../../../types';
+import AccountPolicyCard from '../../../components/AccountPolicyCard';
+import AuthPolicyModal from '../../../components/AuthPolicyModal';
+import {isPermissionErrorMessage} from '../../../components/accountPolicy';
 import PermissionStatusCard from './PermissionStatusCard';
 import AccountMetadataCard from './AccountMetadataCard';
 import ResourceSummaryCard from './ResourceSummaryCard';
@@ -26,8 +29,14 @@ interface AccountDetailEditorProps {
   cdtPermission?: CdtPermissionResult;
   cdtPermissionLoading: boolean;
   onClose: () => void;
-  onOpenAuthModal: () => void;
   onOpenAuditLogs: () => void;
+}
+
+function accountManagedRegions(account: CloudAccount): string[] {
+  const explicitRegions = account.managedRegions.split(',').map((item) => item.trim()).filter(Boolean);
+  if (explicitRegions.length > 0) return explicitRegions;
+  const historicalRegion = account.mainRegion.trim();
+  return historicalRegion ? [historicalRegion] : [];
 }
 
 /**
@@ -44,46 +53,34 @@ export default function AccountDetailEditor({
   cdtPermission,
   cdtPermissionLoading,
   onClose,
-  onOpenAuthModal,
   onOpenAuditLogs,
 }: AccountDetailEditorProps) {
   const saveAccountMutation = useSaveAccountMutation();
   const validateMutation = useValidateAccountMutation();
-  // Lazy initial state: fields are ready on the first mounted frame (no
-  // post-mount effect race), mirroring the old handleEditClick/handleCreateClick
-  // synchronous backfill. The reset effect below still rehydrates fields when
-  // the account identity changes in place.
   const [name, setName] = useState(() => (isCreating ? '' : account.name));
   const [accessKeyId, setAccessKeyId] = useState(() => (isCreating ? '' : account.accessKeyId));
   const [accessKeySecret, setAccessKeySecret] = useState(() => (isCreating ? '' : account.accessKeySecret));
   const [roleArn, setRoleArn] = useState(() => (isCreating ? '' : account.roleArn || ''));
   const [managedRegions, setManagedRegions] = useState<string[]>(() =>
-    isCreating ? [] : account.managedRegions.split(',').map((item) => item.trim()).filter(Boolean),
+    isCreating ? [] : accountManagedRegions(account),
   );
-  const [mainRegion, setMainRegion] = useState(() => (isCreating ? '' : account.mainRegion));
   const [siteType, setSiteType] = useState<'domestic' | 'international'>(() =>
     isCreating ? 'domestic' : account.providerRegion === 'Aliyun International' ? 'international' : 'domestic',
   );
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [showSecret, setShowSecret] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Regions fetched from the accounts SDK (POST /api/accounts/regions) with
-  // the entered credentials + siteType — never hardcoded.
   const [regions, setRegions] = useState<ApiAccountRegion[]>([]);
   const [regionsLoading, setRegionsLoading] = useState(false);
   const [regionsError, setRegionsError] = useState<string | null>(null);
 
-  const [testResult, setTestResult] = useState<{status: 'idle' | 'testing' | 'success' | 'error'; message?: string}>({status: 'idle'});
+  const [testResult, setTestResult] = useState<{status: 'idle' | 'testing' | 'success' | 'error'; message?: string; errorType?: 'permission' | 'credential' | 'network'}>({status: 'idle'});
 
-  // Reset test result when switching accounts
   useEffect(() => {
     setTestResult({status: 'idle'});
   }, [account?.id, isCreating]);
 
-  // Rehydrate the form from the account whenever the identity changes. The
-  // editor is remounted per account (key in the parent), so this effect only
-  // guards against an in-place prop swap; it must not wipe regions already
-  // fetched by the user for the current account.
   useEffect(() => {
     if (isCreating) {
       setName('');
@@ -91,7 +88,6 @@ export default function AccountDetailEditor({
       setAccessKeySecret('');
       setRoleArn('');
       setManagedRegions([]);
-      setMainRegion('');
       setSiteType('domestic');
       setRegions([]);
       setRegionsError(null);
@@ -101,8 +97,7 @@ export default function AccountDetailEditor({
     setAccessKeyId(account.accessKeyId);
     setAccessKeySecret(account.accessKeySecret);
     setRoleArn(account.roleArn || '');
-    setManagedRegions(account.managedRegions.split(',').map((item) => item.trim()).filter(Boolean));
-    setMainRegion(account.mainRegion);
+    setManagedRegions(accountManagedRegions(account));
     setSiteType(account.providerRegion === 'Aliyun International' ? 'international' : 'domestic');
   }, [account?.id, isCreating]);
 
@@ -122,22 +117,20 @@ export default function AccountDetailEditor({
     setSiteType(value);
     setRegions([]);
     setRegionsError(null);
-    setMainRegion('');
     setManagedRegions([]);
   };
 
-  // Option list for the main-region select and the managed-region checkboxes:
-  // SDK-fetched regions first, then any currently-selected value (edit flow
-  // keeps its stored region visible until the user re-fetches with the SDK).
+  // SDK-fetched regions first, then any currently-selected value so the edit
+  // flow keeps stored or historical regions visible until the user re-fetches.
   const regionOptions = useMemo(() => {
     const options = [...regions];
-    for (const value of [mainRegion, ...managedRegions]) {
+    for (const value of managedRegions) {
       if (value && !options.some((option) => option.regionId === value)) {
         options.push({regionId: value});
       }
     }
     return options;
-  }, [regions, mainRegion, managedRegions]);
+  }, [regions, managedRegions]);
 
   /**
    * Fetch available regions for the entered credentials + siteType via the
@@ -219,8 +212,8 @@ export default function AccountDetailEditor({
         accessKeyId,
         accessKeySecret,
         regions: managedRegions,
-        regionId: managedRegions[0] || mainRegion,
-        zoneId: mainRegion,
+        regionId: managedRegions[0] || '',
+        zoneId: '',
         ossBucket: '',
         ossEndpoint: siteType === 'domestic' ? 'oss-cn-hangzhou.aliyuncs.com' : 'oss-cn-hongkong.aliyuncs.com',
       });
@@ -238,15 +231,16 @@ export default function AccountDetailEditor({
         setTestResult({status: 'success', message: '连接测试成功，凭据有效，所有权限正常'});
       } else if (result.valid && result.warning) {
         if (result.errorType === 'network') {
-          setTestResult({status: 'success', message: `凭据有效，但部分接口出现网络错误（非权限问题）:\n${result.warning}\n\n请检查服务器到阿里云 API 的网络连通性（防火墙、DNS、跨境网络等），无需修改 RAM 策略。`});
+          setTestResult({status: 'success', errorType: 'network', message: `凭据有效，但部分接口出现网络错误（非权限问题）:\n${result.warning}\n\n请检查服务器到阿里云 API 的网络连通性（防火墙、DNS、跨境网络等），无需修改 RAM 策略。`});
         } else {
-          setTestResult({status: 'success', message: `凭据有效，但部分权限不足：\n${result.warning}\n\n请点击「查看授权」获取所需 RAM 策略，并在阿里云 RAM 控制台添加。`});
+          setTestResult({status: 'success', errorType: 'permission', message: `凭据有效，但部分权限不足：\n${result.warning}\n\n请打开权限 JSON，在阿里云 RAM 控制台创建并绑定自定义策略。`});
         }
       } else {
-        setTestResult({status: 'error', message: result.error || '凭据验证失败，请检查 AccessKey ID 和 Secret 是否正确'});
+        setTestResult({status: 'error', errorType: result.errorType === 'credential' ? 'credential' : undefined, message: result.error || '凭据验证失败，请检查 AccessKey ID 和 Secret 是否正确'});
       }
     } catch (error) {
-      setTestResult({status: 'error', message: error instanceof Error ? error.message : '连接测试失败'});
+      const message = error instanceof Error ? error.message : '连接测试失败';
+      setTestResult({status: 'error', errorType: isPermissionErrorMessage(message) ? 'permission' : undefined, message});
     }
   };
 
@@ -295,7 +289,7 @@ export default function AccountDetailEditor({
             <PermissionStatusCard
               cdtPermission={cdtPermission}
               isLoading={cdtPermissionLoading}
-              onOpenAuthModal={onOpenAuthModal}
+              onOpenAuthModal={() => setShowAuthModal(true)}
             />
           )}
 
@@ -309,6 +303,11 @@ export default function AccountDetailEditor({
             </header>
 
             <div className="p-5 flex flex-col gap-4">
+              <div className="rounded-md border border-primary/25 bg-primary/[0.04] px-3 py-2.5 text-[11px] leading-relaxed text-secondary-ink">
+                请填写专用于本平台的 <strong className="text-primary-ink">RAM 用户 AccessKey</strong>，不要使用阿里云主账号 AccessKey。
+                RAM 用户默认没有任何权限，请先复制右侧 JSON 创建自定义策略并绑定到该用户。
+              </div>
+
               {/* Account Title block */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider">账户配置名称 *</label>
@@ -326,7 +325,7 @@ export default function AccountDetailEditor({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* AK ID */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider">Access Key ID *</label>
+                  <label className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider">RAM 用户 Access Key ID *</label>
                   <div className="relative">
                     <input
                       type="text"
@@ -349,7 +348,7 @@ export default function AccountDetailEditor({
 
                 {/* AK Secret */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider">Access Key Secret *</label>
+                  <label className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider">RAM 用户 Access Key Secret *</label>
                   <div className="relative">
                     <input
                       type={showSecret ? 'text' : 'password'}
@@ -436,31 +435,22 @@ export default function AccountDetailEditor({
                   获取可用地域
                 </button>
                 {regionsError && (
-                  <span className="text-recovery-red text-[11px]">{regionsError}</span>
+                  <span className="flex flex-wrap items-center gap-2 text-recovery-red text-[11px]">
+                    <span>{regionsError}</span>
+                    {isPermissionErrorMessage(regionsError) && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAuthModal(true)}
+                        className="cursor-pointer rounded border border-recovery-red/35 bg-white px-2 py-0.5 font-medium hover:bg-recovery-red hover:text-white"
+                      >
+                        查看所需权限 JSON
+                      </button>
+                    )}
+                  </span>
                 )}
                 {!regionsError && !regionsLoading && regions.length > 0 && (
                   <span className="text-healthy-green text-[11px]">已加载 {regions.length} 个可用地域</span>
                 )}
-              </div>
-
-              {/* Main region select */}
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="mainRegion-select" className="text-[11px] font-bold text-secondary-ink uppercase tracking-wider">主注册地域</label>
-                <select
-                  id="mainRegion-select"
-                  value={mainRegion}
-                  onChange={(e) => setMainRegion(e.target.value)}
-                  className="w-full px-3.5 py-2 border border-hairline-divider rounded text-xs bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-primary-ink font-medium"
-                >
-                  {regionOptions.length === 0 && (
-                    <option value="">请先填写 Access Key 并点击「获取可用地域」</option>
-                  )}
-                  {regionOptions.map((option) => (
-                    <option key={option.regionId} value={option.regionId}>
-                      {option.localName ? `${option.regionId} (${option.localName})` : option.regionId}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               {/* Managed Regions */}
@@ -519,7 +509,16 @@ export default function AccountDetailEditor({
               <div className="flex flex-col gap-3 mt-5 pt-5 border-t border-hairline-divider">
                 {testResult.status !== 'idle' && testResult.status !== 'testing' && (
                   <div className={`text-[11px] px-3 py-2 rounded border whitespace-pre-wrap ${testResult.status === 'success' ? 'bg-healthy-green/5 border-healthy-green/30 text-healthy-green' : 'bg-recovery-red/5 border-recovery-red/30 text-recovery-red'}`}>
-                    {testResult.message}
+                    <p>{testResult.message}</p>
+                    {testResult.errorType === 'permission' && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAuthModal(true)}
+                        className="mt-2 cursor-pointer rounded border border-current/35 bg-white px-2.5 py-1 font-medium hover:bg-signal-amber hover:text-white"
+                      >
+                        查看连接测试所需权限 JSON
+                      </button>
+                    )}
                   </div>
                 )}
                 <div className="flex justify-end gap-2.5">
@@ -556,15 +555,24 @@ export default function AccountDetailEditor({
 
         {/* Sidebar Account Metadata Card (span 4) */}
         <div className="lg:col-span-4 flex flex-col gap-6">
+          <AccountPolicyCard siteType={siteType} />
           <AccountMetadataCard
             account={account}
             isCreating={isCreating}
             editedName={name}
-            editedMainRegion={mainRegion}
             onOpenAuditLogs={onOpenAuditLogs}
           />
         </div>
       </div>
+
+      {showAuthModal && (
+        <AuthPolicyModal
+          accountName={name.trim() || (isCreating ? '' : account.name)}
+          siteType={siteType}
+          cdtPermission={isCreating ? undefined : cdtPermission}
+          onClose={() => setShowAuthModal(false)}
+        />
+      )}
     </>
   );
 }

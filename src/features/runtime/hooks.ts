@@ -14,6 +14,7 @@ import {
   getPlatformTrafficGovernance,
   listAccounts,
   listGraph,
+  listInventoryGraph,
   listJobs,
   listRegionGroups,
   listRegionsForAccount,
@@ -53,10 +54,14 @@ import {
 } from '@/lib/api/client';
 import type {CloudAccount, DashboardSummary, ECSInstance, WorkflowRun, WorkflowTask} from '@/types';
 import {formatDateLabel} from '@/utils/dateFormat';
+import {mapGraphToInstances} from './instanceMapping';
+
+export {mapGraphToInstances} from './instanceMapping';
 
 export const runtimeKeys = {
   accounts: ['runtime', 'accounts'] as const,
   graph: (accountId: string) => ['runtime', 'graph', accountId] as const,
+  graphInventory: (accountId: string) => ['runtime', 'graph', accountId, 'inventory'] as const,
   graphAll: ['runtime', 'graph'] as const,
   jobs: ['runtime', 'jobs'] as const,
   settings: ['runtime', 'settings', 'traffic-governance'] as const,
@@ -64,21 +69,6 @@ export const runtimeKeys = {
   audits: (accountId: string, filters: TrafficAuditFilters) => ['runtime', 'traffic-audits', accountId, filters] as const,
   cdtPermission: (accountId: string) => ['runtime', 'cdt-permission', accountId] as const,
   regions: (accountId: string) => ['runtime', 'regions', accountId] as const,
-};
-
-/**
- * Alert copy per unavailable traffic source; sources without an entry fall
- * back to the generic unavailable copy in mapGraphToInstances.
- * cdt-region-shared stays a plain informational notice (region-wide eip
- * traffic cannot be split per instance) — never misreported as a
- * permission/network error.
- *
- * @when 实例累计流量不可用时的节点报警文案
- */
-const TRAFFIC_UNAVAILABLE_ALERT_COPY: Record<string, string> = {
-  'bss-no-data': '该实例本月暂无 CDT 出账明细（出账有小时级延迟）。',
-  'bss-api-error': 'BSS 账单接口不可用，请联系管理员升级到 DescribeInstanceBill。',
-  'cdt-region-shared': '该地域多个 EIP 共用流量, 无法按实例拆分。',
 };
 
 function relativeTimeLabel(value?: string): string {
@@ -167,97 +157,6 @@ export function mapJobToWorkflow(job: ApiJob): WorkflowRun {
   };
 }
 
-function resolveExternalIP(graph: ApiResourceGraph, instanceId: string, metadata?: Record<string, string>): string {
-  const eipEdge = graph.edges.find((edge) => edge.type === 'bound-to' && edge.to === instanceId);
-  if (eipEdge) {
-    const eipNode = graph.nodes.find((node) => node.id === eipEdge.from && node.kind === 'eip');
-    const ipAddress = eipNode?.metadata?.ipAddress;
-    if (ipAddress) {
-      return ipAddress;
-    }
-  }
-  return '未绑定';
-}
-
-function normalizeInstanceStatus(node: ApiResourceGraph['nodes'][number], metadata?: Record<string, string>): ECSInstance['status'] {
-  const effectiveMax = Number.parseFloat(metadata?.trafficEffectiveMaximumGb || '0') || 0;
-  const current = node.trafficUsage?.available ? node.trafficUsage.value : 0;
-  if (node.status !== 'Running') {
-    return 'Stopped';
-  }
-  if (effectiveMax > 0 && current / effectiveMax >= 0.8) {
-    return 'Attention';
-  }
-  return 'Running';
-}
-
-export function mapGraphToInstances(graphs: ApiResourceGraph[], accounts: ApiAccount[], policiesByAccount: Record<string, ApiTrafficPolicy[]>): ECSInstance[] {
-  return graphs.flatMap((graph) => {
-    const account = accounts.find((item) => item.id === graph.accountId);
-    const accountName = account?.name || graph.accountId;
-    const accountPolicies = policiesByAccount[graph.accountId] || [];
-    return graph.nodes
-      .filter((node) => node.kind === 'ecs')
-      .map((node) => {
-        const metadata = node.metadata || {};
-        const maximumTraffic = Number.parseFloat(metadata.trafficEffectiveMaximumGb || '0') || 0;
-        const inherited = !metadata.trafficOverrideMaximumGb && !metadata.trafficOverrideOverflowAction && !metadata.trafficOverrideMonitoringEnabled;
-        const policy = accountPolicies.find((item) => item.scopeType === 'instance' && item.scopeId === node.id);
-        const usage = node.trafficUsage;
-        const rate = node.trafficRate;
-        const currentTraffic = usage?.available ? usage.value : 0;
-        const alerts: string[] = [];
-        if (maximumTraffic > 0 && currentTraffic / maximumTraffic >= 0.8) {
-          alerts.push(`累计流量使用已达配置上限的 ${Math.round((currentTraffic / maximumTraffic) * 100)}%。`);
-        }
-        if (!usage?.available) {
-          const sourceAlert = usage?.source ? TRAFFIC_UNAVAILABLE_ALERT_COPY[usage.source] : undefined;
-          alerts.push(sourceAlert || '该实例的累计流量数据当前不可用。');
-        }
-        if (metadata.trafficMonitoringEnabled === 'false') {
-          alerts.push('该实例的监控已关闭。');
-        }
-        return {
-          id: node.id,
-          accountId: graph.accountId,
-          accountName,
-          name: node.name,
-          status: normalizeInstanceStatus(node, metadata),
-          type: metadata.instanceType || 'ecs.unknown',
-          zone: node.zoneId || node.regionId || '-',
-          regionId: node.regionId || account?.regionId || '',
-          publicIp: resolveExternalIP(graph, node.id, metadata),
-          privateIp: metadata.privateIps || metadata.primaryPrivateIp || '未提供',
-          trafficUsage: usage?.available ? Math.round(usage.value * 100) / 100 : null,
-          trafficUsageUnit: usage?.unit || 'GB',
-          trafficUsageSource: usage?.source,
-          trafficUsageErrorReason: usage?.errorReason,
-          trafficUsageCollectedAt: usage?.collectedAt,
-          trafficRate: rate?.available ? Math.round(rate.value * 100) / 100 : null,
-          trafficRateUnit: rate?.unit || 'Mbps',
-          trafficRateSource: rate?.source,
-          trafficRateCollectedAt: rate?.collectedAt,
-          trafficLimit: Math.round(maximumTraffic),
-          monitoringEnabled: metadata.trafficMonitoringEnabled !== 'false',
-          overflowAction: metadata.trafficEffectiveOverflowAction || 'notify',
-          inherited,
-          alerts,
-          trafficPolicy: policy
-            ? {
-                id: policy.id,
-                name: policy.name,
-                thresholdValue: policy.thresholdValue,
-                thresholdType: policy.thresholdType,
-                action: policy.action,
-                cooldownMinutes: policy.cooldownMinutes,
-                enabled: policy.enabled,
-              }
-            : null,
-        };
-      });
-  });
-}
-
 function buildDashboardSummary(accounts: ApiAccount[], graphs: ApiResourceGraph[], jobs: ApiJob[], instances: ECSInstance[]): DashboardSummary {
   return {
     accountCount: accounts.length,
@@ -296,11 +195,19 @@ export function useRuntimeDashboard() {
   const jobsQuery = useJobsQuery();
   const settingsQuery = usePlatformTrafficGovernanceQuery();
   const accountIds = useMemo(() => (accountsQuery.data || []).map((account) => account.id), [accountsQuery.data]);
-  const graphQueries = useQueries({
+  const inventoryGraphQueries = useQueries({
     queries: accountIds.map((accountId) => ({
+      queryKey: runtimeKeys.graphInventory(accountId),
+      queryFn: () => listInventoryGraph(accountId),
+      enabled: Boolean(accountId),
+      staleTime: 60_000,
+    })),
+  }) as Array<{data?: ApiResourceGraph; isLoading: boolean}>;
+  const graphQueries = useQueries({
+    queries: accountIds.map((accountId, index) => ({
       queryKey: runtimeKeys.graph(accountId),
       queryFn: () => listGraph(accountId),
-      enabled: Boolean(accountId),
+      enabled: Boolean(accountId) && inventoryGraphQueries[index]?.data !== undefined,
       // Graph is persisted in the backend store and only changes when a
       // discovery run finishes — not realtime. 60s keeps it cached across
       // page visits instead of refetching the slow /graph endpoint (enrich
@@ -316,13 +223,22 @@ export function useRuntimeDashboard() {
     })),
   }) as Array<{data?: ApiTrafficPolicy[]; isLoading: boolean}>;
 
-  const graphs = graphQueries.map((query) => query.data).filter((graph): graph is ApiResourceGraph => Boolean(graph));
+  const graphs = accountIds
+    .map((_, index) => graphQueries[index]?.data ?? inventoryGraphQueries[index]?.data)
+    .filter((graph): graph is ApiResourceGraph => Boolean(graph));
   const policiesByAccount = Object.fromEntries(accountIds.map((accountId, index) => [accountId, policyQueries[index]?.data || []])) as Record<string, ApiTrafficPolicy[]>;
   const instances = mapGraphToInstances(graphs, accountsQuery.data || [], policiesByAccount);
+  const instanceDetailsLoading = Object.fromEntries(accountIds.map((accountId, index) => [
+    accountId,
+    inventoryGraphQueries[index]?.data !== undefined &&
+      graphQueries[index]?.data === undefined &&
+      graphQueries[index]?.isLoading === true,
+  ])) as Record<string, boolean>;
+  const inventoryLoading = accountsQuery.isLoading || inventoryGraphQueries.some((query) => query.isLoading);
 
   return {
     isLoading:
-      accountsQuery.isLoading ||
+      inventoryLoading ||
       jobsQuery.isLoading ||
       settingsQuery.isLoading ||
       graphQueries.some((query) => query.isLoading) ||
@@ -331,6 +247,8 @@ export function useRuntimeDashboard() {
     rawAccounts: accountsQuery.data || [],
     graphs,
     instances,
+    inventoryLoading,
+    instanceDetailsLoading,
     workflows: (jobsQuery.data || []).map(mapJobToWorkflow),
     summary: buildDashboardSummary(accountsQuery.data || [], graphs, jobsQuery.data || [], instances),
     platformDefaults: settingsQuery.data?.defaults || null,
@@ -556,6 +474,21 @@ export function useRegionsQuery(accountId: string | null) {
     queryKey: runtimeKeys.regions(accountId || ''),
     queryFn: () => listRegionsForAccount(accountId!),
     enabled: Boolean(accountId),
+  });
+}
+
+/**
+ * Fast persisted topology used to populate source-ECS, zone, and instance
+ * type dropdowns in the one-click deployment form.
+ *
+ * @when 一键部署页选定账号后需要可下拉选择的 ECS/可用区/规格时
+ */
+export function useInventoryGraphQuery(accountId: string | null) {
+  return useQuery<ApiResourceGraph>({
+    queryKey: runtimeKeys.graphInventory(accountId || ''),
+    queryFn: () => listInventoryGraph(accountId!),
+    enabled: Boolean(accountId),
+    staleTime: 60_000,
   });
 }
 

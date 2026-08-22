@@ -1,4 +1,4 @@
-import {Calendar, History, MapPin} from 'lucide-react';
+import {Calendar, History} from 'lucide-react';
 
 import type {CloudAccount} from '../../../types';
 
@@ -8,14 +8,13 @@ interface AccountMetadataCardProps {
   isCreating: boolean;
   /** Live form values so the card reflects in-progress edits. */
   editedName: string;
-  editedMainRegion: string;
   onOpenAuditLogs: () => void;
 }
 
 /**
- * Right-column metadata card for the account detail view: identity, main
- * region, import date and the audit log entry point. Only real backend
- * fields are shown — the create draft hides rows that have no real data.
+ * Right-column metadata card for the account detail view: identity, import
+ * date and the audit log entry point. Only real backend fields are shown —
+ * the create draft hides rows that have no real data.
  *
  * @when 账户详情视图（编辑或新建）渲染时
  */
@@ -23,7 +22,6 @@ export default function AccountMetadataCard({
   account,
   isCreating,
   editedName,
-  editedMainRegion,
   onOpenAuditLogs,
 }: AccountMetadataCardProps) {
   return (
@@ -37,14 +35,6 @@ export default function AccountMetadataCard({
           <span className="text-[11px] text-secondary-ink font-semibold uppercase tracking-wider">云账户物理名称</span>
           <div className="font-bold text-primary-ink mt-1 font-space">
             {isCreating ? editedName || '待命名' : account.name}
-          </div>
-        </div>
-
-        <div>
-          <span className="text-[11px] text-secondary-ink font-semibold uppercase tracking-wider">注册主拓扑宿地域</span>
-          <div className="text-primary-ink mt-1 flex items-center gap-2 font-medium">
-            <MapPin className="w-3.5 h-3.5 text-outline" />
-            {isCreating ? editedMainRegion : account.mainRegion}
           </div>
         </div>
 

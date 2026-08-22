@@ -848,6 +848,10 @@
           "portRange": {
             "type": "string"
           },
+          "priority": {
+            "format": "int64",
+            "type": "integer"
+          },
           "protocol": {
             "type": "string"
           }
@@ -858,6 +862,28 @@
           "portRange",
           "cidr",
           "policy"
+        ],
+        "type": "object"
+      },
+      "FirewallTemplateResult": {
+        "additionalProperties": false,
+        "properties": {
+          "operations": {
+            "items": {
+              "$ref": "#/components/schemas/FirewallOperation"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "operations"
         ],
         "type": "object"
       },
@@ -970,6 +996,132 @@
         "required": [
           "job",
           "result"
+        ],
+        "type": "object"
+      },
+      "InstanceFirewallRuleRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "cidr": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string"
+          },
+          "policy": {
+            "type": "string"
+          },
+          "portRange": {
+            "type": "string"
+          },
+          "priority": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "protocol": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "direction",
+          "protocol",
+          "portRange",
+          "cidr",
+          "policy",
+          "priority"
+        ],
+        "type": "object"
+      },
+      "InstanceSecurityGroup": {
+        "additionalProperties": false,
+        "properties": {
+          "egressRules": {
+            "items": {
+              "$ref": "#/components/schemas/SecurityGroupRule"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "ingressRules": {
+            "items": {
+              "$ref": "#/components/schemas/SecurityGroupRule"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "regionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "regionId",
+          "ingressRules",
+          "egressRules"
+        ],
+        "type": "object"
+      },
+      "InstanceSecurityGroupSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "instanceId": {
+            "type": "string"
+          },
+          "securityGroups": {
+            "items": {
+              "$ref": "#/components/schemas/InstanceSecurityGroup"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "instanceId",
+          "securityGroups"
+        ],
+        "type": "object"
+      },
+      "InstanceSoftwareInspectBody": {
+        "additionalProperties": false,
+        "properties": {
+          "sshPassword": {
+            "type": "string"
+          },
+          "sshUser": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "InstanceSoftwareRuntime": {
+        "additionalProperties": false,
+        "properties": {
+          "singBox": {
+            "$ref": "#/components/schemas/SingBoxRuntimeInfo"
+          },
+          "tailscale": {
+            "$ref": "#/components/schemas/TailscaleRuntimeInfo"
+          }
+        },
+        "required": [
+          "tailscale",
+          "singBox"
         ],
         "type": "object"
       },
@@ -1130,12 +1282,12 @@
             "type": "string"
           },
           "imageType": {
-            "type": "string",
             "enum": [
               "system",
               "installer",
               "auto-installer"
-            ]
+            ],
+            "type": "string"
           },
           "installSingBox": {
             "type": "boolean"
@@ -1153,6 +1305,9 @@
             "type": "string"
           },
           "regionId": {
+            "type": "string"
+          },
+          "rootPassword": {
             "type": "string"
           },
           "s3AccessKeyId": {
@@ -1179,12 +1334,25 @@
           "singBoxConfig": {
             "type": "string"
           },
+          "sourceInstanceId": {
+            "type": "string"
+          },
           "spotPriceLimit": {
             "format": "double",
             "type": "number"
           },
           "storageProvider": {
             "type": "string"
+          },
+          "systemDiskCategory": {
+            "type": "string"
+          },
+          "systemDiskPerformanceLevel": {
+            "type": "string"
+          },
+          "systemDiskSize": {
+            "format": "int64",
+            "type": "integer"
           },
           "tailscaleAuthKey": {
             "type": "string"
@@ -1339,6 +1507,9 @@
             "type": "string"
           },
           "systemDiskCategory": {
+            "type": "string"
+          },
+          "systemDiskPerformanceLevel": {
             "type": "string"
           },
           "systemDiskSize": {
@@ -1593,6 +1764,153 @@
         "required": [
           "message",
           "timestamp"
+        ],
+        "type": "object"
+      },
+      "SecurityGroupRule": {
+        "additionalProperties": false,
+        "properties": {
+          "cidr": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string"
+          },
+          "policy": {
+            "type": "string"
+          },
+          "portRange": {
+            "type": "string"
+          },
+          "priority": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "protocol": {
+            "type": "string"
+          },
+          "ruleId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "direction",
+          "protocol",
+          "portRange",
+          "cidr",
+          "policy",
+          "priority"
+        ],
+        "type": "object"
+      },
+      "SingBoxConfigureBody": {
+        "additionalProperties": false,
+        "properties": {
+          "bindInterface": {
+            "type": "string"
+          },
+          "listen": {
+            "type": "string"
+          },
+          "listenPort": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "password": {
+            "type": "string"
+          },
+          "sshPassword": {
+            "type": "string"
+          },
+          "sshUser": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "listen",
+          "listenPort",
+          "username",
+          "password"
+        ],
+        "type": "object"
+      },
+      "SingBoxManagedInbound": {
+        "additionalProperties": false,
+        "properties": {
+          "bindInterface": {
+            "type": "string"
+          },
+          "listen": {
+            "type": "string"
+          },
+          "listenPort": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "listen",
+          "listenPort",
+          "username"
+        ],
+        "type": "object"
+      },
+      "SingBoxRuntimeInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "installed": {
+            "type": "boolean"
+          },
+          "managedInbound": {
+            "$ref": "#/components/schemas/SingBoxManagedInbound"
+          },
+          "running": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "installed",
+          "running"
+        ],
+        "type": "object"
+      },
+      "TailscaleRuntimeInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "hostname": {
+            "type": "string"
+          },
+          "installed": {
+            "type": "boolean"
+          },
+          "ips": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "running": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "installed",
+          "running"
         ],
         "type": "object"
       },

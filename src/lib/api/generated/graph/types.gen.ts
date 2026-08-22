@@ -231,7 +231,13 @@ export type FirewallRuleSpec = {
     direction: string;
     policy: string;
     portRange: string;
+    priority?: number;
     protocol: string;
+};
+
+export type FirewallTemplateResult = {
+    operations: Array<FirewallOperation> | null;
+    status: string;
 };
 
 export type GraphSummary = {
@@ -267,6 +273,39 @@ export type ImportImageResponse = {
     result: {
         [key: string]: string;
     };
+};
+
+export type InstanceFirewallRuleRequest = {
+    cidr: string;
+    description?: string;
+    direction: string;
+    policy: string;
+    portRange: string;
+    priority: number;
+    protocol: string;
+};
+
+export type InstanceSecurityGroup = {
+    egressRules: Array<SecurityGroupRule> | null;
+    id: string;
+    ingressRules: Array<SecurityGroupRule> | null;
+    name: string;
+    regionId: string;
+};
+
+export type InstanceSecurityGroupSnapshot = {
+    instanceId: string;
+    securityGroups: Array<InstanceSecurityGroup> | null;
+};
+
+export type InstanceSoftwareInspectBody = {
+    sshPassword?: string;
+    sshUser?: string;
+};
+
+export type InstanceSoftwareRuntime = {
+    singBox: SingBoxRuntimeInfo;
+    tailscale: TailscaleRuntimeInfo;
 };
 
 export type Job = {
@@ -314,13 +353,14 @@ export type OneClickDeploymentBody = {
     attachGovernance?: boolean;
     imageId?: string;
     imagePath?: string;
-    imageType?: string;
+    imageType?: 'system' | 'installer' | 'auto-installer';
     installSingBox?: boolean;
     installTailscale?: boolean;
     instanceName?: string;
     instanceType?: string;
     objectKey?: string;
     regionId?: string;
+    rootPassword?: string;
     s3AccessKeyId?: string;
     s3AccessKeySecret?: string;
     s3Bucket?: string;
@@ -329,8 +369,12 @@ export type OneClickDeploymentBody = {
     s3ObjectKey?: string;
     s3Region?: string;
     singBoxConfig?: string;
+    sourceInstanceId?: string;
     spotPriceLimit?: number;
     storageProvider?: string;
+    systemDiskCategory?: string;
+    systemDiskPerformanceLevel?: string;
+    systemDiskSize?: number;
     tailscaleAuthKey?: string;
     zoneId?: string;
 };
@@ -377,6 +421,7 @@ export type ProvisionBody = {
     spotInterruptionMode?: string;
     spotStrategy?: string;
     systemDiskCategory?: string;
+    systemDiskPerformanceLevel?: string;
     systemDiskSize?: number;
     vswitchId?: string;
     zoneId?: string;
@@ -442,6 +487,48 @@ export type RuntimeLogEntry = {
     level?: string;
     message: string;
     timestamp: string;
+};
+
+export type SecurityGroupRule = {
+    cidr: string;
+    description?: string;
+    direction: string;
+    policy: string;
+    portRange: string;
+    priority: number;
+    protocol: string;
+    ruleId?: string;
+};
+
+export type SingBoxConfigureBody = {
+    bindInterface?: string;
+    listen: string;
+    listenPort: number;
+    password: string;
+    sshPassword?: string;
+    sshUser?: string;
+    username: string;
+};
+
+export type SingBoxManagedInbound = {
+    bindInterface?: string;
+    listen: string;
+    listenPort: number;
+    username: string;
+};
+
+export type SingBoxRuntimeInfo = {
+    installed: boolean;
+    managedInbound?: SingBoxManagedInbound;
+    running: boolean;
+    version?: string;
+};
+
+export type TailscaleRuntimeInfo = {
+    hostname?: string;
+    installed: boolean;
+    ips?: Array<string> | null;
+    running: boolean;
 };
 
 export type TrafficEvaluation = {
@@ -589,3 +676,30 @@ export type GetGraphResponses = {
 };
 
 export type GetGraphResponse = GetGraphResponses[keyof GetGraphResponses];
+
+export type GetInventoryGraphData = {
+    body?: never;
+    path: {
+        accountId: string;
+    };
+    query?: never;
+    url: '/api/accounts/{accountId}/graph/inventory';
+};
+
+export type GetInventoryGraphErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type GetInventoryGraphError = GetInventoryGraphErrors[keyof GetInventoryGraphErrors];
+
+export type GetInventoryGraphResponses = {
+    /**
+     * OK
+     */
+    200: ResourceGraph;
+};
+
+export type GetInventoryGraphResponse = GetInventoryGraphResponses[keyof GetInventoryGraphResponses];

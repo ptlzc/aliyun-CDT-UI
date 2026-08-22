@@ -1,12 +1,15 @@
 import {useState} from 'react';
-import {Activity, AlertTriangle, Check, Copy, Monitor, RefreshCw, Terminal} from 'lucide-react';
+import {Activity, AlertTriangle, Check, Copy, Monitor, RefreshCw, ShieldCheck, Terminal} from 'lucide-react';
 
 import type {ECSInstance} from '../../../types';
 import {regionNameZh} from '../../../utils/regionNames';
 import {instanceStateLabel} from './instanceLabels';
+import InstanceSoftwarePanel from './InstanceSoftwarePanel';
 
 interface InstanceCardProps {
   instance: ECSInstance;
+  /** True while live traffic/governance details are loading for this card. */
+  detailsLoading: boolean;
   /** Per-instance transient power state ('starting' / 'stopping'). */
   loadingStatus: 'starting' | 'stopping' | null;
   /** Status after local power overrides (backend status otherwise). */
@@ -15,10 +18,24 @@ interface InstanceCardProps {
   onTogglePower: (instance: ECSInstance, effectiveStatus: ECSInstance['status']) => void;
   onOpenVnc: (instance: ECSInstance) => void;
   onOpenSsh: (instance: ECSInstance) => void;
+  onOpenFirewall: (instance: ECSInstance) => void;
   onToggleStateModal: (instance: ECSInstance) => void;
   onManageInstance: (instance: ECSInstance) => void;
   /** Opens the shared auth policy modal for the instance account (permission errors). */
   onViewPolicy?: (instance: ECSInstance) => void;
+}
+
+function TrafficDetailsSkeleton() {
+  return (
+    <div role="status" aria-label="正在加载流量详情" className="mt-1 flex min-h-14 flex-col gap-2">
+      <div className="h-2.5 w-24 animate-pulse rounded bg-section-layer" />
+      <div className="h-1.5 w-full animate-pulse rounded-full bg-emphasis-layer" />
+      <div className="flex items-center justify-between">
+        <div className="h-2.5 w-24 animate-pulse rounded bg-emphasis-layer" />
+        <div className="h-2.5 w-16 animate-pulse rounded bg-section-layer" />
+      </div>
+    </div>
+  );
 }
 
 interface IpCopyCellProps {
@@ -142,12 +159,14 @@ const TRAFFIC_USAGE_ERROR_VARIANTS: Record<string, TrafficUsageErrorVariant> = {
  */
 export default function InstanceCard({
   instance,
+  detailsLoading,
   loadingStatus,
   effectiveStatus,
   powerError,
   onTogglePower,
   onOpenVnc,
   onOpenSsh,
+  onOpenFirewall,
   onToggleStateModal,
   onManageInstance,
   onViewPolicy,
@@ -233,8 +252,6 @@ export default function InstanceCard({
           <h3 className="text-sm font-bold text-primary-ink">
             {instance.regionId ? regionNameZh(instance.regionId) : instance.name}
           </h3>
-          <span className="mt-1 block select-all font-mono text-[11px] text-secondary-ink">{instance.id}</span>
-          <span className="mt-0.5 block text-[10px] text-secondary-ink">{instance.accountName}</span>
         </div>
 
         {/* Machine State details */}
@@ -292,9 +309,13 @@ export default function InstanceCard({
             <span className="block font-sans text-[10px] font-bold uppercase tracking-wider text-secondary-ink">
               绑定公网 IP
             </span>
-            <span className="font-mono text-[10px] text-secondary-ink">
-              监控: {instance.monitoringEnabled ? '开启' : '关闭'}
-            </span>
+            {detailsLoading ? (
+              <span className="h-2.5 w-16 animate-pulse rounded bg-section-layer" aria-hidden="true" />
+            ) : (
+              <span className="font-mono text-[10px] text-secondary-ink">
+                监控: {instance.monitoringEnabled ? '开启' : '关闭'}
+              </span>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-2">
             <IpCopyCell
@@ -315,66 +336,72 @@ export default function InstanceCard({
         </div>
 
         {/* Traffic remaining display progress bar */}
-        <div className="mt-1 flex flex-col gap-1">
-          {trafficUsageErrorVariant ? (
-            <>
-              <span className="block font-sans text-[10px] font-bold uppercase tracking-wider text-signal-amber">
-                累计流量监测
-              </span>
-              <div
-                role={isPermissionNotice ? 'button' : undefined}
-                tabIndex={isPermissionNotice ? 0 : undefined}
-                onClick={isPermissionNotice ? () => onViewPolicy?.(instance) : undefined}
-                onKeyDown={
-                  isPermissionNotice
-                    ? (event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          onViewPolicy?.(instance);
-                        }
-                      }
-                    : undefined
-                }
-                className={`rounded-md border px-2 py-1.5 text-[10px] leading-relaxed ${trafficUsageErrorVariant.containerClass} ${
-                  isPermissionNotice ? 'flex cursor-pointer items-start gap-1.5 outline-none focus-visible:ring-2 focus-visible:ring-primary/40' : ''
-                }`}
-              >
-                {isPermissionNotice && <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
-                <div className="min-w-0 flex-1 space-y-0.5">
-                  <div>{instance.trafficUsageErrorReason || trafficUsageErrorVariant.fallbackText}</div>
-                  {isPermissionNotice && (
-                    <div className="font-semibold underline decoration-dotted underline-offset-2">点击查看授权脚本 →</div>
-                  )}
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <span className="block font-sans text-[10px] font-bold uppercase tracking-wider text-secondary-ink">
-                {isStopped ? '剩余流量' : '累计流量监测'}
-              </span>
-              <div className="h-1.5 w-full overflow-hidden rounded-full border border-hairline-divider/30 bg-surface-white">
-                <div
-                  className={`h-full rounded-full transition-all duration-300 ${
-                    isWarningOnLimit ? 'bg-recovery-red' : effectiveStatus === 'Attention' ? 'bg-signal-amber' : 'bg-primary-container'
-                  }`}
-                  style={{width: `${progressVal}%`}}
-                />
-              </div>
-              <div className="flex items-center justify-between font-mono text-[10px] font-medium">
-                <span className="text-primary-ink">{trafficDisplayStr}</span>
-                <span className={isWarningOnLimit ? 'font-bold text-recovery-red' : 'text-secondary-ink'}>
-                  {remainingDisplayStr}
+        {detailsLoading ? (
+          <TrafficDetailsSkeleton />
+        ) : (
+          <div className="mt-1 flex flex-col gap-1">
+            {trafficUsageErrorVariant ? (
+              <>
+                <span className="block font-sans text-[10px] font-bold uppercase tracking-wider text-signal-amber">
+                  累计流量监测
                 </span>
-              </div>
-            </>
-          )}
-          <div className="flex items-center justify-between font-mono text-[10px] text-secondary-ink">
-            <span>当前速率: {rateDisplayStr}</span>
-            <span>继承: {instance.inherited ? '是' : '否'}</span>
+                <div
+                  role={isPermissionNotice ? 'button' : undefined}
+                  tabIndex={isPermissionNotice ? 0 : undefined}
+                  onClick={isPermissionNotice ? () => onViewPolicy?.(instance) : undefined}
+                  onKeyDown={
+                    isPermissionNotice
+                      ? (event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            onViewPolicy?.(instance);
+                          }
+                        }
+                      : undefined
+                  }
+                  className={`rounded-md border px-2 py-1.5 text-[10px] leading-relaxed ${trafficUsageErrorVariant.containerClass} ${
+                    isPermissionNotice ? 'flex cursor-pointer items-start gap-1.5 outline-none focus-visible:ring-2 focus-visible:ring-primary/40' : ''
+                  }`}
+                >
+                  {isPermissionNotice && <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <div>{instance.trafficUsageErrorReason || trafficUsageErrorVariant.fallbackText}</div>
+                    {isPermissionNotice && (
+                      <div className="font-semibold underline decoration-dotted underline-offset-2">点击查看授权脚本 →</div>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="block font-sans text-[10px] font-bold uppercase tracking-wider text-secondary-ink">
+                  {isStopped ? '剩余流量' : '累计流量监测'}
+                </span>
+                <div className="h-1.5 w-full overflow-hidden rounded-full border border-hairline-divider/30 bg-surface-white">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      isWarningOnLimit ? 'bg-recovery-red' : effectiveStatus === 'Attention' ? 'bg-signal-amber' : 'bg-primary-container'
+                    }`}
+                    style={{width: `${progressVal}%`}}
+                  />
+                </div>
+                <div className="flex items-center justify-between font-mono text-[10px] font-medium">
+                  <span className="text-primary-ink">{trafficDisplayStr}</span>
+                  <span className={isWarningOnLimit ? 'font-bold text-recovery-red' : 'text-secondary-ink'}>
+                    {remainingDisplayStr}
+                  </span>
+                </div>
+              </>
+            )}
+            <div className="flex items-center justify-between font-mono text-[10px] text-secondary-ink">
+              <span>当前速率: {rateDisplayStr}</span>
+              <span>继承: {instance.inherited ? '是' : '否'}</span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
+
+      <InstanceSoftwarePanel instance={instance} effectiveStatus={effectiveStatus} />
 
       {/* Warning box if Attention */}
       {effectiveStatus === 'Attention' && instance.alerts.length > 0 && (
@@ -403,8 +430,8 @@ export default function InstanceCard({
       )}
 
       {/* Bottom footer button actions */}
-      <div className="mt-auto flex items-center justify-between border-t border-hairline-divider/50 pt-3">
-        <div className="flex items-center gap-2">
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-hairline-divider/50 pt-3">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Power button: text label, red 停止 when running, blue 启动 when stopped */}
           {isStopped ? (
             <button
@@ -454,6 +481,15 @@ export default function InstanceCard({
           >
             <Activity className="mr-1 inline h-3.5 w-3.5" />
             状态
+          </button>
+
+          <button
+            onClick={() => onOpenFirewall(instance)}
+            className="cursor-pointer rounded border border-hairline-divider px-3 py-1 text-xs font-medium text-secondary-ink transition-colors hover:bg-emphasis-layer hover:text-primary-ink"
+            title="管理阿里云安全组入站和出站规则"
+          >
+            <ShieldCheck className="mr-1 inline h-3.5 w-3.5" />
+            安全组/防火墙
           </button>
         </div>
 

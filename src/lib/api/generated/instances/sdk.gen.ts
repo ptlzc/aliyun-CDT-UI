@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetEcsInstanceStateData, GetEcsInstanceStateErrors, GetEcsInstanceStateResponses, GetEcsMetricsData, GetEcsMetricsErrors, GetEcsMetricsResponses, GetEcsTrafficGovernanceData, GetEcsTrafficGovernanceErrors, GetEcsTrafficGovernanceResponses, GetEcsVncUrlData, GetEcsVncUrlErrors, GetEcsVncUrlResponses, ListAccessMetadataData, ListAccessMetadataErrors, ListAccessMetadataResponses, SaveEcsTrafficGovernanceOverrideData, SaveEcsTrafficGovernanceOverrideErrors, SaveEcsTrafficGovernanceOverrideResponses, StartEcsInstanceData, StartEcsInstanceErrors, StartEcsInstanceResponses, StopEcsInstanceData, StopEcsInstanceErrors, StopEcsInstanceResponses } from './types.gen';
+import type { ApplyTailscaleDirectFirewallData, ApplyTailscaleDirectFirewallErrors, ApplyTailscaleDirectFirewallResponses, ConfigureSingBoxData, ConfigureSingBoxErrors, ConfigureSingBoxResponses, CreateInstanceSecurityGroupRuleData, CreateInstanceSecurityGroupRuleErrors, CreateInstanceSecurityGroupRuleResponses, DeleteInstanceSecurityGroupRuleData, DeleteInstanceSecurityGroupRuleErrors, DeleteInstanceSecurityGroupRuleResponses, GetEcsInstanceStateData, GetEcsInstanceStateErrors, GetEcsInstanceStateResponses, GetEcsMetricsData, GetEcsMetricsErrors, GetEcsMetricsResponses, GetEcsTrafficGovernanceData, GetEcsTrafficGovernanceErrors, GetEcsTrafficGovernanceResponses, GetEcsVncUrlData, GetEcsVncUrlErrors, GetEcsVncUrlResponses, InspectInstanceSoftwareData, InspectInstanceSoftwareErrors, InspectInstanceSoftwareResponses, ListAccessMetadataData, ListAccessMetadataErrors, ListAccessMetadataResponses, ListInstanceSecurityGroupsData, ListInstanceSecurityGroupsErrors, ListInstanceSecurityGroupsResponses, SaveEcsTrafficGovernanceOverrideData, SaveEcsTrafficGovernanceOverrideErrors, SaveEcsTrafficGovernanceOverrideResponses, StartEcsInstanceData, StartEcsInstanceErrors, StartEcsInstanceResponses, StopEcsInstanceData, StopEcsInstanceErrors, StopEcsInstanceResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -20,7 +20,40 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 
 export const listAccessMetadata = <ThrowOnError extends boolean = false>(options: Options<ListAccessMetadataData, ThrowOnError>): RequestResult<ListAccessMetadataResponses, ListAccessMetadataErrors, ThrowOnError> => (options.client ?? client).get<ListAccessMetadataResponses, ListAccessMetadataErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/access', ...options });
 
+export const listInstanceSecurityGroups = <ThrowOnError extends boolean = false>(options: Options<ListInstanceSecurityGroupsData, ThrowOnError>): RequestResult<ListInstanceSecurityGroupsResponses, ListInstanceSecurityGroupsErrors, ThrowOnError> => (options.client ?? client).get<ListInstanceSecurityGroupsResponses, ListInstanceSecurityGroupsErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/ecs/{instanceId}/firewall', ...options });
+
+export const createInstanceSecurityGroupRule = <ThrowOnError extends boolean = false>(options: Options<CreateInstanceSecurityGroupRuleData, ThrowOnError>): RequestResult<CreateInstanceSecurityGroupRuleResponses, CreateInstanceSecurityGroupRuleErrors, ThrowOnError> => (options.client ?? client).post<CreateInstanceSecurityGroupRuleResponses, CreateInstanceSecurityGroupRuleErrors, ThrowOnError>({
+    url: '/api/accounts/{accountId}/ecs/{instanceId}/firewall/security-groups/{securityGroupId}/rules',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteInstanceSecurityGroupRule = <ThrowOnError extends boolean = false>(options: Options<DeleteInstanceSecurityGroupRuleData, ThrowOnError>): RequestResult<DeleteInstanceSecurityGroupRuleResponses, DeleteInstanceSecurityGroupRuleErrors, ThrowOnError> => (options.client ?? client).delete<DeleteInstanceSecurityGroupRuleResponses, DeleteInstanceSecurityGroupRuleErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/ecs/{instanceId}/firewall/security-groups/{securityGroupId}/rules/{ruleId}', ...options });
+
+export const applyTailscaleDirectFirewall = <ThrowOnError extends boolean = false>(options: Options<ApplyTailscaleDirectFirewallData, ThrowOnError>): RequestResult<ApplyTailscaleDirectFirewallResponses, ApplyTailscaleDirectFirewallErrors, ThrowOnError> => (options.client ?? client).post<ApplyTailscaleDirectFirewallResponses, ApplyTailscaleDirectFirewallErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/ecs/{instanceId}/firewall/security-groups/{securityGroupId}/tailscale-direct', ...options });
+
 export const getEcsMetrics = <ThrowOnError extends boolean = false>(options: Options<GetEcsMetricsData, ThrowOnError>): RequestResult<GetEcsMetricsResponses, GetEcsMetricsErrors, ThrowOnError> => (options.client ?? client).get<GetEcsMetricsResponses, GetEcsMetricsErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/ecs/{instanceId}/metrics', ...options });
+
+export const inspectInstanceSoftware = <ThrowOnError extends boolean = false>(options: Options<InspectInstanceSoftwareData, ThrowOnError>): RequestResult<InspectInstanceSoftwareResponses, InspectInstanceSoftwareErrors, ThrowOnError> => (options.client ?? client).post<InspectInstanceSoftwareResponses, InspectInstanceSoftwareErrors, ThrowOnError>({
+    url: '/api/accounts/{accountId}/ecs/{instanceId}/software-runtime/inspect',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const configureSingBox = <ThrowOnError extends boolean = false>(options: Options<ConfigureSingBoxData, ThrowOnError>): RequestResult<ConfigureSingBoxResponses, ConfigureSingBoxErrors, ThrowOnError> => (options.client ?? client).post<ConfigureSingBoxResponses, ConfigureSingBoxErrors, ThrowOnError>({
+    url: '/api/accounts/{accountId}/ecs/{instanceId}/software-runtime/sing-box',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 export const startEcsInstance = <ThrowOnError extends boolean = false>(options: Options<StartEcsInstanceData, ThrowOnError>): RequestResult<StartEcsInstanceResponses, StartEcsInstanceErrors, ThrowOnError> => (options.client ?? client).post<StartEcsInstanceResponses, StartEcsInstanceErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/ecs/{instanceId}/start', ...options });
 

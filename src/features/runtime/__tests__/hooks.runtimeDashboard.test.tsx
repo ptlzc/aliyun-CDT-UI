@@ -11,9 +11,10 @@ interface CapturedQueryOptions {
   enabled?: boolean;
 }
 
-const {useQueryCalls, useQueriesCalls} = vi.hoisted(() => ({
+const {useQueryCalls, useQueriesCalls, useQueriesResults} = vi.hoisted(() => ({
   useQueryCalls: [] as CapturedQueryOptions[],
   useQueriesCalls: [] as CapturedQueryOptions[][],
+  useQueriesResults: [] as Array<Array<{data?: unknown; isLoading: boolean}>>,
 }));
 
 vi.mock('@tanstack/react-query', () => {
@@ -37,8 +38,9 @@ vi.mock('@tanstack/react-query', () => {
       return {data: [], isLoading: false};
     }),
     useQueries: vi.fn((options: {queries: CapturedQueryOptions[]}) => {
+      const callIndex = useQueriesCalls.length;
       useQueriesCalls.push(options.queries);
-      return options.queries.map(() => ({data: undefined, isLoading: false}));
+      return useQueriesResults[callIndex] ?? options.queries.map(() => ({data: undefined, isLoading: false}));
     }),
     useMutation: vi.fn(() => ({mutate: vi.fn(), mutateAsync: vi.fn()})),
     useQueryClient: vi.fn(() => ({invalidateQueries: vi.fn()})),
@@ -49,18 +51,97 @@ describe('useRuntimeDashboard graph query refresh strategy', () => {
   beforeEach(() => {
     useQueryCalls.length = 0;
     useQueriesCalls.length = 0;
+    useQueriesResults.length = 0;
   });
 
-  it('caches graph queries for 60s (graph is persisted in the store, not realtime)', () => {
+  it('loads the inventory graph first and enables the enriched graph after inventory arrives', () => {
+    const inventoryGraph = {
+      accountId: 'acc-1',
+      nodes: [{
+        id: 'i-1',
+        kind: 'ecs',
+        name: 'ecs-a',
+        status: 'Running',
+        regionId: 'cn-hangzhou',
+        zoneId: 'cn-hangzhou-i',
+        metadata: {instanceType: 'ecs.g6.large', privateIps: '10.0.0.1'},
+      }],
+      edges: [],
+      summary: {ecsCount: 1, eipCount: 0},
+    };
+    useQueriesResults.push(
+      [{data: inventoryGraph, isLoading: false}],
+      [{data: undefined, isLoading: true}],
+      [{data: [], isLoading: false}],
+    );
+
+    const {result} = renderHook(() => useRuntimeDashboard());
+
+    const inventoryQuery = useQueriesCalls[0][0];
+    const enrichedQuery = useQueriesCalls[1][0];
+    expect(inventoryQuery.queryKey).toEqual(['runtime', 'graph', 'acc-1', 'inventory']);
+    expect(inventoryQuery.enabled).toBe(true);
+    expect(enrichedQuery.queryKey).toEqual(['runtime', 'graph', 'acc-1']);
+    expect(enrichedQuery.enabled).toBe(true);
+    expect(result.current.instances).toEqual([expect.objectContaining({id: 'i-1'})]);
+    expect(result.current.inventoryLoading).toBe(false);
+    expect(result.current.instanceDetailsLoading).toEqual({'acc-1': true});
+  });
+
+  it('caches both graph stages for 60s', () => {
     renderHook(() => useRuntimeDashboard());
 
-    // useRuntimeDashboard calls useQueries twice: [0] graph, [1] policies.
-    const graphQueries = useQueriesCalls[0];
-    const graphQuery = graphQueries.find((query) => (query.queryKey as string[])[1] === 'graph');
+    // useRuntimeDashboard calls useQueries three times: inventory, enriched,
+    // then policies. Enrichment stays disabled until inventory is available.
+    const inventoryQuery = useQueriesCalls[0][0];
+    const graphQuery = useQueriesCalls[1][0];
 
+    expect(inventoryQuery.queryKey).toEqual(['runtime', 'graph', 'acc-1', 'inventory']);
+    expect(inventoryQuery.staleTime).toBe(60_000);
     expect(graphQuery?.queryKey).toEqual(['runtime', 'graph', 'acc-1']);
-    expect(graphQuery?.enabled).toBe(true);
+    expect(graphQuery?.enabled).toBe(false);
     expect(graphQuery?.staleTime).toBe(60_000);
+  });
+
+  it('prefers enriched details when available and does not leave failed details loading forever', () => {
+    const inventoryGraph = {
+      accountId: 'acc-1',
+      nodes: [{id: 'i-1', kind: 'ecs', name: 'ecs-a', status: 'Running', metadata: {instanceType: 'ecs.g6.large'}}],
+      edges: [],
+      summary: {ecsCount: 1, eipCount: 0},
+    };
+    const enrichedGraph = {
+      ...inventoryGraph,
+      nodes: [{
+        ...inventoryGraph.nodes[0],
+        metadata: {...inventoryGraph.nodes[0].metadata, trafficEffectiveMaximumGb: '200'},
+        trafficUsage: {available: true, value: 125, unit: 'GB'},
+      }],
+    };
+    useQueriesResults.push(
+      [{data: inventoryGraph, isLoading: false}],
+      [{data: enrichedGraph, isLoading: false}],
+      [{data: [], isLoading: false}],
+    );
+
+    const {result, unmount} = renderHook(() => useRuntimeDashboard());
+
+    expect(result.current.instances[0]).toEqual(expect.objectContaining({trafficUsage: 125, trafficLimit: 200}));
+    expect(result.current.instanceDetailsLoading).toEqual({'acc-1': false});
+    unmount();
+
+    useQueryCalls.length = 0;
+    useQueriesCalls.length = 0;
+    useQueriesResults.length = 0;
+    useQueriesResults.push(
+      [{data: inventoryGraph, isLoading: false}],
+      [{data: undefined, isLoading: false}],
+      [{data: [], isLoading: false}],
+    );
+
+    const failed = renderHook(() => useRuntimeDashboard());
+    expect(failed.result.current.instances).toEqual([expect.objectContaining({id: 'i-1'})]);
+    expect(failed.result.current.instanceDetailsLoading).toEqual({'acc-1': false});
   });
 
   it('leaves the other runtime queries untouched (no staleTime added)', () => {

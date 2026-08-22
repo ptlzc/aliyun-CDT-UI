@@ -1,7 +1,7 @@
 import {createMemoryRouter, Outlet, RouterProvider} from 'react-router-dom';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {afterEach, describe, expect, it, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import InstancesPage from '../index';
 import CdtFreeQuotaCard from '../components/CdtFreeQuotaCard';
@@ -11,13 +11,18 @@ let instancesData: any[] = [];
 let rawAccountsData: any[] = [];
 let cdtData: any = null;
 let governanceData: any = null;
+let runtimeIsLoading = false;
+let inventoryLoading = false;
+let instanceDetailsLoading: Record<string, boolean> = {};
 
 vi.mock('../../../features/runtime/hooks', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../features/runtime/hooks')>();
   return {
     ...actual,
     useRuntimeDashboard: () => ({
-      isLoading: false,
+      isLoading: runtimeIsLoading,
+      inventoryLoading,
+      instanceDetailsLoading,
       accounts: [],
       rawAccounts: rawAccountsData,
       graphs: [],
@@ -68,6 +73,21 @@ vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({invalidateQueries: invalidateQueriesMock}),
 }));
 
+// Software runtime query/mutation behavior belongs to the dedicated panel
+// tests; keep this page orchestration suite independent of TanStack internals.
+vi.mock('../components/InstanceSoftwarePanel', () => ({
+  default: () => <div data-testid="instance-software-panel" />,
+}));
+
+const {firewallModalRenderMock} = vi.hoisted(() => ({firewallModalRenderMock: vi.fn()}));
+
+vi.mock('../components/InstanceFirewallModal', () => ({
+  default: (props: any) => {
+    firewallModalRenderMock(props);
+    return <div role="dialog" aria-label="安全组/防火墙配置" />;
+  },
+}));
+
 const {sshModalRenderMock} = vi.hoisted(() => ({sshModalRenderMock: vi.fn()}));
 
 // The page test owns only the "open SSH" state transition. SshModal's
@@ -84,6 +104,13 @@ vi.mock('../components/SshModal', () => ({
 afterEach(() => {
   vi.unstubAllGlobals();
   sshModalRenderMock.mockClear();
+  firewallModalRenderMock.mockClear();
+});
+
+beforeEach(() => {
+  runtimeIsLoading = false;
+  inventoryLoading = false;
+  instanceDetailsLoading = {};
 });
 
 function renderInstances() {
@@ -130,6 +157,38 @@ describe('CdtFreeQuotaCard', () => {
 });
 
 describe('InstancesPage', () => {
+  it('shows full card skeletons only while the initial inventory is unavailable', () => {
+    runtimeIsLoading = true;
+    inventoryLoading = true;
+    instancesData = [];
+
+    renderInstances();
+
+    expect(screen.getByRole('status', {name: '正在加载实例列表'})).toBeInTheDocument();
+    expect(screen.queryByText('没有匹配的实例。')).not.toBeInTheDocument();
+  });
+
+  it('renders available cards while unrelated runtime data and card details continue loading', () => {
+    runtimeIsLoading = true;
+    inventoryLoading = false;
+    instanceDetailsLoading = {'acc-1': true};
+    instancesData = [
+      {
+        id: 'i-1', accountId: 'acc-1', accountName: 'Account A', name: 'ecs-a', status: 'Running',
+        type: 'ecs.g6.large', zone: 'cn-hangzhou-i', regionId: 'cn-hangzhou-i', publicIp: '1.1.1.1',
+        privateIp: '10.0.0.1', trafficUsage: null, trafficUsageUnit: 'GB', trafficRate: null,
+        trafficRateUnit: 'Mbps', trafficLimit: 0, monitoringEnabled: true, overflowAction: 'notify',
+        inherited: true, alerts: [],
+      },
+    ];
+
+    renderInstances();
+
+    expect(screen.getByRole('heading', {name: 'cn-hangzhou-i'})).toBeInTheDocument();
+    expect(screen.queryByRole('status', {name: '正在加载实例列表'})).not.toBeInTheDocument();
+    expect(screen.getByRole('status', {name: '正在加载流量详情'})).toBeInTheDocument();
+  });
+
   it('renders the list header without the account-level CDT card by default', () => {
     cdtData = null;
     governanceData = null;
@@ -249,6 +308,27 @@ describe('InstancesPage', () => {
         onClose: expect.any(Function),
       }),
     );
+  });
+
+  it('opens the scoped firewall modal from an instance card', async () => {
+    const user = userEvent.setup();
+    instancesData = [{
+      id: 'i-1', accountId: 'acc-1', accountName: 'Account A', name: 'ecs-a', status: 'Running',
+      type: 'ecs.g6.large', zone: 'cn-hangzhou-i', regionId: 'cn-hangzhou', publicIp: '1.1.1.1',
+      privateIp: '10.0.0.1', trafficUsage: 1, trafficUsageUnit: 'GB', trafficRate: 1,
+      trafficRateUnit: 'Mbps', trafficLimit: 200, monitoringEnabled: true, overflowAction: 'notify',
+      inherited: true, alerts: [],
+    }];
+
+    renderInstances();
+    await user.click(screen.getByRole('button', {name: '安全组/防火墙'}));
+
+    expect(screen.getByRole('dialog', {name: '安全组/防火墙配置'})).toBeInTheDocument();
+    expect(firewallModalRenderMock).toHaveBeenLastCalledWith(expect.objectContaining({
+      instance: expect.objectContaining({id: 'i-1', accountId: 'acc-1'}),
+      onClose: expect.any(Function),
+      onViewPolicy: expect.any(Function),
+    }));
   });
 
   it('opens the shared auth policy modal when a permission notice is clicked', async () => {

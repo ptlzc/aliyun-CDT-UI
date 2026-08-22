@@ -50,6 +50,7 @@ vi.mock('../features/runtime/hooks', () => ({
   useAccountsQuery: () => ({data: [], isLoading: false}),
   useJobsQuery: () => ({data: [], isLoading: false}),
   useRegionsQuery: () => ({data: [], isLoading: false}),
+  useInventoryGraphQuery: () => ({data: undefined, isLoading: false}),
   useCreateOneClickDeploymentMutation: () => ({mutate: vi.fn(), isPending: false, error: null}),
   useContinueOneClickDeploymentMutation: () => ({mutate: vi.fn(), isPending: false, error: null}),
   useSaveAccountMutation: () => ({mutateAsync: vi.fn(), isPending: false}),

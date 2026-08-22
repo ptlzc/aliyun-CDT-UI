@@ -13,6 +13,7 @@ export default defineConfig(() => {
     },
     envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
     server: {
+      allowedHosts: ['code.3900x-wsl.hs'],
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',

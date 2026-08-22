@@ -272,7 +272,7 @@ export default function AccountDetailEditor({
         {!isCreating && (
           <div className="bg-[#FAFBFD] px-3 py-1 rounded border border-hairline-divider text-xs font-medium text-secondary-ink flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-healthy-green" />
-            <span>探测周期: 900s 缓存轮询中</span>
+            <span>资源数据缓存同步中</span>
           </div>
         )}
       </div>

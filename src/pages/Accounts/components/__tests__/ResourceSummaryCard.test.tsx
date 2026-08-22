@@ -38,6 +38,25 @@ describe('ResourceSummaryCard', () => {
     expect(screen.getByText('2')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
     expect(screen.getByText('6')).toBeInTheDocument();
+    expect(screen.getByText('VPC 通道连接就绪')).toBeInTheDocument();
+  });
+
+  it('shows no VPC channel when vpcCount is zero', () => {
+    mocks.useInventoryGraphQuery.mockReturnValue({
+      data: {
+        accountId: 'acc-1',
+        edges: [],
+        nodes: [],
+        summary: {ecsCount: 0, eipCount: 0, imageCount: 0, securityGroupCount: 0, vpcCount: 0, vswitchCount: 0},
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<ResourceSummaryCard accountId="acc-1" />);
+
+    expect(screen.getByText('暂无 VPC 通道')).toBeInTheDocument();
+    expect(screen.queryByText('VPC 通道连接就绪')).not.toBeInTheDocument();
   });
 
   it('shows an em dash while loading', () => {
@@ -50,6 +69,7 @@ describe('ResourceSummaryCard', () => {
     render(<ResourceSummaryCard accountId="acc-1" />);
 
     expect(screen.getAllByText('—')).toHaveLength(3);
+    expect(screen.getByText('VPC 状态未知')).toBeInTheDocument();
   });
 
   it('shows an em dash when there is no data', () => {
@@ -62,6 +82,7 @@ describe('ResourceSummaryCard', () => {
     render(<ResourceSummaryCard accountId="acc-1" />);
 
     expect(screen.getAllByText('—')).toHaveLength(3);
+    expect(screen.getByText('VPC 状态未知')).toBeInTheDocument();
   });
 
   it('shows an em dash when the request fails', () => {
@@ -74,5 +95,6 @@ describe('ResourceSummaryCard', () => {
     render(<ResourceSummaryCard accountId="acc-1" />);
 
     expect(screen.getAllByText('—')).toHaveLength(3);
+    expect(screen.getByText('VPC 状态未知')).toBeInTheDocument();
   });
 });

@@ -46,6 +46,8 @@ describe('AccountDetailEditor managed-region compatibility', () => {
     renderEditor();
 
     expect(screen.getByRole('checkbox', {name: /cn-shanghai/})).toBeChecked();
+    expect(screen.getByText('资源数据缓存同步中')).toBeInTheDocument();
+    expect(screen.queryByText(/探测周期|900s/)).not.toBeInTheDocument();
   });
 
   it('prefers explicit managed regions over a different historical regionId', () => {

@@ -23,12 +23,18 @@ export default function ResourceSummaryCard({accountId}: ResourceSummaryCardProp
   const vpcCount = unavailable ? '—' : graph.summary.vpcCount;
   const eipCount = unavailable ? '—' : graph.summary.eipCount;
 
+  const vpcStatus = unavailable
+    ? 'VPC 状态未知'
+    : graph.summary.vpcCount > 0
+      ? 'VPC 通道连接就绪'
+      : '暂无 VPC 通道';
+
   return (
     <section className="bg-surface-white border border-hairline-divider rounded-lg p-5 shadow-xs">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xs font-bold uppercase tracking-wider text-outline">托管资源摘要</h2>
         <span className="text-[11px] text-secondary font-semibold font-mono">
-          VPC 通道连接就绪
+          {vpcStatus}
         </span>
       </div>
 

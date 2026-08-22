@@ -227,13 +227,13 @@ export function useRuntimeDashboard() {
     .map((_, index) => graphQueries[index]?.data ?? inventoryGraphQueries[index]?.data)
     .filter((graph): graph is ApiResourceGraph => Boolean(graph));
   const policiesByAccount = Object.fromEntries(accountIds.map((accountId, index) => [accountId, policyQueries[index]?.data || []])) as Record<string, ApiTrafficPolicy[]>;
-  const instances = mapGraphToInstances(graphs, accountsQuery.data || [], policiesByAccount);
   const instanceDetailsLoading = Object.fromEntries(accountIds.map((accountId, index) => [
     accountId,
     inventoryGraphQueries[index]?.data !== undefined &&
       graphQueries[index]?.data === undefined &&
       graphQueries[index]?.isLoading === true,
   ])) as Record<string, boolean>;
+  const instances = mapGraphToInstances(graphs, accountsQuery.data || [], policiesByAccount, instanceDetailsLoading);
   const inventoryLoading = accountsQuery.isLoading || inventoryGraphQueries.some((query) => query.isLoading);
 
   return {

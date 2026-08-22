@@ -397,6 +397,9 @@ export default function InstanceCard({
               <span>当前速率: {rateDisplayStr}</span>
               <span>继承: {instance.inherited ? '是' : '否'}</span>
             </div>
+            {instance.trafficRate === null && instance.trafficRateErrorReason && !instance.trafficDetailsLoading && (
+              <div className="text-[10px] text-secondary-ink">{instance.trafficRateErrorReason}</div>
+            )}
           </div>
         )}
       </div>

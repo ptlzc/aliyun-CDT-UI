@@ -83,7 +83,8 @@ describe('useRuntimeDashboard graph query refresh strategy', () => {
     expect(inventoryQuery.enabled).toBe(true);
     expect(enrichedQuery.queryKey).toEqual(['runtime', 'graph', 'acc-1']);
     expect(enrichedQuery.enabled).toBe(true);
-    expect(result.current.instances).toEqual([expect.objectContaining({id: 'i-1'})]);
+    expect(result.current.instances).toEqual([expect.objectContaining({id: 'i-1', trafficDetailsLoading: true})]);
+    expect(result.current.instances[0].alerts).not.toContain('该实例的累计流量数据当前不可用。');
     expect(result.current.inventoryLoading).toBe(false);
     expect(result.current.instanceDetailsLoading).toEqual({'acc-1': true});
   });
@@ -140,7 +141,8 @@ describe('useRuntimeDashboard graph query refresh strategy', () => {
     );
 
     const failed = renderHook(() => useRuntimeDashboard());
-    expect(failed.result.current.instances).toEqual([expect.objectContaining({id: 'i-1'})]);
+    expect(failed.result.current.instances).toEqual([expect.objectContaining({id: 'i-1', trafficDetailsLoading: false})]);
+    expect(failed.result.current.instances[0].alerts).toContain('该实例的累计流量数据当前不可用。');
     expect(failed.result.current.instanceDetailsLoading).toEqual({'acc-1': false});
   });
 

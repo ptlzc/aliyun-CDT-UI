@@ -30,6 +30,7 @@ export function mapGraphToInstances(
   graphs: ApiResourceGraph[],
   accounts: ApiAccount[],
   policiesByAccount: Record<string, ApiTrafficPolicy[]>,
+  detailsLoadingByAccount?: Record<string, boolean>,
 ): ECSInstance[] {
   return graphs.flatMap((graph) => {
     const account = accounts.find((item) => item.id === graph.accountId);
@@ -39,6 +40,7 @@ export function mapGraphToInstances(
       .filter((node) => node.kind === 'ecs')
       .map((node) => {
         const metadata = node.metadata || {};
+        const detailsLoading = detailsLoadingByAccount?.[graph.accountId] ?? false;
         const maximumTraffic = Number.parseFloat(metadata.trafficEffectiveMaximumGb || '0') || 0;
         const inherited = !metadata.trafficOverrideMaximumGb && !metadata.trafficOverrideOverflowAction && !metadata.trafficOverrideMonitoringEnabled;
         const policy = accountPolicies.find((item) => item.scopeType === 'instance' && item.scopeId === node.id);
@@ -49,7 +51,7 @@ export function mapGraphToInstances(
         if (maximumTraffic > 0 && currentTraffic / maximumTraffic >= 0.8) {
           alerts.push(`累计流量使用已达配置上限的 ${Math.round((currentTraffic / maximumTraffic) * 100)}%。`);
         }
-        if (!usage?.available) {
+        if (!usage?.available && !detailsLoading) {
           const sourceAlert = usage?.source ? TRAFFIC_UNAVAILABLE_ALERT_COPY[usage.source] : undefined;
           alerts.push(sourceAlert || '该实例的累计流量数据当前不可用。');
         }
@@ -74,6 +76,8 @@ export function mapGraphToInstances(
           trafficRateUnit: rate?.unit || 'Mbps',
           trafficRateSource: rate?.source,
           trafficRateCollectedAt: rate?.collectedAt,
+          trafficRateErrorReason: rate?.errorReason,
+          trafficDetailsLoading: detailsLoading,
           trafficLimit: Math.round(maximumTraffic),
           monitoringEnabled: metadata.trafficMonitoringEnabled !== 'false',
           overflowAction: metadata.trafficEffectiveOverflowAction || 'notify',

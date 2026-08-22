@@ -18,7 +18,9 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const {accounts, instances, summary, workflows} = runtime;
 
-  const attentionInstances = instances.filter((instance) => instance.alerts.length > 0 || instance.status === 'Attention');
+  const attentionInstances = instances.filter(
+    (instance) => instance.alerts.length > 0 || instance.status === 'Attention' || instance.trafficDetailsLoading,
+  );
   const latestWorkflows = workflows.slice(0, 5);
 
   /**
@@ -105,23 +107,37 @@ export default function DashboardPage() {
             {attentionInstances.length === 0 ? (
               <div className="rounded border border-dashed border-hairline-divider p-6 text-sm text-secondary-ink">当前没有需要处理的实例告警。</div>
             ) : (
-              attentionInstances.slice(0, 6).map((instance) => (
-                <div key={instance.id} className="rounded border border-signal-amber/30 bg-signal-amber/[0.05] p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="font-medium text-primary-ink">{instance.name}</div>
-                    <span className="text-xs font-semibold text-signal-amber">
-                      {instance.trafficUsage === null ? '累计流量不可用' : `${instance.trafficUsage}/${instance.trafficLimit} ${instance.trafficUsageUnit}`}
-                    </span>
+              attentionInstances.slice(0, 6).map((instance) => {
+                const visibleAlert = instance.trafficDetailsLoading
+                  ? instance.alerts.find((alert) => !alert.includes('该实例的累计流量数据当前不可用。'))
+                  : instance.alerts[0];
+                return (
+                  <div key={instance.id} className="rounded border border-signal-amber/30 bg-signal-amber/[0.05] p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="font-medium text-primary-ink">{instance.name}</div>
+                      <span className="text-xs font-semibold text-signal-amber">
+                        {instance.trafficDetailsLoading
+                          ? '流量数据加载中…'
+                          : instance.trafficUsage === null
+                            ? '累计流量不可用'
+                            : `${instance.trafficUsage}/${instance.trafficLimit} ${instance.trafficUsageUnit}`}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-xs text-secondary-ink">
+                      外网 {instance.publicIp} · 内网 {instance.privateIp}
+                    </div>
+                    <div className="mt-1 text-xs text-secondary-ink">
+                      {instance.trafficDetailsLoading
+                        ? '当前速率 加载中…'
+                        : `当前速率 ${instance.trafficRate === null ? '不可用' : `${instance.trafficRate} ${instance.trafficRateUnit}`}`}
+                    </div>
+                    {instance.trafficRate === null && instance.trafficRateErrorReason && !instance.trafficDetailsLoading && (
+                      <div className="mt-0.5 text-[10px] text-secondary-ink">当前速率不可用：{instance.trafficRateErrorReason}</div>
+                    )}
+                    {visibleAlert && <div className="mt-2 text-xs text-signal-amber">{visibleAlert}</div>}
                   </div>
-                  <div className="mt-1 text-xs text-secondary-ink">
-                    外网 {instance.publicIp} · 内网 {instance.privateIp}
-                  </div>
-                  <div className="mt-1 text-xs text-secondary-ink">
-                    当前速率 {instance.trafficRate === null ? '不可用' : `${instance.trafficRate} ${instance.trafficRateUnit}`}
-                  </div>
-                  {instance.alerts.length > 0 && <div className="mt-2 text-xs text-signal-amber">{instance.alerts[0]}</div>}
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </section>

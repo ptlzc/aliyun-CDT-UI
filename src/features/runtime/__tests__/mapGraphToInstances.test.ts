@@ -19,6 +19,7 @@ const account: ApiAccount = {
 };
 
 type UsageMeasurement = NonNullable<ApiResourceGraph['nodes'][number]['trafficUsage']>;
+type RateMeasurement = NonNullable<ApiResourceGraph['nodes'][number]['trafficRate']>;
 type ResourceNode = ApiResourceGraph['nodes'][number];
 
 function usageMeasurement(source: string, available: boolean, value: number): UsageMeasurement {
@@ -34,7 +35,21 @@ function usageMeasurement(source: string, available: boolean, value: number): Us
   };
 }
 
-function ecsNode(id: string, trafficUsage: UsageMeasurement): ResourceNode {
+function rateMeasurement(available: boolean, source: string, errorReason?: string): RateMeasurement {
+  return {
+    available,
+    collectedAt: '2026-06-22T00:00:00Z',
+    metricName: 'EcsInternetTrafficRate',
+    scopeId: 'i-1',
+    scopeType: 'instance',
+    source,
+    unit: 'Mbps',
+    value: 0,
+    ...(errorReason ? {errorReason} : {}),
+  };
+}
+
+function ecsNode(id: string, trafficUsage: UsageMeasurement, trafficRate?: RateMeasurement): ResourceNode {
   return {
     id,
     kind: 'ecs',
@@ -43,6 +58,7 @@ function ecsNode(id: string, trafficUsage: UsageMeasurement): ResourceNode {
     regionId: 'cn-hangzhou',
     zoneId: 'cn-hangzhou-i',
     trafficUsage,
+    trafficRate,
   };
 }
 
@@ -114,5 +130,43 @@ describe('mapGraphToInstances traffic usage mapping', () => {
 
     expect(instance.trafficUsageSource).toBe('cdt-network-error');
     expect(instance.alerts).toContain('该实例的累计流量数据当前不可用。');
+  });
+
+  it('does not generate the unavailable alert while details are loading', () => {
+    const [instance] = mapGraphToInstances(
+      [graphWith(ecsNode('i-1', usageMeasurement('cdt-network-error', false, 0)))],
+      [account],
+      {},
+      {'acc-1': true},
+    );
+
+    expect(instance.trafficDetailsLoading).toBe(true);
+    expect(instance.trafficUsage).toBeNull();
+    expect(instance.alerts).not.toContain('该实例的累计流量数据当前不可用。');
+  });
+
+  it('still generates the unavailable alert when details are not loading', () => {
+    const [instance] = mapGraphToInstances(
+      [graphWith(ecsNode('i-1', usageMeasurement('cdt-network-error', false, 0)))],
+      [account],
+      {},
+      {'acc-1': false},
+    );
+
+    expect(instance.trafficDetailsLoading).toBe(false);
+    expect(instance.trafficUsage).toBeNull();
+    expect(instance.alerts).toContain('该实例的累计流量数据当前不可用。');
+  });
+
+  it('passes through the traffic rate error reason while keeping trafficRate null', () => {
+    const errorReason = 'cloudmonitor: ...; eip_fallback: ...';
+    const [instance] = mapGraphToInstances(
+      [graphWith(ecsNode('i-1', usageMeasurement('bss-cumulative', true, 10), rateMeasurement(false, 'cdt-rate-unavailable', errorReason)))],
+      [account],
+      {},
+    );
+
+    expect(instance.trafficRate).toBeNull();
+    expect(instance.trafficRateErrorReason).toBe(errorReason);
   });
 });

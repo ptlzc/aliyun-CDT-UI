@@ -54,6 +54,8 @@ export interface ECSInstance {
   trafficRateUnit: string;
   trafficRateSource?: string;
   trafficRateCollectedAt?: string;
+  trafficRateErrorReason?: string;
+  trafficDetailsLoading?: boolean;
   trafficLimit: number;
   monitoringEnabled: boolean;
   overflowAction: string;

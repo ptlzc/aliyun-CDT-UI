@@ -1,7 +1,7 @@
 import {createMemoryRouter, RouterProvider} from 'react-router-dom';
 import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {describe, expect, it, vi} from 'vitest';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import DashboardPage from '../index';
 import type {CloudAccount, DashboardSummary, ECSInstance, WorkflowRun} from '../../../types';
@@ -73,7 +73,7 @@ const workflows: WorkflowRun[] = [
   },
 ];
 
-const runtimeData = {
+let runtimeData = {
   isLoading: false,
   accounts,
   rawAccounts: [],
@@ -107,6 +107,20 @@ function renderDashboard() {
 }
 
 describe('DashboardPage', () => {
+  beforeEach(() => {
+    runtimeData = {
+      isLoading: false,
+      accounts,
+      rawAccounts: [],
+      graphs: [],
+      instances,
+      workflows,
+      summary,
+      platformDefaults: null,
+      policiesByAccount: {},
+    };
+  });
+
   it('renders backend-derived summary metrics and account rows', async () => {
     const user = userEvent.setup();
     const router = renderDashboard();
@@ -127,6 +141,27 @@ describe('DashboardPage', () => {
 
     await user.click(screen.getByText('Account A'));
     expect(router.state.location.pathname).toBe('/accounts/acc-1');
+  });
+
+  it('shows a loading placeholder instead of the unavailable alert while traffic details load', () => {
+    const loadingInstance: ECSInstance = {
+      ...instances[0],
+      trafficUsage: null,
+      trafficRate: null,
+      alerts: ['该实例的累计流量数据当前不可用。'],
+      trafficDetailsLoading: true,
+    };
+    runtimeData = {
+      ...runtimeData,
+      instances: [loadingInstance],
+    };
+
+    renderDashboard();
+
+    expect(screen.getByText('流量数据加载中…')).toBeInTheDocument();
+    expect(screen.getByText('当前速率 加载中…')).toBeInTheDocument();
+    expect(screen.queryByText('累计流量不可用')).not.toBeInTheDocument();
+    expect(screen.queryByText('该实例的累计流量数据当前不可用。')).not.toBeInTheDocument();
   });
 
   it('navigates to settings / instances / workflows via the shortcut buttons', async () => {

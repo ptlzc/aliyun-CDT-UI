@@ -41,6 +41,7 @@ vi.mock('../../../features/runtime/hooks', () => ({
   useDeleteAccountMutation: () => ({mutate: vi.fn(), isPending: false}),
   useCdtPermissionQuery: () => ({data: mocks.permissionResult, isLoading: false}),
   useValidateAccountMutation: () => ({mutateAsync: mocks.validateMutate}),
+  useInventoryGraphQuery: () => ({data: undefined, isLoading: false, isError: false}),
   useTrafficAuditsQuery: () => ({data: {items: [], total: 0}, isLoading: false, isError: false, error: null}),
 }));
 

@@ -282,7 +282,7 @@ export default function AccountDetailEditor({
         {/* Form editing block (span 8) */}
         <div className="lg:col-span-8 flex flex-col gap-6">
           {/* Resource Summary indicators card (Only for edited existing accounts) */}
-          {!isCreating && <ResourceSummaryCard />}
+          {!isCreating && <ResourceSummaryCard accountId={account.id} />}
 
           {/* Account Permission Status */}
           {!isCreating && (

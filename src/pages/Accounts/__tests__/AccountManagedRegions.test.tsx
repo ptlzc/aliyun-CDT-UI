@@ -7,6 +7,7 @@ import AccountDetailEditor from '../components/AccountDetailEditor';
 vi.mock('../../../features/runtime/hooks', () => ({
   useSaveAccountMutation: () => ({mutateAsync: vi.fn(), isPending: false}),
   useValidateAccountMutation: () => ({mutateAsync: vi.fn()}),
+  useInventoryGraphQuery: () => ({data: undefined, isLoading: false, isError: false}),
 }));
 
 vi.mock('../../../lib/api/client', () => ({listRegions: vi.fn()}));

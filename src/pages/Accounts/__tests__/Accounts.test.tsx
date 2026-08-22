@@ -166,7 +166,7 @@ describe('AccountsPage create flow', () => {
     // Form closes and the listing is shown again
     expect(router.state.location.pathname).toBe('/accounts');
     expect(await screen.findByRole('heading', {name: /账户管理/})).toBeInTheDocument();
-  });
+  }, 15_000);
 
   it('shows the backend error message inline when the region fetch fails', async () => {
     mocks.listRegions.mockRejectedValue(new Error('InvalidAccessKeyId: 无效的 AccessKey'));

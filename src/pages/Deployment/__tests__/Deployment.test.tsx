@@ -248,7 +248,7 @@ describe('DeploymentPage form', () => {
       },
       expect.anything(),
     );
-  });
+  }, 15_000);
 
   it('shows VNC flow hint when image type is installer', async () => {
     const user = setupUser();

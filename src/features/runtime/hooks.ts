@@ -57,19 +57,8 @@ import {formatDateLabel} from '@/utils/dateFormat';
 import {mapGraphToInstances} from './instanceMapping';
 
 export {mapGraphToInstances} from './instanceMapping';
-
-export const runtimeKeys = {
-  accounts: ['runtime', 'accounts'] as const,
-  graph: (accountId: string) => ['runtime', 'graph', accountId] as const,
-  graphInventory: (accountId: string) => ['runtime', 'graph', accountId, 'inventory'] as const,
-  graphAll: ['runtime', 'graph'] as const,
-  jobs: ['runtime', 'jobs'] as const,
-  settings: ['runtime', 'settings', 'traffic-governance'] as const,
-  policies: (accountId: string) => ['runtime', 'traffic-policies', accountId] as const,
-  audits: (accountId: string, filters: TrafficAuditFilters) => ['runtime', 'traffic-audits', accountId, filters] as const,
-  cdtPermission: (accountId: string) => ['runtime', 'cdt-permission', accountId] as const,
-  regions: (accountId: string) => ['runtime', 'regions', accountId] as const,
-};
+import {accountKeys, enrichedKeys, inventoryKeys, policyKeys, runtimeKeys} from './queryKeys';
+export {accountKeys, enrichedKeys, inventoryKeys, policyKeys, runtimeKeys} from './queryKeys';
 
 function relativeTimeLabel(value?: string): string {
   if (!value) {
@@ -275,7 +264,7 @@ export function useSaveAccountMutation() {
       return createAccount(payload);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({queryKey: runtimeKeys.accounts});
+      void queryClient.invalidateQueries({queryKey: accountKeys.all});
     },
   });
 }
@@ -285,7 +274,7 @@ export function useDeleteAccountMutation() {
   return useMutation({
     mutationFn: (accountId: string) => deleteAccount(accountId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({queryKey: runtimeKeys.accounts});
+      void queryClient.invalidateQueries({queryKey: accountKeys.all});
     },
   });
 }
@@ -296,7 +285,7 @@ export function useSavePlatformDefaultsMutation() {
     mutationFn: async (payload: Partial<ApiTrafficGovernanceDefaults>) => savePlatformTrafficGovernance(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({queryKey: runtimeKeys.settings});
-      void queryClient.invalidateQueries({queryKey: runtimeKeys.accounts});
+      void queryClient.invalidateQueries({queryKey: accountKeys.all});
     },
   });
 }
@@ -307,9 +296,10 @@ export function useApplyPlatformDefaultsMutation() {
     mutationFn: applyPlatformTrafficGovernanceToAccounts,
     onSuccess: (result) => {
       void queryClient.invalidateQueries({queryKey: runtimeKeys.settings});
-      void queryClient.invalidateQueries({queryKey: runtimeKeys.accounts});
+      void queryClient.invalidateQueries({queryKey: accountKeys.all});
       for (const accountId of result.accountIds || []) {
-        void queryClient.invalidateQueries({queryKey: runtimeKeys.graph(accountId)});
+        void queryClient.invalidateQueries({queryKey: enrichedKeys.byAccount(accountId)});
+        void queryClient.invalidateQueries({queryKey: inventoryKeys.byAccount(accountId)});
       }
     },
   });
@@ -328,7 +318,8 @@ export function useSaveInstanceGovernanceMutation() {
       payload: ApiECSTrafficGovernance['override'];
     }) => saveECSTrafficGovernance(accountId, instanceId, payload),
     onSuccess: (_, variables) => {
-      void queryClient.invalidateQueries({queryKey: runtimeKeys.graph(variables.accountId)});
+      void queryClient.invalidateQueries({queryKey: enrichedKeys.byAccount(variables.accountId)});
+      void queryClient.invalidateQueries({queryKey: inventoryKeys.byAccount(variables.accountId)});
     },
   });
 }
@@ -338,8 +329,8 @@ export function useSaveTrafficPolicyMutation() {
   return useMutation({
     mutationFn: async ({accountId, payload}: {accountId: string; payload: ApiTrafficPolicyRequest}) => saveTrafficPolicy(accountId, payload),
     onSuccess: (_, variables) => {
-      void queryClient.invalidateQueries({queryKey: runtimeKeys.policies(variables.accountId)});
-      void queryClient.invalidateQueries({queryKey: runtimeKeys.graph(variables.accountId)});
+      void queryClient.invalidateQueries({queryKey: policyKeys.byAccount(variables.accountId)});
+      void queryClient.invalidateQueries({queryKey: enrichedKeys.byAccount(variables.accountId)});
     },
   });
 }
@@ -349,7 +340,8 @@ export function useStartECSInstanceMutation() {
   return useMutation({
     mutationFn: async ({accountId, instanceId}: {accountId: string; instanceId: string}) => startECSInstance(accountId, instanceId),
     onSuccess: (_, variables) => {
-      void queryClient.invalidateQueries({queryKey: runtimeKeys.graph(variables.accountId)});
+      void queryClient.invalidateQueries({queryKey: enrichedKeys.byAccount(variables.accountId)});
+      void queryClient.invalidateQueries({queryKey: inventoryKeys.byAccount(variables.accountId)});
       void queryClient.invalidateQueries({queryKey: runtimeKeys.jobs});
     },
   });
@@ -360,7 +352,8 @@ export function useStopECSInstanceMutation() {
   return useMutation({
     mutationFn: async ({accountId, instanceId}: {accountId: string; instanceId: string}) => stopECSInstance(accountId, instanceId),
     onSuccess: (_, variables) => {
-      void queryClient.invalidateQueries({queryKey: runtimeKeys.graph(variables.accountId)});
+      void queryClient.invalidateQueries({queryKey: enrichedKeys.byAccount(variables.accountId)});
+      void queryClient.invalidateQueries({queryKey: inventoryKeys.byAccount(variables.accountId)});
       void queryClient.invalidateQueries({queryKey: runtimeKeys.jobs});
     },
   });
@@ -591,7 +584,7 @@ export function useValidateAccountMutation() {
   return useMutation({
     mutationFn: (accountId: string) => validateAccount(accountId),
     onSuccess: () => {
-      void queryClient.invalidateQueries();
+      void queryClient.invalidateQueries({queryKey: accountKeys.all});
     },
   });
 }

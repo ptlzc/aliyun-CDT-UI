@@ -32,7 +32,7 @@ function countGraphInvalidates(invalidateSpy: {mock: {calls: unknown[][]}}, acco
   return invalidateSpy.mock.calls.filter((call) => {
     const filters = call[0] as {queryKey?: readonly unknown[]} | undefined;
     const key = filters?.queryKey;
-    return key?.[0] === 'runtime' && key?.[1] === 'graph' && key?.[2] === accountId;
+    return key?.[0] === 'runtime' && key?.[1] === 'graph' && key?.[2] === accountId && key?.[3] === undefined;
   }).length;
 }
 

@@ -2,7 +2,7 @@ import {useEffect, useRef} from 'react';
 import type {QueryClient} from '@tanstack/react-query';
 
 import {runtimeWebSocketUrl, type RuntimeEvent} from '@/lib/api/client';
-import {runtimeKeys} from './hooks';
+import {accountKeys, enrichedKeys, inventoryKeys, policyKeys, runtimeKeys} from './queryKeys';
 
 // Graph data is persisted in the backend store and only changes when a
 // discovery run finishes. A discovery run emits a storm of
@@ -41,13 +41,13 @@ function patchJobs(queryClient: QueryClient, event: RuntimeEvent) {
 // Cheap runtime lists — safe to refresh on every event.
 function invalidateJobsAndAccounts(queryClient: QueryClient) {
   void queryClient.invalidateQueries({ queryKey: runtimeKeys.jobs });
-  void queryClient.invalidateQueries({ queryKey: runtimeKeys.accounts });
+  void queryClient.invalidateQueries({ queryKey: accountKeys.all });
 }
 
 function invalidateRuntime(queryClient: QueryClient, accountId?: string) {
   invalidateJobsAndAccounts(queryClient);
   if (accountId) {
-    void queryClient.invalidateQueries({ queryKey: runtimeKeys.policies(accountId) });
+    void queryClient.invalidateQueries({ queryKey: policyKeys.byAccount(accountId) });
   }
 }
 
@@ -79,7 +79,8 @@ export function useRuntimeEventBridge(queryClient: QueryClient) {
         accountId,
         setTimeout(() => {
           timers.delete(accountId);
-          void queryClient.invalidateQueries({ queryKey: runtimeKeys.graph(accountId) });
+          void queryClient.invalidateQueries({ queryKey: enrichedKeys.byAccount(accountId) });
+          void queryClient.invalidateQueries({ queryKey: inventoryKeys.byAccount(accountId) });
         }, GRAPH_INVALIDATE_DEBOUNCE_MS),
       );
     };

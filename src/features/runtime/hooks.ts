@@ -501,6 +501,40 @@ export function useInventoryGraphQuery(accountId: string | null) {
   });
 }
 
+/** Lightweight inventory graphs for several accounts (list views only). */
+export function useInventoryGraphsQuery(accountIds: string[]) {
+  return useQueries({
+    queries: accountIds.map((accountId) => ({
+      queryKey: runtimeKeys.graphInventory(accountId),
+      queryFn: () => listInventoryGraph(accountId),
+      enabled: Boolean(accountId),
+      staleTime: 60_000,
+    })),
+  }) as Array<{data?: ApiResourceGraph; isLoading: boolean}>;
+}
+
+/**
+ * Instance list data built from lightweight inventory graphs only. This is the
+ * replacement for the previous heavy `useRuntimeDashboard` usage on the
+ * Instances page: it never requests enriched `/graph` or traffic policies.
+ */
+export function useInventoryInstances() {
+  const accountsQuery = useAccountsQuery();
+  const accountIds = useMemo(() => (accountsQuery.data || []).map((account) => account.id), [accountsQuery.data]);
+  const inventoryGraphQueries = useInventoryGraphsQuery(accountIds);
+  const instances = useMemo(() => {
+    const graphs = inventoryGraphQueries
+      .map((query) => query.data)
+      .filter((graph): graph is ApiResourceGraph => Boolean(graph));
+    return mapGraphToInstances(graphs, accountsQuery.data || [], {});
+  }, [accountsQuery.data, inventoryGraphQueries]);
+  return {
+    rawAccounts: accountsQuery.data || [],
+    instances,
+    inventoryLoading: accountsQuery.isLoading || inventoryGraphQueries.some((query) => query.isLoading),
+  };
+}
+
 /**
  * Enriched topology for one account: inventory plus live traffic/rate details.
  * This is the heavier /graph endpoint and should only be fetched when a page

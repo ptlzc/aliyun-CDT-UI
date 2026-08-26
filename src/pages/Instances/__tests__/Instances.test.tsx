@@ -7,38 +7,26 @@ import InstancesPage from '../index';
 import CdtFreeQuotaCard from '../components/CdtFreeQuotaCard';
 import {INSTANCE_STATUS_LABELS, SOURCE_LAYER_LABELS, sourceLayerBadgeClass} from '../components/instanceLabels';
 
+const {useRuntimeDashboardMock} = vi.hoisted(() => ({useRuntimeDashboardMock: vi.fn()}));
+
 let instancesData: any[] = [];
 let rawAccountsData: any[] = [];
 let cdtData: any = null;
 let governanceData: any = null;
-let runtimeIsLoading = false;
 let inventoryLoading = false;
-let instanceDetailsLoading: Record<string, boolean> = {};
 
 vi.mock('../../../features/runtime/hooks', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../features/runtime/hooks')>();
   return {
     ...actual,
-    useRuntimeDashboard: () => ({
-      isLoading: runtimeIsLoading,
-      inventoryLoading,
-      instanceDetailsLoading,
-      accounts: [],
+    useRuntimeDashboard: useRuntimeDashboardMock,
+    useInventoryInstances: () => ({
       rawAccounts: rawAccountsData,
-      graphs: [],
       instances: instancesData,
-      workflows: [],
-      summary: {
-        accountCount: 0,
-        ecsCount: 0,
-        eipCount: 0,
-        activeWorkflowCount: 0,
-        attentionInstanceCount: 0,
-        monitoredInstanceCount: 0,
-      },
-      platformDefaults: null,
-      policiesByAccount: {},
+      inventoryLoading,
     }),
+    useEnrichedGraphQuery: () => ({data: undefined, isLoading: false}),
+    useTrafficPoliciesQuery: () => ({data: [], isLoading: false}),
     mapAccountToViewModel: (account: any) => ({
       id: account.id,
       name: account.name,
@@ -108,9 +96,7 @@ afterEach(() => {
 });
 
 beforeEach(() => {
-  runtimeIsLoading = false;
   inventoryLoading = false;
-  instanceDetailsLoading = {};
 });
 
 function renderInstances() {
@@ -158,7 +144,6 @@ describe('CdtFreeQuotaCard', () => {
 
 describe('InstancesPage', () => {
   it('shows full card skeletons only while the initial inventory is unavailable', () => {
-    runtimeIsLoading = true;
     inventoryLoading = true;
     instancesData = [];
 
@@ -168,10 +153,8 @@ describe('InstancesPage', () => {
     expect(screen.queryByText('没有匹配的实例。')).not.toBeInTheDocument();
   });
 
-  it('renders available cards while unrelated runtime data and card details continue loading', () => {
-    runtimeIsLoading = true;
+  it('renders inventory-only cards without traffic-detail skeletons', () => {
     inventoryLoading = false;
-    instanceDetailsLoading = {'acc-1': true};
     instancesData = [
       {
         id: 'i-1', accountId: 'acc-1', accountName: 'Account A', name: 'ecs-a', status: 'Running',
@@ -186,7 +169,13 @@ describe('InstancesPage', () => {
 
     expect(screen.getByRole('heading', {name: 'cn-hangzhou-i'})).toBeInTheDocument();
     expect(screen.queryByRole('status', {name: '正在加载实例列表'})).not.toBeInTheDocument();
-    expect(screen.getByRole('status', {name: '正在加载流量详情'})).toBeInTheDocument();
+    expect(screen.queryByRole('status', {name: '正在加载流量详情'})).not.toBeInTheDocument();
+  });
+
+  it('does not use the heavy runtime dashboard hook for the list page', () => {
+    useRuntimeDashboardMock.mockClear();
+    renderInstances();
+    expect(useRuntimeDashboardMock).not.toHaveBeenCalled();
   });
 
   it('renders the list header without the account-level CDT card by default', () => {

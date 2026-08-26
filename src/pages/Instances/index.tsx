@@ -11,7 +11,7 @@ import {
   useEffectiveTrafficGovernanceQuery,
   useECSMetricsQuery,
   useECSVncUrlQuery,
-  useRuntimeDashboard,
+  useInventoryInstances,
   useStartECSInstanceMutation,
   useStopECSInstanceMutation,
 } from '../../features/runtime/hooks';
@@ -36,10 +36,8 @@ import {INSTANCE_STATUS_LABELS, SOURCE_LAYER_LABELS, sourceLayerBadgeClass} from
  * @when 侧边栏点击「ECS 实例列表」或深链 /instances 时渲染
  */
 export default function InstancesPage() {
-  const runtime = useRuntimeDashboard();
+  const {rawAccounts, instances, inventoryLoading} = useInventoryInstances();
   const {openInstance} = useOutletContext<{openInstance: (instance: ECSInstance) => void}>();
-  const instances = runtime.instances;
-  const inventoryLoading = runtime.inventoryLoading;
   const accountId = null;
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
@@ -144,7 +142,7 @@ export default function InstancesPage() {
   // the owning account. rawAccounts covers every graph account, so a missing
   // match is unexpected; if it ever happens, keep the card as-is (no modal).
   const openPolicyModal = (instance: ECSInstance) => {
-    const rawAccount = runtime.rawAccounts.find((account) => account.id === instance.accountId);
+    const rawAccount = rawAccounts.find((account) => account.id === instance.accountId);
     if (!rawAccount) return;
     setActivePolicyAccount(mapAccountToViewModel(rawAccount));
   };
@@ -231,7 +229,7 @@ export default function InstancesPage() {
               <InstanceCard
                 key={instance.id}
                 instance={instance}
-                detailsLoading={runtime.instanceDetailsLoading[instance.accountId] ?? false}
+                detailsLoading={false}
                 loadingStatus={tempState[instance.id]}
                 effectiveStatus={statusOverride[instance.id] || instance.status}
                 powerError={powerError[instance.id]}

@@ -86,6 +86,7 @@ vi.mock('../features/runtime/hooks', () => ({
   useTrafficPoliciesQuery: vi.fn(() => ({data: [], isLoading: false})),
   usePlatformTrafficGovernanceQuery: vi.fn(() => ({data: {defaults: null}, isLoading: false})),
   useWorkflowsQuery: vi.fn(() => ({data: [], isLoading: false})),
+  useInventoryInstances: vi.fn(() => ({rawAccounts: [], instances: [], inventoryLoading: false})),
   runtimeKeys: {
     accounts: ['runtime', 'accounts'],
     graph: (accountId: string) => ['runtime', 'graph', accountId],

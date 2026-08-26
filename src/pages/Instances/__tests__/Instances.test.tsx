@@ -7,7 +7,10 @@ import InstancesPage from '../index';
 import CdtFreeQuotaCard from '../components/CdtFreeQuotaCard';
 import {INSTANCE_STATUS_LABELS, SOURCE_LAYER_LABELS, sourceLayerBadgeClass} from '../components/instanceLabels';
 
-const {useRuntimeDashboardMock} = vi.hoisted(() => ({useRuntimeDashboardMock: vi.fn()}));
+const {useRuntimeDashboardMock, useEnrichedInstancesMock} = vi.hoisted(() => ({
+  useRuntimeDashboardMock: vi.fn(),
+  useEnrichedInstancesMock: vi.fn(),
+}));
 
 let instancesData: any[] = [];
 let rawAccountsData: any[] = [];
@@ -25,6 +28,11 @@ vi.mock('../../../features/runtime/hooks', async (importOriginal) => {
       instances: instancesData,
       inventoryLoading,
     }),
+    useEnrichedInstances: useEnrichedInstancesMock.mockImplementation(() => ({
+      rawAccounts: rawAccountsData,
+      instances: instancesData,
+      inventoryLoading,
+    })),
     useEnrichedGraphQuery: () => ({data: undefined, isLoading: false}),
     useTrafficPoliciesQuery: () => ({data: [], isLoading: false}),
     mapAccountToViewModel: (account: any) => ({
@@ -97,6 +105,7 @@ afterEach(() => {
 
 beforeEach(() => {
   inventoryLoading = false;
+  useEnrichedInstancesMock.mockClear();
 });
 
 function renderInstances() {
@@ -178,6 +187,12 @@ describe('InstancesPage', () => {
     expect(useRuntimeDashboardMock).not.toHaveBeenCalled();
   });
 
+  it('loads the list through the enriched instances hook', () => {
+    useEnrichedInstancesMock.mockClear();
+    renderInstances();
+    expect(useEnrichedInstancesMock).toHaveBeenCalled();
+  });
+
   it('renders the list header without the account-level CDT card by default', () => {
     cdtData = null;
     governanceData = null;
@@ -256,6 +271,8 @@ describe('InstancesPage', () => {
     expect(screen.getByRole('button', {name: '停止'})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /连接 VNC/})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: '状态'})).toBeInTheDocument();
+    expect(screen.getByText('180 GB / 200 GB')).toBeInTheDocument();
+    expect(screen.getByText('当前速率: 22.5 Mbps')).toBeInTheDocument();
   });
 
   it('opens the SSH terminal modal when SSH login is clicked', async () => {

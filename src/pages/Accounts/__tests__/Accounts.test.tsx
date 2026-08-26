@@ -4,24 +4,18 @@ import userEvent from '@testing-library/user-event';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import AccountsPage from '../index';
-import type {CloudAccount} from '../../../types';
 import type {ApiAccountRegion} from '../../../lib/api/client';
 
-const accountA: CloudAccount = {
+const accountA = {
   id: 'acc-1',
   name: 'Account A',
-  providerRegion: 'Aliyun Domestic',
-  mainRegion: 'cn-hangzhou',
-  lastSynced: 'Just now',
-  creationDate: '2026-06-17',
+  siteType: 'domestic',
+  regionId: 'cn-hangzhou',
+  regions: ['cn-hangzhou'],
+  createdAt: '2026-06-17T00:00:00Z',
+  updatedAt: '2026-06-17T00:00:00Z',
   accessKeyId: 'ak',
   accessKeySecret: 'secret',
-  managedRegions: 'cn-hangzhou',
-  trafficDefaults: {
-    maximumTrafficGb: 200,
-    overflowAction: 'notify',
-    monitoringEnabled: true,
-  },
 };
 
 const mocks = vi.hoisted(() => ({
@@ -32,27 +26,27 @@ const mocks = vi.hoisted(() => ({
   permissionResult: undefined as undefined | {permitted: boolean; errorType?: 'permission' | 'credential' | 'network'; error?: string},
 }));
 
-let runtimeAccounts: CloudAccount[] = [];
+let runtimeAccounts: any[] = [];
 let auditLogs: unknown[] = [];
 
 vi.mock('../../../features/runtime/hooks', () => ({
-  useRuntimeDashboard: () => ({
-    isLoading: false,
-    accounts: runtimeAccounts,
-    rawAccounts: [],
-    graphs: [],
-    instances: [],
-    workflows: [],
-    summary: {
-      accountCount: 0,
-      ecsCount: 0,
-      eipCount: 0,
-      activeWorkflowCount: 0,
-      attentionInstanceCount: 0,
-      monitoredInstanceCount: 0,
+  useAccountsQuery: () => ({data: runtimeAccounts, isLoading: false}),
+  mapAccountToViewModel: (account: any) => ({
+    id: account.id,
+    name: account.name,
+    providerRegion: account.siteType === 'domestic' ? 'Aliyun Domestic' : 'Aliyun International',
+    mainRegion: account.regionId,
+    lastSynced: 'Just now',
+    creationDate: '2026-06-17',
+    accessKeyId: account.accessKeyId,
+    accessKeySecret: account.accessKeySecret ?? '************************',
+    managedRegions: (account.regions || []).join(', '),
+    roleArn: '',
+    trafficDefaults: account.trafficGovernanceDefaults ?? {
+      maximumTrafficGb: 200,
+      overflowAction: 'notify',
+      monitoringEnabled: true,
     },
-    platformDefaults: null,
-    policiesByAccount: {},
   }),
   useSaveAccountMutation: () => ({mutateAsync: mocks.saveMutate, isPending: false}),
   useDeleteAccountMutation: () => ({mutate: mocks.deleteMutate, isPending: false}),

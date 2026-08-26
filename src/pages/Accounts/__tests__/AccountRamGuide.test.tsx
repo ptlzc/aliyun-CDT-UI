@@ -4,19 +4,17 @@ import userEvent from '@testing-library/user-event';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import AccountsPage from '../index';
-import type {CloudAccount} from '../../../types';
 
-const account: CloudAccount = {
+const account = {
   id: 'acc-1',
   name: 'Account A',
-  providerRegion: 'Aliyun Domestic',
-  mainRegion: 'cn-hangzhou',
-  lastSynced: 'Just now',
-  creationDate: '2026-06-17',
+  siteType: 'domestic',
+  regionId: 'cn-hangzhou',
+  regions: ['cn-hangzhou'],
+  createdAt: '2026-06-17T00:00:00Z',
+  updatedAt: '2026-06-17T00:00:00Z',
   accessKeyId: 'ak',
   accessKeySecret: 'secret',
-  managedRegions: 'cn-hangzhou',
-  trafficDefaults: {maximumTrafficGb: 200, overflowAction: 'notify', monitoringEnabled: true},
 };
 
 const mocks = vi.hoisted(() => ({
@@ -26,16 +24,23 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../features/runtime/hooks', () => ({
-  useRuntimeDashboard: () => ({
-    isLoading: false,
-    accounts: [account],
-    rawAccounts: [],
-    graphs: [],
-    instances: [],
-    workflows: [],
-    summary: {accountCount: 1, ecsCount: 0, eipCount: 0, activeWorkflowCount: 0, attentionInstanceCount: 0, monitoredInstanceCount: 0},
-    platformDefaults: null,
-    policiesByAccount: {},
+  useAccountsQuery: () => ({data: [account], isLoading: false}),
+  mapAccountToViewModel: (raw: any) => ({
+    id: raw.id,
+    name: raw.name,
+    providerRegion: raw.siteType === 'domestic' ? 'Aliyun Domestic' : 'Aliyun International',
+    mainRegion: raw.regionId,
+    lastSynced: 'Just now',
+    creationDate: '2026-06-17',
+    accessKeyId: raw.accessKeyId,
+    accessKeySecret: raw.accessKeySecret ?? '************************',
+    managedRegions: (raw.regions || []).join(', '),
+    roleArn: '',
+    trafficDefaults: raw.trafficGovernanceDefaults ?? {
+      maximumTrafficGb: 200,
+      overflowAction: 'notify',
+      monitoringEnabled: true,
+    },
   }),
   useSaveAccountMutation: () => ({mutateAsync: vi.fn(), isPending: false}),
   useDeleteAccountMutation: () => ({mutate: vi.fn(), isPending: false}),

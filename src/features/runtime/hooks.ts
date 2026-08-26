@@ -183,6 +183,15 @@ export function useJobsQuery() {
   });
 }
 
+/** Workflow view models derived from the raw jobs query. */
+export function useWorkflowsQuery() {
+  const jobsQuery = useJobsQuery();
+  return {
+    ...jobsQuery,
+    data: (jobsQuery.data || []).map(mapJobToWorkflow),
+  };
+}
+
 export function usePlatformTrafficGovernanceQuery() {
   return useQuery<ApiPlatformTrafficGovernance>({
     queryKey: runtimeKeys.settings,
@@ -489,6 +498,33 @@ export function useInventoryGraphQuery(accountId: string | null) {
     queryFn: () => listInventoryGraph(accountId!),
     enabled: Boolean(accountId),
     staleTime: 60_000,
+  });
+}
+
+/**
+ * Enriched topology for one account: inventory plus live traffic/rate details.
+ * This is the heavier /graph endpoint and should only be fetched when a page
+ * actually needs traffic/governance detail (e.g. dashboard risk section or an
+ * opened instance drawer).
+ */
+export function useEnrichedGraphQuery(accountId: string | null) {
+  return useQuery<ApiResourceGraph>({
+    queryKey: runtimeKeys.graph(accountId || ''),
+    queryFn: () => listGraph(accountId!),
+    enabled: Boolean(accountId),
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Traffic policies for one account. Only fetch when the UI needs policy data
+ * (drawer/editor), not on every global layout render.
+ */
+export function useTrafficPoliciesQuery(accountId: string | null) {
+  return useQuery<ApiTrafficPolicy[]>({
+    queryKey: runtimeKeys.policies(accountId || ''),
+    queryFn: () => listTrafficPolicies(accountId!),
+    enabled: Boolean(accountId),
   });
 }
 

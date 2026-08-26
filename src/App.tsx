@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {Bell, Cloud, Menu, RefreshCw, X} from 'lucide-react';
 import {AnimatePresence, motion} from 'motion/react';
@@ -7,7 +7,13 @@ import {Outlet, useLocation, useNavigate} from 'react-router-dom';
 import InstanceGovernanceDrawer from './components/InstanceGovernanceDrawer';
 import Sidebar from './components/Sidebar';
 import {useRuntimeEventBridge} from './features/runtime/events';
-import {useRuntimeDashboard} from './features/runtime/hooks';
+import {
+  mapGraphToInstances,
+  useAccountsQuery,
+  useEnrichedGraphQuery,
+  useJobsQuery,
+  useTrafficPoliciesQuery,
+} from './features/runtime/hooks';
 import {menuItems} from './navigation';
 import type {ECSInstance} from './types';
 
@@ -18,18 +24,41 @@ import type {ECSInstance} from './types';
  * @when 任意路由命中时作为布局层渲染
  */
 export default function App() {
-  const runtime = useRuntimeDashboard();
   const client = useQueryClient();
+  const accountsQuery = useAccountsQuery();
+  const jobsQuery = useJobsQuery();
   useRuntimeEventBridge(client);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
+  const [selectedInstance, setSelectedInstance] = useState<ECSInstance | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(2);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const selectedInstance = runtime.instances.find((instance) => instance.id === selectedInstanceId) || null;
+  // The layout no longer fetches every account's enriched graph up front.
+  // Only when the user opens the instance governance drawer do we request the
+  // owning account's enriched graph and traffic policies.
+  const enrichedGraphQuery = useEnrichedGraphQuery(selectedInstance?.accountId ?? null);
+  const trafficPoliciesQuery = useTrafficPoliciesQuery(selectedInstance?.accountId ?? null);
+
+  const selectedInstanceWithDetails = useMemo(() => {
+    if (!selectedInstance) {
+      return null;
+    }
+    const graph = enrichedGraphQuery.data;
+    if (!graph) {
+      return selectedInstance;
+    }
+    const policies = trafficPoliciesQuery.data ?? [];
+    const enrichedInstances = mapGraphToInstances(
+      [graph],
+      accountsQuery.data || [],
+      {[graph.accountId]: policies},
+    );
+    const matched = enrichedInstances.find((instance) => instance.id === selectedInstance.id);
+    return matched ? {...matched, accountName: selectedInstance.accountName} : selectedInstance;
+  }, [accountsQuery.data, enrichedGraphQuery.data, selectedInstance, trafficPoliciesQuery.data]);
 
   const isPathActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(`${path}/`);
@@ -45,7 +74,7 @@ export default function App() {
   const handleDeployTrigger = () => {
     navigate('/deployment');
     setMobileMenuOpen(false);
-    if (runtime.workflows.length > 0) {
+    if ((jobsQuery.data?.length ?? 0) > 0) {
       setNotificationCount((count) => Math.max(0, count - 1));
     }
   };
@@ -79,16 +108,16 @@ export default function App() {
         <main className="flex-1 p-6 max-w-7xl w-full mx-auto flex flex-col gap-6">
           <Outlet
             context={{
-              openInstance: (instance: ECSInstance) => setSelectedInstanceId(instance.id),
+              openInstance: (instance: ECSInstance) => setSelectedInstance(instance),
             }}
           />
         </main>
       </div>
 
       <AnimatePresence>
-        {selectedInstance && (
+        {selectedInstanceWithDetails && (
           <motion.div key="instance-drawer" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-            <InstanceGovernanceDrawer instance={selectedInstance} onClose={() => setSelectedInstanceId(null)} />
+            <InstanceGovernanceDrawer instance={selectedInstanceWithDetails} onClose={() => setSelectedInstance(null)} />
           </motion.div>
         )}
       </AnimatePresence>

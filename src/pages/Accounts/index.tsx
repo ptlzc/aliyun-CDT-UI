@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react';
 import {AnimatePresence, motion} from 'motion/react';
 import {useNavigate, useParams} from 'react-router-dom';
 
-import {useCdtPermissionQuery, useDeleteAccountMutation, useRuntimeDashboard} from '../../features/runtime/hooks';
+import {mapAccountToViewModel, useAccountsQuery, useCdtPermissionQuery, useDeleteAccountMutation} from '../../features/runtime/hooks';
 import type {CloudAccount} from '../../types';
 import AccountList from './components/AccountList';
 import AccountDetailEditor from './components/AccountDetailEditor';
@@ -48,21 +48,22 @@ function makeAccountDraft(): CloudAccount {
  * @when 侧边栏点击「账户管理」或深链 /accounts* 时渲染
  */
 export default function AccountsPage() {
-  const runtime = useRuntimeDashboard();
+  const accountsQuery = useAccountsQuery();
   const {accountId} = useParams();
   const navigate = useNavigate();
+  const accounts = (accountsQuery.data || []).map(mapAccountToViewModel);
 
   // Mode discrimination: /accounts/new is matched by :accountId ('new'); any
   // other id selects an existing account from the backend list.
   const isCreating = accountId === 'new';
   const detailAccountId = accountId && accountId !== 'new' ? accountId : undefined;
   const selectedAccount =
-    detailAccountId ? runtime.accounts.find((account) => account.id === detailAccountId) || null : null;
+    detailAccountId ? accounts.find((account) => account.id === detailAccountId) || null : null;
 
   // Guard: after the accounts list has loaded, an unknown id must not render
   // a dangling detail view — redirect back to the listing.
   const accountNotFound = Boolean(
-    detailAccountId && !runtime.isLoading && runtime.accounts.length > 0 && !selectedAccount,
+    detailAccountId && !accountsQuery.isLoading && accounts.length > 0 && !selectedAccount,
   );
   useEffect(() => {
     if (accountNotFound) {
@@ -126,7 +127,7 @@ export default function AccountsPage() {
             className="flex flex-col gap-6"
           >
             <AccountList
-              accounts={runtime.accounts}
+              accounts={accounts}
               onCreate={handleCreateClick}
               onEdit={(acc) => navigate(`/accounts/${acc.id}`)}
               onDelete={setAccountToDelete}

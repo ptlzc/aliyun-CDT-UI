@@ -8,7 +8,9 @@ import InstanceGovernanceDrawer from './components/InstanceGovernanceDrawer';
 import Sidebar from './components/Sidebar';
 import {useRuntimeEventBridge} from './features/runtime/events';
 import {
+  accountKeys,
   mapGraphToInstances,
+  runtimeKeys,
   useAccountsQuery,
   useEnrichedGraphQuery,
   useJobsQuery,
@@ -65,9 +67,13 @@ export default function App() {
 
   const handleGlobalSync = () => {
     setIsSyncing(true);
-    void Promise.resolve().then(() => {
+    void Promise.all([
+      client.invalidateQueries({queryKey: accountKeys.all}),
+      client.invalidateQueries({queryKey: runtimeKeys.jobs}),
+      client.invalidateQueries({queryKey: runtimeKeys.settings}),
+      client.invalidateQueries({queryKey: ['region-groups']}),
+    ]).then(() => {
       setIsSyncing(false);
-      void client.invalidateQueries();
     });
   };
 

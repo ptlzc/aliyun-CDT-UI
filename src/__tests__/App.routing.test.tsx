@@ -99,6 +99,22 @@ vi.mock('../features/runtime/hooks', () => ({
     cdtPermission: (accountId: string) => ['runtime', 'cdt-permission', accountId],
     regions: (accountId: string) => ['runtime', 'regions', accountId],
   },
+  accountKeys: {
+    all: ['runtime', 'accounts'],
+    byId: (accountId: string) => ['runtime', 'accounts', accountId],
+  },
+  inventoryKeys: {
+    all: ['runtime', 'graph'],
+    byAccount: (accountId: string) => ['runtime', 'graph', accountId, 'inventory'],
+  },
+  enrichedKeys: {
+    all: ['runtime', 'graph'],
+    byAccount: (accountId: string) => ['runtime', 'graph', accountId],
+  },
+  policyKeys: {
+    all: ['runtime', 'traffic-policies'],
+    byAccount: (accountId: string) => ['runtime', 'traffic-policies', accountId],
+  },
   useCreateOneClickDeploymentMutation: () => ({mutate: vi.fn(), isPending: false, error: null}),
   useContinueOneClickDeploymentMutation: () => ({mutate: vi.fn(), isPending: false, error: null}),
   useSaveAccountMutation: () => ({mutateAsync: vi.fn(), isPending: false}),

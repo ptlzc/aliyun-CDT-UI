@@ -76,24 +76,7 @@ const manualRequiredWorkflow: WorkflowRun = {
 let workflowsData: WorkflowRun[] = [];
 
 vi.mock('../../../features/runtime/hooks', () => ({
-  useRuntimeDashboard: () => ({
-    isLoading: false,
-    accounts: [],
-    rawAccounts: [],
-    graphs: [],
-    instances: [],
-    workflows: workflowsData,
-    summary: {
-      accountCount: 0,
-      ecsCount: 0,
-      eipCount: 0,
-      activeWorkflowCount: 0,
-      attentionInstanceCount: 0,
-      monitoredInstanceCount: 0,
-    },
-    platformDefaults: null,
-    policiesByAccount: {},
-  }),
+  useWorkflowsQuery: () => ({data: workflowsData, isLoading: false}),
 }));
 
 function renderWorkflows() {

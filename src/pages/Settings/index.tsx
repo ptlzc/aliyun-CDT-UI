@@ -1,10 +1,10 @@
 import {useEffect, useState} from 'react';
 
-import {useRuntimeDashboard} from '../../features/runtime/hooks';
 import {
   useApplyPlatformDefaultsMutation,
   useCreateRegionGroupMutation,
   useDeleteRegionGroupMutation,
+  usePlatformTrafficGovernanceQuery,
   useRegionGroupsQuery,
   useSavePlatformDefaultsMutation,
   useUpdateRegionGroupMutation,
@@ -18,8 +18,8 @@ import {ACTION_OPTIONS, actionLabelZh, type TrafficOverflowAction} from '../../u
  * @when 侧边栏点击「系统设置」时渲染
  */
 export default function SettingsPage() {
-  const runtime = useRuntimeDashboard();
-  const defaults = runtime.platformDefaults;
+  const defaultsQuery = usePlatformTrafficGovernanceQuery();
+  const defaults = defaultsQuery.data?.defaults ?? null;
 
   const saveMutation = useSavePlatformDefaultsMutation();
   const applyMutation = useApplyPlatformDefaultsMutation();

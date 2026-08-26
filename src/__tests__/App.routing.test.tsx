@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import {describe, expect, it, vi} from 'vitest';
 
 import {appRoutes} from '../router';
+import {useRuntimeDashboard} from '../features/runtime/hooks';
 import type {CloudAccount} from '../types';
 
 const queryClient = new QueryClient();
@@ -46,11 +47,57 @@ const runtimeData = {
 };
 
 vi.mock('../features/runtime/hooks', () => ({
-  useRuntimeDashboard: () => runtimeData,
-  useAccountsQuery: () => ({data: [], isLoading: false}),
-  useJobsQuery: () => ({data: [], isLoading: false}),
-  useRegionsQuery: () => ({data: [], isLoading: false}),
-  useInventoryGraphQuery: () => ({data: undefined, isLoading: false}),
+  useRuntimeDashboard: vi.fn(() => runtimeData),
+  mapAccountToViewModel: (account: any) => ({
+    id: account.id,
+    name: account.name,
+    providerRegion: account.siteType === 'domestic' ? 'Aliyun Domestic' : 'Aliyun International',
+    mainRegion: account.regionId,
+    lastSynced: 'Just now',
+    creationDate: '2026-06-17',
+    accessKeyId: account.accessKeyId,
+    accessKeySecret: account.accessKeySecret ?? '************************',
+    managedRegions: (account.regions || []).join(', '),
+    roleArn: '',
+    trafficDefaults: account.trafficGovernanceDefaults ?? {
+      maximumTrafficGb: 200,
+      overflowAction: 'notify',
+      monitoringEnabled: true,
+    },
+  }),
+  useAccountsQuery: vi.fn(() => ({
+    data: [{
+      id: 'acc-1',
+      name: 'Account A',
+      siteType: 'domestic',
+      regionId: 'cn-hangzhou',
+      regions: ['cn-hangzhou'],
+      createdAt: '2026-06-17T00:00:00Z',
+      updatedAt: '2026-06-17T00:00:00Z',
+      accessKeyId: 'ak',
+      accessKeySecret: 'secret',
+    }],
+    isLoading: false,
+  })),
+  useJobsQuery: vi.fn(() => ({data: [], isLoading: false})),
+  useRegionsQuery: vi.fn(() => ({data: [], isLoading: false})),
+  useInventoryGraphQuery: vi.fn(() => ({data: undefined, isLoading: false})),
+  useEnrichedGraphQuery: vi.fn(() => ({data: undefined, isLoading: false})),
+  useTrafficPoliciesQuery: vi.fn(() => ({data: [], isLoading: false})),
+  usePlatformTrafficGovernanceQuery: vi.fn(() => ({data: {defaults: null}, isLoading: false})),
+  useWorkflowsQuery: vi.fn(() => ({data: [], isLoading: false})),
+  runtimeKeys: {
+    accounts: ['runtime', 'accounts'],
+    graph: (accountId: string) => ['runtime', 'graph', accountId],
+    graphInventory: (accountId: string) => ['runtime', 'graph', accountId, 'inventory'],
+    graphAll: ['runtime', 'graph'],
+    jobs: ['runtime', 'jobs'],
+    settings: ['runtime', 'settings', 'traffic-governance'],
+    policies: (accountId: string) => ['runtime', 'traffic-policies', accountId],
+    audits: (accountId: string, filters: unknown) => ['runtime', 'traffic-audits', accountId, filters],
+    cdtPermission: (accountId: string) => ['runtime', 'cdt-permission', accountId],
+    regions: (accountId: string) => ['runtime', 'regions', accountId],
+  },
   useCreateOneClickDeploymentMutation: () => ({mutate: vi.fn(), isPending: false, error: null}),
   useContinueOneClickDeploymentMutation: () => ({mutate: vi.fn(), isPending: false, error: null}),
   useSaveAccountMutation: () => ({mutateAsync: vi.fn(), isPending: false}),
@@ -92,6 +139,15 @@ describe('App routing', () => {
     const router = renderApp('/');
     expect(screen.getByRole('heading', {name: /控制台概览/})).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/dashboard');
+  });
+
+  it('does not call the heavy runtime dashboard hook from non-instance layout/page routes', () => {
+    const dashboardSpy = vi.mocked(useRuntimeDashboard);
+    for (const path of ['/settings', '/accounts', '/workflows', '/protection-records', '/deployment']) {
+      dashboardSpy.mockClear();
+      renderApp(path);
+      expect(dashboardSpy).not.toHaveBeenCalled();
+    }
   });
 
   it('renders each page at its own route', async () => {

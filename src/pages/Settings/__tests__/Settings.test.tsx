@@ -15,23 +15,9 @@ let regionGroupsReturnValue: any[] = [];
 let platformDefaultsValue: any = null;
 
 vi.mock('../../../features/runtime/hooks', () => ({
-  useRuntimeDashboard: () => ({
+  usePlatformTrafficGovernanceQuery: () => ({
+    data: {defaults: platformDefaultsValue},
     isLoading: false,
-    accounts: [],
-    rawAccounts: [],
-    graphs: [],
-    instances: [],
-    workflows: [],
-    summary: {
-      accountCount: 0,
-      ecsCount: 0,
-      eipCount: 0,
-      activeWorkflowCount: 0,
-      attentionInstanceCount: 0,
-      monitoredInstanceCount: 0,
-    },
-    platformDefaults: platformDefaultsValue,
-    policiesByAccount: {},
   }),
   useSavePlatformDefaultsMutation: () => ({
     mutate: saveMutate,

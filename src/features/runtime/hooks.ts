@@ -507,9 +507,10 @@ export function useInventoryGraphsQuery(accountIds: string[]) {
 }
 
 /**
- * Instance list data built from lightweight inventory graphs only. This is the
- * replacement for the previous heavy `useRuntimeDashboard` usage on the
- * Instances page: it never requests enriched `/graph` or traffic policies.
+ * Instance list data built from lightweight inventory graphs only. Prefer
+ * `useEnrichedInstances` for the ECS list page when traffic details are
+ * required; this hook intentionally never requests enriched `/graph` or
+ * traffic policies.
  */
 export function useInventoryInstances() {
   const accountsQuery = useAccountsQuery();
@@ -525,6 +526,52 @@ export function useInventoryInstances() {
     rawAccounts: accountsQuery.data || [],
     instances,
     inventoryLoading: accountsQuery.isLoading || inventoryGraphQueries.some((query) => query.isLoading),
+  };
+}
+
+/**
+ * Instance list data with enriched traffic details for the Instances page.
+ *
+ * This is the targeted replacement for `useInventoryInstances` after #48:
+ * the list page again shows real cumulative traffic/current rate data, while
+ * keeping the heavy enriched `/graph` request scoped to this page instead of
+ * being fetched globally from `App`. It fetches accounts, enriched graphs, and
+ * traffic policies for all accounts (no inventory-only graph, no jobs/settings).
+ */
+export function useEnrichedInstances() {
+  const accountsQuery = useAccountsQuery();
+  const accountIds = useMemo(() => (accountsQuery.data || []).map((account) => account.id), [accountsQuery.data]);
+  const graphQueries = useQueries({
+    queries: accountIds.map((accountId) => ({
+      queryKey: runtimeKeys.graph(accountId),
+      queryFn: () => listGraph(accountId),
+      enabled: Boolean(accountId),
+      staleTime: 60_000,
+    })),
+  }) as Array<{data?: ApiResourceGraph; isLoading: boolean}>;
+  const policyQueries = useQueries({
+    queries: accountIds.map((accountId) => ({
+      queryKey: runtimeKeys.policies(accountId),
+      queryFn: () => listTrafficPolicies(accountId),
+      enabled: Boolean(accountId),
+    })),
+  }) as Array<{data?: ApiTrafficPolicy[]; isLoading: boolean}>;
+
+  const instances = useMemo(() => {
+    const graphs = accountIds
+      .map((_, index) => graphQueries[index]?.data)
+      .filter((graph): graph is ApiResourceGraph => Boolean(graph));
+    const policiesByAccount = Object.fromEntries(accountIds.map((accountId, index) => [
+      accountId,
+      policyQueries[index]?.data || [],
+    ])) as Record<string, ApiTrafficPolicy[]>;
+    return mapGraphToInstances(graphs, accountsQuery.data || [], policiesByAccount);
+  }, [accountIds, accountsQuery.data, graphQueries, policyQueries]);
+
+  return {
+    rawAccounts: accountsQuery.data || [],
+    instances,
+    inventoryLoading: accountsQuery.isLoading || graphQueries.some((query) => query.isLoading),
   };
 }
 

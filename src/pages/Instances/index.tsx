@@ -13,7 +13,7 @@ import {
   useEffectiveTrafficGovernanceQuery,
   useECSMetricsQuery,
   useECSVncUrlQuery,
-  useInventoryInstances,
+  useEnrichedInstances,
   useStartECSInstanceMutation,
   useStopECSInstanceMutation,
 } from '../../features/runtime/hooks';
@@ -38,7 +38,7 @@ import {INSTANCE_STATUS_LABELS, SOURCE_LAYER_LABELS, sourceLayerBadgeClass} from
  * @when 侧边栏点击「ECS 实例列表」或深链 /instances 时渲染
  */
 export default function InstancesPage() {
-  const {rawAccounts, instances, inventoryLoading} = useInventoryInstances();
+  const {rawAccounts, instances, inventoryLoading} = useEnrichedInstances();
   const {openInstance} = useOutletContext<{openInstance: (instance: ECSInstance) => void}>();
   const accountId = null;
   const queryClient = useQueryClient();

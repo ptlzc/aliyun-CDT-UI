@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import {describe, expect, it, vi} from 'vitest';
 
 import {appRoutes} from '../router';
-import {useRuntimeDashboard} from '../features/runtime/hooks';
+import {useEnrichedGraphQuery, useRuntimeDashboard} from '../features/runtime/hooks';
 import type {CloudAccount} from '../types';
 
 const queryClient = new QueryClient();
@@ -87,6 +87,7 @@ vi.mock('../features/runtime/hooks', () => ({
   usePlatformTrafficGovernanceQuery: vi.fn(() => ({data: {defaults: null}, isLoading: false})),
   useWorkflowsQuery: vi.fn(() => ({data: [], isLoading: false})),
   useInventoryInstances: vi.fn(() => ({rawAccounts: [], instances: [], inventoryLoading: false})),
+  useEnrichedInstances: vi.fn(() => ({rawAccounts: [], instances: [], inventoryLoading: false})),
   runtimeKeys: {
     accounts: ['runtime', 'accounts'],
     graph: (accountId: string) => ['runtime', 'graph', accountId],
@@ -164,6 +165,18 @@ describe('App routing', () => {
       dashboardSpy.mockClear();
       renderApp(path);
       expect(dashboardSpy).not.toHaveBeenCalled();
+    }
+  });
+
+  it('does not fetch enriched graphs globally from the layout for non-instance routes', () => {
+    const enrichedSpy = vi.mocked(useEnrichedGraphQuery);
+    for (const path of ['/settings', '/accounts', '/workflows', '/protection-records', '/deployment']) {
+      enrichedSpy.mockClear();
+      renderApp(path);
+      expect(enrichedSpy).toHaveBeenCalled();
+      for (const call of enrichedSpy.mock.calls) {
+        expect(call[0]).toBeNull();
+      }
     }
   });
 

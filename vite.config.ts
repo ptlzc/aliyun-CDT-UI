@@ -4,16 +4,18 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 function resolveBase(): string {
-  const proxyUri = process.env.VSCODE_PROXY_URI;
-  if (proxyUri) {
-    const port = process.env.WEB_PORT || '3000';
-    const withPort = proxyUri.replaceAll('{{port}}', port);
-    try {
-      const url = new URL(withPort);
-      const base = url.pathname.endsWith('/') ? url.pathname : `${url.pathname}/`;
-      if (base && base !== '/') return base;
-    } catch {
-      // fall through to '/'
+  if (process.env.VITE_USE_PROXY_BASE === 'true') {
+    const proxyUri = process.env.VSCODE_PROXY_URI;
+    if (proxyUri) {
+      const port = process.env.WEB_PORT || '3000';
+      const withPort = proxyUri.replaceAll('{{port}}', port);
+      try {
+        const url = new URL(withPort);
+        const base = url.pathname.endsWith('/') ? url.pathname : `${url.pathname}/`;
+        if (base && base !== '/') return base;
+      } catch {
+        // fall through to '/'
+      }
     }
   }
   return '/';

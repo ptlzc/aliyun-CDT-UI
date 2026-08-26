@@ -1,7 +1,6 @@
 import {act, render, screen} from '@testing-library/react';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
-import {API_BASE_URL} from '@/lib/api/baseUrl';
 import type {ECSInstance} from '@/types';
 import SshModal from '@/pages/Instances/components/SshModal';
 
@@ -223,10 +222,9 @@ describe('SshModal', () => {
     expect(terminal.loadedAddons).toEqual([fitAddon, attachAddon]);
 
     const parsed = new URL(ws.url);
-    const apiProtocol = new URL(API_BASE_URL).protocol;
-    expect(parsed.protocol).toBe(apiProtocol === 'https:' ? 'wss:' : 'ws:');
-    expect(parsed.host).toBe(new URL(API_BASE_URL).host);
-    expect(parsed.pathname).toBe('/api/accounts/acc-1/ecs/i-1/ssh/ws');
+    expect(parsed.protocol).toBe(window.location.protocol === 'https:' ? 'wss:' : 'ws:');
+    expect(parsed.host).toBe(window.location.host);
+    expect(parsed.pathname.endsWith('/api/accounts/acc-1/ecs/i-1/ssh/ws')).toBe(true);
     expect(parsed.searchParams.get('host')).toBe('1.1.1.1');
     expect(parsed.searchParams.get('port')).toBe('22');
     expect(parsed.searchParams.get('user')).toBe('root');

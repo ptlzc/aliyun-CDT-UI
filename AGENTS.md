@@ -47,7 +47,8 @@ npm run check:size
 
 ## API client
 
-- `API_BASE_URL` (src/lib/api/baseUrl.ts) defaults to the same-origin Vite base (`/` or `/proxy/<port>/`), so the generated client turns `/api/...` into `/api/...` or `/proxy/<port>/api/...`; huma spec operation paths already include `/api`, so the base URL must not duplicate it.
+- `API_BASE_URL` (src/lib/api/baseUrl.ts) defaults to the same-origin Vite base (`/`), so the generated client turns `/api/...` into `/api/...`; huma spec operation paths already include `/api`, so the base URL must not duplicate it.
+- For code-server proxy deployments, set `VITE_USE_PROXY_BASE=true` and `VSCODE_PROXY_URI` to opt back into a `/proxy/<port>/` base and API path.
 - Dev Vite server proxies `/api` (including WebSocket) to `BACKEND_PROXY_TARGET` (compose default `http://backend:8080`).
 - `NEXT_PUBLIC_API_BASE_URL` / `VITE_API_BASE_URL` can still override the base when a direct backend URL is needed.
 - Regenerate the client from a live backend: start `./scripts/dev.sh up`, then run `npm run generate:api`.

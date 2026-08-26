@@ -20,8 +20,27 @@ function resolveBase(): string {
 }
 
 export default defineConfig(() => {
+  const base = resolveBase();
+  const backendProxyTarget = process.env.BACKEND_PROXY_TARGET || 'http://backend:8080';
+  const baseApiPath = `${base}api`;
+  const proxy = {
+    '/api': {
+      target: backendProxyTarget,
+      changeOrigin: true,
+      ws: true,
+    },
+    ...(base !== '/' ? {
+      [baseApiPath]: {
+        target: backendProxyTarget,
+        changeOrigin: true,
+        ws: true,
+        rewrite: (path: string) => path.startsWith(baseApiPath) ? `/api${path.slice(baseApiPath.length)}` : path,
+      },
+    } : {}),
+  };
+
   return {
-    base: resolveBase(),
+    base,
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
@@ -36,6 +55,7 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      proxy,
     },
     test: {
       environment: 'jsdom',

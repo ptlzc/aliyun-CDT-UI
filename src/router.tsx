@@ -21,6 +21,12 @@ import WorkflowsPage from './pages/Workflows';
  */
 export const appRoutes: RouteObject[] = [
   {
+    // Pure full-screen SSH terminal: intentionally outside the App layout so
+    // it has no sidebar/header/global chrome.
+    path: '/ssh/:accountId/:instanceId',
+    element: <SshTerminalPage />,
+  },
+  {
     path: '/',
     element: <App />,
     children: [
@@ -29,7 +35,6 @@ export const appRoutes: RouteObject[] = [
       {path: 'accounts', element: <AccountsPage />},
       {path: 'accounts/:accountId', element: <AccountsPage />},
       {path: 'instances', element: <InstancesPage />},
-      {path: 'ssh/:accountId/:instanceId', element: <SshTerminalPage />},
       {path: 'protection-records', element: <ProtectionRecordsPage />},
       {path: 'deployment', element: <DeploymentPage />},
       {path: 'workflows', element: <WorkflowsPage />},

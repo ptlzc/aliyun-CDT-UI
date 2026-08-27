@@ -201,8 +201,8 @@ describe('InstancesPage', () => {
 
     renderInstances();
 
-    expect(screen.getByText('Account A')).toBeInTheDocument();
-    expect(screen.getByText('Account B')).toBeInTheDocument();
+    expect(screen.getAllByText('Account A').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Account B').length).toBeGreaterThan(0);
     expect(screen.getByText('acc-1')).toBeInTheDocument();
     expect(screen.getByText('acc-2')).toBeInTheDocument();
     expect(screen.getAllByText('1 台实例')).toHaveLength(2);
@@ -298,7 +298,7 @@ describe('InstancesPage', () => {
     expect(screen.getByRole('button', {name: '停止'})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /连接 VNC/})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: '状态'})).toBeInTheDocument();
-    expect(screen.getByText('180 GB / 200 GB')).toBeInTheDocument();
+    expect(screen.getByText('180 GB')).toBeInTheDocument();
     expect(screen.getByText('当前速率: 22.5 Mbps')).toBeInTheDocument();
   });
 

@@ -10,23 +10,20 @@ import {
   mapAccountToViewModel,
   runtimeKeys,
   useCdtFreeQuotaQuery,
-  useEffectiveTrafficGovernanceQuery,
   useECSMetricsQuery,
   useECSVncUrlQuery,
   useEnrichedInstances,
   useStartECSInstanceMutation,
   useStopECSInstanceMutation,
 } from '../../features/runtime/hooks';
-import type {ApiEffectiveTrafficGovernance} from '../../lib/api/client';
 import type {CloudAccount, ECSInstance} from '../../types';
-import {actionLabelZh} from '../../utils/actionLabels';
-import CdtFreeQuotaCard from './components/CdtFreeQuotaCard';
+import AccountTrafficBar from './components/AccountTrafficBar';
 import InstanceCard from './components/InstanceCard';
 import InstanceFirewallModal from './components/InstanceFirewallModal';
 import InstanceMetricsModal from './components/InstanceMetricsModal';
 import OverQuotaConfirmModal from './components/OverQuotaConfirmModal';
 import VncModal from './components/VncModal';
-import {INSTANCE_STATUS_LABELS, SOURCE_LAYER_LABELS, sourceLayerBadgeClass} from './components/instanceLabels';
+import {INSTANCE_STATUS_LABELS} from './components/instanceLabels';
 
 /**
  * Instances page: search/filter orchestration, per-instance power/VNC/metrics
@@ -39,7 +36,6 @@ import {INSTANCE_STATUS_LABELS, SOURCE_LAYER_LABELS, sourceLayerBadgeClass} from
 export default function InstancesPage() {
   const {rawAccounts, instances, inventoryLoading} = useEnrichedInstances();
   const {openInstance} = useOutletContext<{openInstance: (instance: ECSInstance) => void}>();
-  const accountId = null;
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
   const [filterText, setFilterText] = useState('');
@@ -57,8 +53,7 @@ export default function InstancesPage() {
 
   const startMutation = useStartECSInstanceMutation();
   const stopMutation = useStopECSInstanceMutation();
-  const cdtQuotaQuery = useCdtFreeQuotaQuery(accountId);
-  const effectiveGovernanceQuery = useEffectiveTrafficGovernanceQuery(accountId);
+  const cdtQuotaQuery = useCdtFreeQuotaQuery(null);
 
   // VNC URL and instance metrics queries — only enabled for the active instance
   const activeInstance = instances.find((inst) => inst.id === activeVncId) || null;
@@ -228,14 +223,7 @@ export default function InstancesPage() {
       </div>
 
       {/* Account-level traffic panel: CDT free quota + effective governance source layer */}
-      {accountId && (
-        <div className="grid gap-4 md:grid-cols-2">
-          {cdtQuotaQuery.data && <CdtFreeQuotaCard snapshot={cdtQuotaQuery.data} />}
-          {effectiveGovernanceQuery.data && (
-            <EffectiveGovernanceCard data={effectiveGovernanceQuery.data} />
-          )}
-        </div>
-      )}
+      {/* Account-level traffic bar is rendered per account group below. */}
 
       {/* Bento Grid Layout */}
       {inventoryLoading && instances.length === 0 ? (
@@ -251,6 +239,12 @@ export default function InstancesPage() {
                 </h2>
                 <span className="text-xs text-secondary-ink">{group.items.length} 台实例</span>
               </div>
+              <AccountTrafficBar
+                accountName={group.accountName}
+                usage={group.items[0]?.accountTrafficUsage}
+                limit={group.items[0]?.accountTrafficLimit}
+                unit={group.items[0]?.accountTrafficUnit}
+              />
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
                 {group.items.map((instance) => (
                   <InstanceCard
@@ -331,33 +325,6 @@ export default function InstancesPage() {
         />
       )}
     </div>
-  );
-}
-
-/**
- * Effective governance source layer panel for the account scope.
- *
- * @when 实例页带有 accountId 且生效治理快照可用时渲染
- */
-function EffectiveGovernanceCard({data}: {data: ApiEffectiveTrafficGovernance}) {
-  return (
-    <section className="rounded-lg border border-hairline-divider bg-surface-white p-6 shadow-xs">
-      <h2 className="font-space text-lg font-bold text-primary-ink">生效治理来源</h2>
-      <p className="mt-1 text-xs text-secondary-ink">当前账号生效的累计流量治理规则来源层级。</p>
-      <div className="mt-4 flex items-center gap-3">
-        <span
-          className={`inline-flex items-center gap-1.5 rounded border px-2.5 py-1 text-[10px] font-bold ${
-            sourceLayerBadgeClass(SOURCE_LAYER_LABELS[data.sourceLayer] || data.sourceLayer)
-          }`}
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-current" />
-          {SOURCE_LAYER_LABELS[data.sourceLayer] || data.sourceLayer}
-        </span>
-        <span className="text-xs text-secondary-ink">
-          上限 {data.maximumTrafficGb} GB · 溢出 {actionLabelZh(data.overflowAction)}
-        </span>
-      </div>
-    </section>
   );
 }
 

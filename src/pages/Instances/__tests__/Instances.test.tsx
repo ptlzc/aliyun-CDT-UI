@@ -298,7 +298,7 @@ describe('InstancesPage', () => {
     expect(screen.getByRole('button', {name: '停止'})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /连接 VNC/})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: '状态'})).toBeInTheDocument();
-    expect(screen.getByText('180 GB')).toBeInTheDocument();
+    expect(screen.getByText('180.00 GB')).toBeInTheDocument();
     expect(screen.getByText('当前速率: 22.5 Mbps')).toBeInTheDocument();
   });
 

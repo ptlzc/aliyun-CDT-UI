@@ -10,6 +10,7 @@ import {
   deleteAccount,
   deleteRegionGroup,
   getCdtFreeQuota,
+  getCdtTotalTraffic,
   getEffectiveTrafficGovernance,
   getPlatformTrafficGovernance,
   listAccounts,
@@ -45,6 +46,7 @@ import {
   type ApiResourceGraph,
   type ApiTrafficAuditPage,
   type ApiTrafficGovernanceDefaults,
+  type ApiTrafficMeasurement,
   type ApiTrafficPolicy,
   type ApiTrafficPolicyRequest,
   type ApiTrafficQuotaSnapshot,
@@ -440,6 +442,15 @@ export function useCdtFreeQuotaQuery(accountId: string | null) {
   });
 }
 
+export function useCdtTotalTrafficQuery(accountId: string | null) {
+  return useQuery<ApiTrafficMeasurement>({
+    queryKey: ['cdt-total-traffic', accountId],
+    queryFn: () => getCdtTotalTraffic(accountId!),
+    enabled: Boolean(accountId),
+    staleTime: 30_000,
+  });
+}
+
 /**
  * Action audits for one account with optional server-side filters (see
  * TrafficAuditFilters). Data is the {items, total} page shape; total is the
@@ -556,6 +567,14 @@ export function useEnrichedInstances() {
       enabled: Boolean(accountId),
     })),
   }) as Array<{data?: ApiTrafficPolicy[]; isLoading: boolean}>;
+  const totalTrafficQueries = useQueries({
+    queries: accountIds.map((accountId) => ({
+      queryKey: ['cdt-total-traffic', accountId],
+      queryFn: () => getCdtTotalTraffic(accountId),
+      enabled: Boolean(accountId),
+      staleTime: 30_000,
+    })),
+  }) as Array<{data?: ApiTrafficMeasurement; isLoading: boolean}>;
 
   const instances = useMemo(() => {
     const graphs = accountIds
@@ -565,8 +584,18 @@ export function useEnrichedInstances() {
       accountId,
       policyQueries[index]?.data || [],
     ])) as Record<string, ApiTrafficPolicy[]>;
-    return mapGraphToInstances(graphs, accountsQuery.data || [], policiesByAccount);
-  }, [accountIds, accountsQuery.data, graphQueries, policyQueries]);
+    const accountsById = Object.fromEntries((accountsQuery.data || []).map((account) => [account.id, account]));
+    return mapGraphToInstances(graphs, accountsQuery.data || [], policiesByAccount).map((instance) => {
+      const total = totalTrafficQueries[accountIds.indexOf(instance.accountId)]?.data;
+      const account = accountsById[instance.accountId];
+      if (total?.available) {
+        instance.accountTrafficUsage = total.value;
+        instance.accountTrafficUnit = total.unit || 'GB';
+      }
+      instance.accountTrafficLimit = account?.trafficGovernanceDefaults?.maximumTrafficGb || instance.trafficLimit;
+      return instance;
+    });
+  }, [accountIds, accountsQuery.data, graphQueries, policyQueries, totalTrafficQueries]);
 
   return {
     rawAccounts: accountsQuery.data || [],

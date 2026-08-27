@@ -4,7 +4,6 @@ import {Activity, AlertTriangle, Check, Copy, Monitor, RefreshCw, ShieldCheck, T
 import type {ECSInstance} from '../../../types';
 import {regionNameZh} from '../../../utils/regionNames';
 import {instanceStateLabel} from './instanceLabels';
-import InstanceSoftwarePanel from './InstanceSoftwarePanel';
 
 interface InstanceCardProps {
   instance: ECSInstance;
@@ -196,15 +195,15 @@ export default function InstanceCard({
   let progressVal = 0;
   let isWarningOnLimit = false;
 
-  if (instance.trafficUsage === null || instance.trafficLimit <= 0) {
+  const usedGb = instance.accountTrafficUsage ?? instance.trafficUsage;
+  const limitGb = instance.accountTrafficLimit ?? instance.trafficLimit;
+  const unit = (instance.accountTrafficUnit ?? instance.trafficUsageUnit) || 'GB';
+  if (usedGb === null || usedGb === undefined || limitGb <= 0) {
     trafficDisplayStr = isStopped ? '未运行' : '不可用';
     remainingDisplayStr = isStopped ? '剩余 -' : '剩余 -';
   } else {
-    const usedGb = instance.trafficUsage;
-    const limitGb = instance.trafficLimit;
     const remainingGb = Math.max(0, limitGb - usedGb);
     progressVal = Math.min(100, Math.floor((usedGb / limitGb) * 100));
-    const unit = instance.trafficUsageUnit || 'GB';
 
     if (limitGb >= 1000) {
       trafficDisplayStr = `${usedGb} ${unit} / ${(limitGb / 1000).toFixed(1)} TB`;
@@ -375,7 +374,7 @@ export default function InstanceCard({
             ) : (
               <>
                 <span className="block font-sans text-[10px] font-bold uppercase tracking-wider text-secondary-ink">
-                  {isStopped ? '剩余流量' : '累计流量监测'}
+                  {isStopped ? '剩余流量' : instance.accountTrafficUsage !== undefined ? '账号累计流量' : '累计流量监测'}
                 </span>
                 <div className="h-1.5 w-full overflow-hidden rounded-full border border-hairline-divider/30 bg-surface-white">
                   <div
@@ -404,7 +403,6 @@ export default function InstanceCard({
         )}
       </div>
 
-      <InstanceSoftwarePanel instance={instance} effectiveStatus={effectiveStatus} />
 
       {/* Warning box if Attention */}
       {effectiveStatus === 'Attention' && instance.alerts.length > 0 && (

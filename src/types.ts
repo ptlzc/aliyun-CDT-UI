@@ -57,6 +57,11 @@ export interface ECSInstance {
   trafficRateErrorReason?: string;
   trafficDetailsLoading?: boolean;
   trafficLimit: number;
+  /** Account-level CDT total used for the account-scoped traffic bar. */
+  accountTrafficUsage?: number;
+  /** Account-level CDT cap (e.g. 200 GB) for the account-scoped traffic bar. */
+  accountTrafficLimit?: number;
+  accountTrafficUnit?: string;
   monitoringEnabled: boolean;
   overflowAction: string;
   inherited: boolean;

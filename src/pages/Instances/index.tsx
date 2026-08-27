@@ -236,15 +236,16 @@ export default function InstancesPage() {
                 <h2 className="text-base font-bold text-primary-ink">
                   {group.accountName}
                   <span className="ml-2 text-xs font-normal text-secondary-ink">{group.accountId}</span>
+                  <span className="ml-3">
+                    <AccountTrafficBar
+                      usage={group.items[0]?.accountTrafficUsage}
+                      limit={group.items[0]?.accountTrafficLimit}
+                      unit={group.items[0]?.accountTrafficUnit}
+                    />
+                  </span>
                 </h2>
                 <span className="text-xs text-secondary-ink">{group.items.length} 台实例</span>
               </div>
-              <AccountTrafficBar
-                accountName={group.accountName}
-                usage={group.items[0]?.accountTrafficUsage}
-                limit={group.items[0]?.accountTrafficLimit}
-                unit={group.items[0]?.accountTrafficUnit}
-              />
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
                 {group.items.map((instance) => (
                   <InstanceCard

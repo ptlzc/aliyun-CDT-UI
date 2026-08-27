@@ -191,33 +191,13 @@ export default function InstanceCard({
 
   // Traffic indicators
   let trafficDisplayStr = '不可用';
-  let remainingDisplayStr = '';
-  let progressVal = 0;
-  let isWarningOnLimit = false;
 
   const usedGb = instance.accountTrafficUsage ?? instance.trafficUsage;
-  const limitGb = instance.accountTrafficLimit ?? instance.trafficLimit;
   const unit = (instance.accountTrafficUnit ?? instance.trafficUsageUnit) || 'GB';
-  if (usedGb === null || usedGb === undefined || limitGb <= 0) {
+  if (usedGb === null || usedGb === undefined) {
     trafficDisplayStr = isStopped ? '未运行' : '不可用';
-    remainingDisplayStr = isStopped ? '剩余 -' : '剩余 -';
   } else {
-    const remainingGb = Math.max(0, limitGb - usedGb);
-    progressVal = Math.min(100, Math.floor((usedGb / limitGb) * 100));
-
-    if (limitGb >= 1000) {
-      trafficDisplayStr = `${usedGb} ${unit} / ${(limitGb / 1000).toFixed(1)} TB`;
-    } else {
-      trafficDisplayStr = `${usedGb} ${unit} / ${limitGb} ${unit}`;
-    }
-
-    if (remainingGb >= 1000) {
-      remainingDisplayStr = `剩余 ${(remainingGb / 1000).toFixed(1)} TB`;
-    } else {
-      remainingDisplayStr = `剩余 ${remainingGb.toFixed(1)} ${unit}`;
-    }
-
-    if (progressVal > 80) isWarningOnLimit = true;
+    trafficDisplayStr = `${usedGb} ${unit}`;
   }
 
   const rateDisplayStr =
@@ -334,7 +314,7 @@ export default function InstanceCard({
           </div>
         </div>
 
-        {/* Traffic remaining display progress bar */}
+        {/* Traffic value display */}
         {detailsLoading ? (
           <TrafficDetailsSkeleton />
         ) : (
@@ -342,7 +322,7 @@ export default function InstanceCard({
             {trafficUsageErrorVariant ? (
               <>
                 <span className="block font-sans text-[10px] font-bold uppercase tracking-wider text-signal-amber">
-                  累计流量监测
+                  流量
                 </span>
                 <div
                   role={isPermissionNotice ? 'button' : undefined}
@@ -372,25 +352,12 @@ export default function InstanceCard({
                 </div>
               </>
             ) : (
-              <>
+              <div className="flex items-center justify-between">
                 <span className="block font-sans text-[10px] font-bold uppercase tracking-wider text-secondary-ink">
-                  {isStopped ? '剩余流量' : instance.accountTrafficUsage !== undefined ? '账号累计流量' : '累计流量监测'}
+                  流量
                 </span>
-                <div className="h-1.5 w-full overflow-hidden rounded-full border border-hairline-divider/30 bg-surface-white">
-                  <div
-                    className={`h-full rounded-full transition-all duration-300 ${
-                      isWarningOnLimit ? 'bg-recovery-red' : effectiveStatus === 'Attention' ? 'bg-signal-amber' : 'bg-primary-container'
-                    }`}
-                    style={{width: `${progressVal}%`}}
-                  />
-                </div>
-                <div className="flex items-center justify-between font-mono text-[10px] font-medium">
-                  <span className="text-primary-ink">{trafficDisplayStr}</span>
-                  <span className={isWarningOnLimit ? 'font-bold text-recovery-red' : 'text-secondary-ink'}>
-                    {remainingDisplayStr}
-                  </span>
-                </div>
-              </>
+                <span className="font-mono text-[10px] font-medium text-primary-ink">{trafficDisplayStr}</span>
+              </div>
             )}
             <div className="flex items-center justify-between font-mono text-[10px] text-secondary-ink">
               <span>当前速率: {rateDisplayStr}</span>

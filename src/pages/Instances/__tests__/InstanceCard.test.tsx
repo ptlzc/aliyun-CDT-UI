@@ -128,10 +128,10 @@ describe('InstanceCard bss-* cumulative traffic usage branches', () => {
     expect(screen.getByText('自定义出账原因')).toBeInTheDocument();
   });
 
-  it('renders the progress bar instead of an error notice for bss-cumulative with data', () => {
+  it('renders the traffic value instead of an error notice for bss-cumulative with data', () => {
     renderCard({trafficUsageSource: 'bss-cumulative', trafficUsage: 180});
 
-    expect(screen.getByText('180 GB / 200 GB')).toBeInTheDocument();
+    expect(screen.getByText('180 GB')).toBeInTheDocument();
     expect(screen.queryByText(/暂无 CDT 出账明细/)).not.toBeInTheDocument();
   });
 });

@@ -25,7 +25,6 @@ import InstanceCard from './components/InstanceCard';
 import InstanceFirewallModal from './components/InstanceFirewallModal';
 import InstanceMetricsModal from './components/InstanceMetricsModal';
 import OverQuotaConfirmModal from './components/OverQuotaConfirmModal';
-import SshModal from './components/SshModal';
 import VncModal from './components/VncModal';
 import {INSTANCE_STATUS_LABELS, SOURCE_LAYER_LABELS, sourceLayerBadgeClass} from './components/instanceLabels';
 
@@ -49,7 +48,6 @@ export default function InstancesPage() {
   // Interactive UI states per instance (SSH + VNC + state modal, power via backend API)
   const [activeStateModalId, setActiveStateModalId] = useState<string | null>(null);
   const [activeVncId, setActiveVncId] = useState<string | null>(null);
-  const [activeSshId, setActiveSshId] = useState<string | null>(null);
   const [activeFirewallId, setActiveFirewallId] = useState<string | null>(null);
   const [pendingStartInstance, setPendingStartInstance] = useState<ECSInstance | null>(null);
   const [tempState, setTempState] = useState<{[key: string]: 'starting' | 'stopping' | null}>({});
@@ -65,7 +63,6 @@ export default function InstancesPage() {
   // VNC URL and instance metrics queries — only enabled for the active instance
   const activeInstance = instances.find((inst) => inst.id === activeVncId) || null;
   const vncUrlQuery = useECSVncUrlQuery(activeInstance?.accountId || null, activeVncId, Boolean(activeVncId));
-  const activeSshInstance = instances.find((inst) => inst.id === activeSshId) || null;
   const activeFirewallInstance = instances.find((inst) => inst.id === activeFirewallId) || null;
   const stateModalInstance = instances.find((inst) => inst.id === activeStateModalId) || null;
   const metricsQuery = useECSMetricsQuery(stateModalInstance?.accountId || null, activeStateModalId, Boolean(activeStateModalId));
@@ -155,7 +152,8 @@ export default function InstancesPage() {
 
   // Open SSH terminal modal for the selected instance
   const openSsh = (instance: ECSInstance) => {
-    setActiveSshId(instance.id);
+    const url = `/ssh/${encodeURIComponent(instance.accountId)}/${encodeURIComponent(instance.id)}?host=${encodeURIComponent(instance.publicIp)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   // Permission notices on instance cards open the shared auth policy modal for
@@ -284,10 +282,6 @@ export default function InstancesPage() {
       )}
 
       {/* SSH Terminal Modal */}
-      {activeSshId && activeSshInstance && (
-        <SshModal instance={activeSshInstance} onClose={() => setActiveSshId(null)} />
-      )}
-
       {activeFirewallInstance && (
         <InstanceFirewallModal
           instance={activeFirewallInstance}

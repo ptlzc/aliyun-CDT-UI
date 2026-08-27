@@ -62,8 +62,8 @@ import type {
   SingBoxRuntimeInfo,
 } from './generated/instances/types.gen';
 import {client as jobsClient} from './generated/jobs/client.gen';
-import {getCdtFreeQuota as getCdtFreeQuotaRequest, listJobs as listJobsRequest, listTrafficAudits as listTrafficAuditsRequest, listTrafficPolicies as listTrafficPoliciesRequest, saveTrafficPolicy as saveTrafficPolicyRequest} from './generated/jobs/sdk.gen';
-import type {ActionAuditListResponse, Job, JobListResponse, ListTrafficAuditsData, TrafficPolicy, TrafficPolicyListResponse, TrafficPolicyRequest} from './generated/jobs/types.gen';
+import {getCdtFreeQuota as getCdtFreeQuotaRequest, getCdtTotalTraffic as getCdtTotalTrafficRequest, listJobs as listJobsRequest, listTrafficAudits as listTrafficAuditsRequest, listTrafficPolicies as listTrafficPoliciesRequest, saveTrafficPolicy as saveTrafficPolicyRequest} from './generated/jobs/sdk.gen';
+import type {ActionAuditListResponse, Job, JobListResponse, ListTrafficAuditsData, TrafficMeasurement, TrafficPolicy, TrafficPolicyListResponse, TrafficPolicyRequest} from './generated/jobs/types.gen';
 import {client as provisionClient} from './generated/provision/client.gen';
 import {continueOneClickDeployment as continueOneClickDeploymentRequest, createOneClickDeployment as createOneClickDeploymentRequest, provision as provisionRequest} from './generated/provision/sdk.gen';
 import type {ContinueOneClickDeploymentBody, ContinueOneClickDeploymentResponse, OneClickDeploymentBody, OneClickDeploymentResponse, ProvisionBody, ProvisionResponse2} from './generated/provision/types.gen';
@@ -146,6 +146,7 @@ export type ApiTrafficGovernanceDefaultsRequest = TrafficGovernanceDefaultsReque
 export type ApiTrafficPolicy = TrafficPolicy;
 export type ApiTrafficPolicyRequest = TrafficPolicyRequest;
 export type ApiTrafficQuotaSnapshot = TrafficQuotaSnapshot;
+export type ApiTrafficMeasurement = TrafficMeasurement;
 
 export type RuntimeEvent = {
   type: 'job.updated' | 'job.log.appended' | 'discovery.progress';
@@ -527,6 +528,10 @@ export async function getEffectiveTrafficGovernance(accountId: string): Promise<
 
 export async function getCdtFreeQuota(accountId: string): Promise<ApiTrafficQuotaSnapshot> {
   return unwrapData((await getCdtFreeQuotaRequest({path: {accountId}})) as GeneratedResult<ApiTrafficQuotaSnapshot>);
+}
+
+export async function getCdtTotalTraffic(accountId: string): Promise<ApiTrafficMeasurement> {
+  return unwrapData((await getCdtTotalTrafficRequest({path: {accountId}})) as GeneratedResult<ApiTrafficMeasurement>);
 }
 
 export interface CdtPermissionResult {

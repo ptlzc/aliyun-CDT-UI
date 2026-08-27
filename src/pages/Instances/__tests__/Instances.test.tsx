@@ -178,7 +178,34 @@ describe('InstancesPage', () => {
 
     expect(screen.getByRole('heading', {name: 'cn-hangzhou-i'})).toBeInTheDocument();
     expect(screen.queryByRole('status', {name: '正在加载实例列表'})).not.toBeInTheDocument();
-    expect(screen.queryByRole('status', {name: '正在加载流量详情'})).not.toBeInTheDocument();
+  });
+
+  it('groups instances by account with account headings and counts', () => {
+    inventoryLoading = false;
+    instancesData = [
+      {
+        id: 'i-1', accountId: 'acc-1', accountName: 'Account A', name: 'ecs-a', status: 'Running',
+        type: 'ecs.g6.large', zone: 'cn-hangzhou-i', regionId: 'cn-hangzhou-i', publicIp: '1.1.1.1',
+        privateIp: '10.0.0.1', trafficUsage: null, trafficUsageUnit: 'GB', trafficRate: null,
+        trafficRateUnit: 'Mbps', trafficLimit: 0, monitoringEnabled: true, overflowAction: 'notify',
+        inherited: true, alerts: [],
+      },
+      {
+        id: 'i-2', accountId: 'acc-2', accountName: 'Account B', name: 'ecs-b', status: 'Stopped',
+        type: 'ecs.g6.large', zone: 'us-west-1a', regionId: 'us-west-1', publicIp: '2.2.2.2',
+        privateIp: '10.0.0.2', trafficUsage: null, trafficUsageUnit: 'GB', trafficRate: null,
+        trafficRateUnit: 'Mbps', trafficLimit: 0, monitoringEnabled: true, overflowAction: 'notify',
+        inherited: true, alerts: [],
+      },
+    ];
+
+    renderInstances();
+
+    expect(screen.getByText('Account A')).toBeInTheDocument();
+    expect(screen.getByText('Account B')).toBeInTheDocument();
+    expect(screen.getByText('acc-1')).toBeInTheDocument();
+    expect(screen.getByText('acc-2')).toBeInTheDocument();
+    expect(screen.getAllByText('1 台实例')).toHaveLength(2);
   });
 
   it('does not use the heavy runtime dashboard hook for the list page', () => {

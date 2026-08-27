@@ -83,6 +83,24 @@ export default function InstancesPage() {
     });
   }, [filterText, instances, statusFilter, statusOverride]);
 
+  const groupedByAccount = useMemo(() => {
+    const groups = new Map<string, ECSInstance[]>();
+    for (const instance of filtered) {
+      const key = instance.accountId || instance.accountName || 'unknown';
+      const list = groups.get(key);
+      if (list) {
+        list.push(instance);
+      } else {
+        groups.set(key, [instance]);
+      }
+    }
+    return Array.from(groups.entries()).map(([accountId, items]) => ({
+      accountId,
+      accountName: items[0]?.accountName || accountId,
+      items,
+    }));
+  }, [filtered]);
+
   // Power toggle via backend start/stop API
   // For start: pre-check CDT free quota; if over capacity, require confirmation
   const togglePower = async (instance: ECSInstance, currentStatus: ECSInstance['status']) => {
@@ -226,25 +244,36 @@ export default function InstancesPage() {
         <InstanceSkeletonGrid />
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
-            {filtered.map((instance) => (
-              <InstanceCard
-                key={instance.id}
-                instance={instance}
-                detailsLoading={false}
-                loadingStatus={tempState[instance.id]}
-                effectiveStatus={statusOverride[instance.id] || instance.status}
-                powerError={powerError[instance.id]}
-                onTogglePower={togglePower}
-                onOpenVnc={openVnc}
-                onOpenSsh={openSsh}
-                onOpenFirewall={(inst) => setActiveFirewallId(inst.id)}
-                onToggleStateModal={(inst) => setActiveStateModalId(activeStateModalId === inst.id ? null : inst.id)}
-                onManageInstance={openInstance}
-                onViewPolicy={openPolicyModal}
-              />
-            ))}
-          </div>
+          {groupedByAccount.map((group) => (
+            <section key={group.accountId} className="flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b border-hairline-divider pb-2">
+                <h2 className="text-base font-bold text-primary-ink">
+                  {group.accountName}
+                  <span className="ml-2 text-xs font-normal text-secondary-ink">{group.accountId}</span>
+                </h2>
+                <span className="text-xs text-secondary-ink">{group.items.length} 台实例</span>
+              </div>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
+                {group.items.map((instance) => (
+                  <InstanceCard
+                    key={instance.id}
+                    instance={instance}
+                    detailsLoading={false}
+                    loadingStatus={tempState[instance.id]}
+                    effectiveStatus={statusOverride[instance.id] || instance.status}
+                    powerError={powerError[instance.id]}
+                    onTogglePower={togglePower}
+                    onOpenVnc={openVnc}
+                    onOpenSsh={openSsh}
+                    onOpenFirewall={(inst) => setActiveFirewallId(inst.id)}
+                    onToggleStateModal={(inst) => setActiveStateModalId(activeStateModalId === inst.id ? null : inst.id)}
+                    onManageInstance={openInstance}
+                    onViewPolicy={openPolicyModal}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
 
           {filtered.length === 0 && (
             <div className="rounded border border-dashed border-hairline-divider bg-surface-white p-10 text-center text-sm text-secondary-ink">

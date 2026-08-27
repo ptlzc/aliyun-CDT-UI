@@ -302,8 +302,10 @@ describe('InstancesPage', () => {
     expect(screen.getByText('当前速率: 22.5 Mbps')).toBeInTheDocument();
   });
 
-  it('opens the SSH terminal modal when SSH login is clicked', async () => {
+  it('opens the SSH terminal in a new tab when SSH login is clicked', async () => {
     const user = userEvent.setup();
+    const openSpy = vi.fn();
+    vi.stubGlobal('open', openSpy);
     cdtData = null;
     governanceData = null;
     instancesData = [
@@ -334,13 +336,12 @@ describe('InstancesPage', () => {
 
     await user.click(screen.getByRole('button', {name: /SSH 登录/}));
 
-    expect(screen.getByText('连接中')).toBeInTheDocument();
-    expect(sshModalRenderMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        instance: expect.objectContaining({id: 'i-1', accountId: 'acc-1'}),
-        onClose: expect.any(Function),
-      }),
+    expect(openSpy).toHaveBeenCalledWith(
+      '/ssh/acc-1/i-1?host=1.1.1.1',
+      '_blank',
+      'noopener,noreferrer',
     );
+    expect(screen.queryByText('连接中')).not.toBeInTheDocument();
   });
 
   it('opens the scoped firewall modal from an instance card', async () => {

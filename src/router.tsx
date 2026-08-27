@@ -7,6 +7,7 @@ import DeploymentPage from './pages/Deployment';
 import InstancesPage from './pages/Instances';
 import ProtectionRecordsPage from './pages/ProtectionRecords';
 import SettingsPage from './pages/Settings';
+import SshTerminalPage from './pages/SshTerminal';
 import WorkflowsPage from './pages/Workflows';
 
 /**
@@ -28,6 +29,7 @@ export const appRoutes: RouteObject[] = [
       {path: 'accounts', element: <AccountsPage />},
       {path: 'accounts/:accountId', element: <AccountsPage />},
       {path: 'instances', element: <InstancesPage />},
+      {path: 'ssh/:accountId/:instanceId', element: <SshTerminalPage />},
       {path: 'protection-records', element: <ProtectionRecordsPage />},
       {path: 'deployment', element: <DeploymentPage />},
       {path: 'workflows', element: <WorkflowsPage />},

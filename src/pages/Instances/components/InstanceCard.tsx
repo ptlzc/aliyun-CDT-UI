@@ -3,7 +3,7 @@ import {Activity, AlertTriangle, Check, Copy, Monitor, RefreshCw, ShieldCheck, T
 
 import type {ECSInstance} from '../../../types';
 import {regionNameZh} from '../../../utils/regionNames';
-import {instanceStateLabel} from './instanceLabels';
+import {formatTrafficValue, instanceStateLabel} from './instanceLabels';
 
 interface InstanceCardProps {
   instance: ECSInstance;
@@ -197,7 +197,7 @@ export default function InstanceCard({
   if (usedGb === null || usedGb === undefined) {
     trafficDisplayStr = isStopped ? '未运行' : '不可用';
   } else {
-    trafficDisplayStr = `${usedGb} ${unit}`;
+    trafficDisplayStr = `${formatTrafficValue(usedGb)} ${unit}`;
   }
 
   const rateDisplayStr =

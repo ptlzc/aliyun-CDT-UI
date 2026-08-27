@@ -1,4 +1,4 @@
-import {quotaBarColor} from './instanceLabels';
+import {formatTrafficValue, quotaBarColor} from './instanceLabels';
 
 interface AccountTrafficBarProps {
   accountName: string;
@@ -25,7 +25,7 @@ export default function AccountTrafficBar({accountName, usage, limit, unit = 'GB
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-primary-ink">{accountName}</h3>
         <span className="font-mono text-xs font-medium text-primary-ink">
-          {unavailable ? '不可用' : `${safeUsage} ${unit} / ${safeLimit} ${unit}`}
+          {unavailable ? '不可用' : `${formatTrafficValue(safeUsage)} ${unit} / ${formatTrafficValue(safeLimit)} ${unit}`}
         </span>
       </div>
       {!unavailable && (

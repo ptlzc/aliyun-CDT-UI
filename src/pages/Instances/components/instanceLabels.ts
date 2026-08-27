@@ -42,3 +42,7 @@ export function quotaBarColor(usedGb: number, capacityGb: number): string {
   }
   return 'bg-healthy-green';
 }
+
+export function formatTrafficValue(value: number): string {
+  return value.toFixed(2);
+}

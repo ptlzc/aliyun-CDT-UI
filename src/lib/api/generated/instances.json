@@ -632,6 +632,7 @@
               "stop-instance",
               "start-instance",
               "detach-eip",
+              "release-eip",
               "release-instance"
             ],
             "type": "string"
@@ -667,6 +668,7 @@
               "stop-instance",
               "start-instance",
               "detach-eip",
+              "release-eip",
               "release-instance"
             ],
             "type": "string"
@@ -690,6 +692,7 @@
               "stop-instance",
               "start-instance",
               "detach-eip",
+              "release-eip",
               "release-instance"
             ],
             "type": "string"
@@ -707,6 +710,7 @@
               "stop-instance",
               "start-instance",
               "detach-eip",
+              "release-eip",
               "release-instance"
             ],
             "type": "string"
@@ -1334,6 +1338,12 @@
           "singBoxConfig": {
             "type": "string"
           },
+          "sourceAccountId": {
+            "type": "string"
+          },
+          "sourceImageId": {
+            "type": "string"
+          },
           "sourceInstanceId": {
             "type": "string"
           },
@@ -1355,6 +1365,12 @@
             "type": "integer"
           },
           "tailscaleAuthKey": {
+            "type": "string"
+          },
+          "tailscaleForceReauth": {
+            "type": "boolean"
+          },
+          "tailscaleLoginServer": {
             "type": "string"
           },
           "zoneId": {
@@ -1619,6 +1635,7 @@
               "stop-instance",
               "start-instance",
               "detach-eip",
+              "release-eip",
               "release-instance"
             ],
             "type": "string"
@@ -1632,6 +1649,7 @@
               "stop-instance",
               "start-instance",
               "detach-eip",
+              "release-eip",
               "release-instance"
             ],
             "type": "string"
@@ -1992,6 +2010,7 @@
               "stop-instance",
               "start-instance",
               "detach-eip",
+              "release-eip",
               "release-instance"
             ],
             "type": "string"
@@ -2006,6 +2025,7 @@
               "stop-instance",
               "start-instance",
               "detach-eip",
+              "release-eip",
               "release-instance"
             ],
             "type": "string"
@@ -2036,6 +2056,7 @@
               "stop-instance",
               "start-instance",
               "detach-eip",
+              "release-eip",
               "release-instance"
             ],
             "type": "string"
@@ -2050,6 +2071,7 @@
               "stop-instance",
               "start-instance",
               "detach-eip",
+              "release-eip",
               "release-instance"
             ],
             "type": "string"

@@ -4,7 +4,7 @@
  * Mirrors the generated client union; kept here so form state can be typed
  * without reaching into generated files.
  */
-export type TrafficOverflowAction = 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+export type TrafficOverflowAction = 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-eip' | 'release-instance';
 
 export const ACTION_LABELS_ZH: Record<string, string> = {
   'notify': '通知',
@@ -12,6 +12,7 @@ export const ACTION_LABELS_ZH: Record<string, string> = {
   'stop-instance': '停止实例',
   'start-instance': '启动实例',
   'detach-eip': '解绑弹性公网 IP',
+  'release-eip': '释放弹性公网 IP',
   'release-instance': '释放实例',
 };
 

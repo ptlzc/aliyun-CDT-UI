@@ -81,8 +81,9 @@ describe('SettingsPage', () => {
 
     const actionSelect = screen.getByRole('combobox');
     const optionValues = Array.from(actionSelect.querySelectorAll('option')).map((option) => (option as HTMLOptionElement).value);
-    expect(optionValues).toEqual(['notify', 'keepalive-job', 'stop-instance', 'start-instance', 'detach-eip', 'release-instance']);
+    expect(optionValues).toEqual(['notify', 'keepalive-job', 'stop-instance', 'start-instance', 'detach-eip', 'release-eip', 'release-instance']);
     expect(screen.getByRole('option', {name: '停止实例'})).toBeInTheDocument();
+    expect(screen.getByRole('option', {name: '释放弹性公网 IP'})).toBeInTheDocument();
     expect(screen.getByRole('option', {name: '释放实例'})).toBeInTheDocument();
 
     expect(screen.getByLabelText('溢出停止阈值（GB）')).toBeInTheDocument();

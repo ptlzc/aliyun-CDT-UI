@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CheckCdtPermissionData, CheckCdtPermissionErrors, CheckCdtPermissionResponses, CreateAccountData, CreateAccountErrors, CreateAccountResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, GetAccountData, GetAccountErrors, GetAccountResponses, ListAccountsData, ListAccountsErrors, ListAccountsResponses, ListRegionsData, ListRegionsErrors, ListRegionsForAccountData, ListRegionsForAccountErrors, ListRegionsForAccountResponses, ListRegionsResponses, UpdateAccountData, UpdateAccountErrors, UpdateAccountResponses, ValidateAccountByIdData, ValidateAccountByIdErrors, ValidateAccountByIdResponses, ValidateAccountData, ValidateAccountErrors, ValidateAccountResponses } from './types.gen';
+import type { CheckCdtPermissionData, CheckCdtPermissionErrors, CheckCdtPermissionResponses, CreateAccountData, CreateAccountErrors, CreateAccountResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, GetAccountData, GetAccountErrors, GetAccountResponses, ListAccountsData, ListAccountsErrors, ListAccountsResponses, ListRegionsData, ListRegionsErrors, ListRegionsForAccountData, ListRegionsForAccountErrors, ListRegionsForAccountResponses, ListRegionsResponses, ReleaseAccountEipData, ReleaseAccountEipErrors, ReleaseAccountEipResponses, UpdateAccountData, UpdateAccountErrors, UpdateAccountResponses, ValidateAccountByIdData, ValidateAccountByIdErrors, ValidateAccountByIdResponses, ValidateAccountData, ValidateAccountErrors, ValidateAccountResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -61,6 +61,8 @@ export const updateAccount = <ThrowOnError extends boolean = false>(options: Opt
 });
 
 export const checkCdtPermission = <ThrowOnError extends boolean = false>(options: Options<CheckCdtPermissionData, ThrowOnError>): RequestResult<CheckCdtPermissionResponses, CheckCdtPermissionErrors, ThrowOnError> => (options.client ?? client).get<CheckCdtPermissionResponses, CheckCdtPermissionErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/cdt-permission', ...options });
+
+export const releaseAccountEip = <ThrowOnError extends boolean = false>(options: Options<ReleaseAccountEipData, ThrowOnError>): RequestResult<ReleaseAccountEipResponses, ReleaseAccountEipErrors, ThrowOnError> => (options.client ?? client).delete<ReleaseAccountEipResponses, ReleaseAccountEipErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/eips/{allocationId}', ...options });
 
 export const listRegionsForAccount = <ThrowOnError extends boolean = false>(options: Options<ListRegionsForAccountData, ThrowOnError>): RequestResult<ListRegionsForAccountResponses, ListRegionsForAccountErrors, ThrowOnError> => (options.client ?? client).get<ListRegionsForAccountResponses, ListRegionsForAccountErrors, ThrowOnError>({ url: '/api/accounts/{accountId}/regions', ...options });
 

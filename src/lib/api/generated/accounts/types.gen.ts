@@ -173,7 +173,7 @@ export type EcsTrafficGovernance = {
 export type EcsTrafficGovernanceOverride = {
     maximumTrafficGb?: number;
     monitoringEnabled?: boolean;
-    overflowAction?: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    overflowAction?: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-eip' | 'release-instance';
 };
 
 export type EcsVncUrlResponse = {
@@ -183,16 +183,16 @@ export type EcsVncUrlResponse = {
 export type EcsGovernanceOverrideBody = {
     maximumTrafficGb?: number;
     monitoringEnabled?: boolean;
-    overflowAction?: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    overflowAction?: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-eip' | 'release-instance';
 };
 
 export type EffectiveTrafficGovernance = {
     maximumTrafficGb: number;
     monitoringEnabled: boolean;
-    overflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    overflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-eip' | 'release-instance';
     overflowThresholdGb: number;
     sourceLayer: string;
-    underflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    underflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-eip' | 'release-instance';
 };
 
 export type ErrorResponse = {
@@ -369,6 +369,8 @@ export type OneClickDeploymentBody = {
     s3ObjectKey?: string;
     s3Region?: string;
     singBoxConfig?: string;
+    sourceAccountId?: string;
+    sourceImageId?: string;
     sourceInstanceId?: string;
     spotPriceLimit?: number;
     storageProvider?: string;
@@ -376,6 +378,8 @@ export type OneClickDeploymentBody = {
     systemDiskPerformanceLevel?: string;
     systemDiskSize?: number;
     tailscaleAuthKey?: string;
+    tailscaleForceReauth?: boolean;
+    tailscaleLoginServer?: string;
     zoneId?: string;
 };
 
@@ -450,9 +454,9 @@ export type RegionGroupListResponse = {
 export type RegionGroupTrafficRule = {
     maximumTrafficGb: number;
     monitoringEnabled: boolean;
-    overflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    overflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-eip' | 'release-instance';
     regionGroupId?: string;
-    underflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    underflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-eip' | 'release-instance';
 };
 
 export type ResourceEdge = {
@@ -550,17 +554,17 @@ export type TrafficEvaluationListResponse = {
 export type TrafficGovernanceDefaults = {
     maximumTrafficGb: number;
     monitoringEnabled: boolean;
-    overflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    overflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-eip' | 'release-instance';
     overflowThresholdGb: number;
-    underflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    underflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-eip' | 'release-instance';
 };
 
 export type TrafficGovernanceDefaultsRequest = {
     maximumTrafficGb: number;
     monitoringEnabled?: boolean;
-    overflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    overflowAction: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-eip' | 'release-instance';
     overflowThresholdGb?: number;
-    underflowAction?: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-instance';
+    underflowAction?: 'notify' | 'stop-instance' | 'start-instance' | 'detach-eip' | 'release-eip' | 'release-instance';
 };
 
 export type TrafficMeasurement = {
@@ -830,6 +834,34 @@ export type CheckCdtPermissionResponses = {
 };
 
 export type CheckCdtPermissionResponse = CheckCdtPermissionResponses[keyof CheckCdtPermissionResponses];
+
+export type ReleaseAccountEipData = {
+    body?: never;
+    path: {
+        accountId: string;
+        allocationId: string;
+    };
+    query?: never;
+    url: '/api/accounts/{accountId}/eips/{allocationId}';
+};
+
+export type ReleaseAccountEipErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ReleaseAccountEipError = ReleaseAccountEipErrors[keyof ReleaseAccountEipErrors];
+
+export type ReleaseAccountEipResponses = {
+    /**
+     * OK
+     */
+    200: ActionAudit;
+};
+
+export type ReleaseAccountEipResponse = ReleaseAccountEipResponses[keyof ReleaseAccountEipResponses];
 
 export type ListRegionsForAccountData = {
     body?: never;

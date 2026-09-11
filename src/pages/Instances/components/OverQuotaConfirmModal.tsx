@@ -39,17 +39,17 @@ export default function OverQuotaConfirmModal({instance, quotaSnapshot, onCancel
             <div className="flex-1">
               <h3 className="text-base font-bold text-primary-ink">启动确认</h3>
               <p className="mt-1 text-sm text-secondary-ink">
-                当前 CDT 免费额度已超出容量，启动实例可能产生额外流量费用。是否确认启动？
+                当前 CDT 免费额度已用满，继续使用将按量产生流量费用。是否确认启动？
               </p>
               <div className="mt-3 rounded border border-signal-amber/30 bg-signal-amber/5 p-3 text-xs">
-                {quotaSnapshot.domesticUsedGb > quotaSnapshot.domesticCapacityGb && (
+                {quotaSnapshot.domesticUsedGb >= quotaSnapshot.domesticCapacityGb && (
                   <div className="text-signal-amber">
-                    中国内地: {quotaSnapshot.domesticUsedGb} / {quotaSnapshot.domesticCapacityGb} GB（已超容量）
+                    中国内地: {quotaSnapshot.domesticUsedGb} / {quotaSnapshot.domesticCapacityGb} GB（免费额度已用满）
                   </div>
                 )}
-                {quotaSnapshot.internationalUsedGb > quotaSnapshot.internationalCapacityGb && (
+                {quotaSnapshot.internationalUsedGb >= quotaSnapshot.internationalCapacityGb && (
                   <div className="text-signal-amber">
-                    非中国内地: {quotaSnapshot.internationalUsedGb} / {quotaSnapshot.internationalCapacityGb} GB（已超容量）
+                    非中国内地: {quotaSnapshot.internationalUsedGb} / {quotaSnapshot.internationalCapacityGb} GB（免费额度已用满）
                   </div>
                 )}
               </div>

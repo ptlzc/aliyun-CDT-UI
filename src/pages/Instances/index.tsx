@@ -9,15 +9,16 @@ import {
   enrichedKeys,
   mapAccountToViewModel,
   runtimeKeys,
-  useCdtFreeQuotaQuery,
   useECSMetricsQuery,
   useECSVncUrlQuery,
   useEnrichedInstances,
   useStartECSInstanceMutation,
   useStopECSInstanceMutation,
 } from '../../features/runtime/hooks';
+import {useCdtFreeQuotaQueries} from '../../features/runtime/trafficQuotaHooks';
 import type {CloudAccount, ECSInstance} from '../../types';
 import AccountTrafficBar from './components/AccountTrafficBar';
+import CdtFreeQuotaCard from './components/CdtFreeQuotaCard';
 import InstanceCard from './components/InstanceCard';
 import InstanceFirewallModal from './components/InstanceFirewallModal';
 import InstanceMetricsModal from './components/InstanceMetricsModal';
@@ -53,7 +54,9 @@ export default function InstancesPage() {
 
   const startMutation = useStartECSInstanceMutation();
   const stopMutation = useStopECSInstanceMutation();
-  const cdtQuotaQuery = useCdtFreeQuotaQuery(null);
+  // Official CDT free quota per account (Aliyun bill source). Accounts whose
+  // snapshot is unavailable simply have no map entry.
+  const quotaByAccount = useCdtFreeQuotaQueries(rawAccounts.map((account) => account.id));
 
   // VNC URL and instance metrics queries — only enabled for the active instance
   const activeInstance = instances.find((inst) => inst.id === activeVncId) || null;
@@ -94,18 +97,18 @@ export default function InstancesPage() {
   }, [filtered]);
 
   // Power toggle via backend start/stop API
-  // For start: pre-check CDT free quota; if over capacity, require confirmation
+  // For start: pre-check the owning account's CDT free quota; require a
+  // confirmation once either category has used up its monthly allowance.
   const togglePower = async (instance: ECSInstance, currentStatus: ECSInstance['status']) => {
     if (tempState[instance.id]) return;
 
     const isStarting = currentStatus === 'Stopped';
 
-    // Pre-check: if starting and CDT quota data shows over-capacity, prompt for confirmation
-    if (isStarting && cdtQuotaQuery.data) {
-      const snapshot = cdtQuotaQuery.data;
-      const domesticOver = snapshot.domesticUsedGb > snapshot.domesticCapacityGb;
-      const internationalOver = snapshot.internationalUsedGb > snapshot.internationalCapacityGb;
-      if (domesticOver || internationalOver) {
+    if (isStarting) {
+      const snapshot = quotaByAccount.get(instance.accountId);
+      const domesticUsedUp = snapshot ? snapshot.domesticUsedGb >= snapshot.domesticCapacityGb : false;
+      const internationalUsedUp = snapshot ? snapshot.internationalUsedGb >= snapshot.internationalCapacityGb : false;
+      if (domesticUsedUp || internationalUsedUp) {
         setPendingStartInstance(instance);
         return;
       }
@@ -174,6 +177,10 @@ export default function InstancesPage() {
     });
   };
 
+  const pendingQuotaSnapshot = pendingStartInstance
+    ? quotaByAccount.get(pendingStartInstance.accountId)
+    : undefined;
+
   return (
     <div className="flex flex-col gap-6 font-sans">
       {/* Top action header section */}
@@ -230,43 +237,47 @@ export default function InstancesPage() {
         <InstanceSkeletonGrid />
       ) : (
         <>
-          {groupedByAccount.map((group) => (
-            <section key={group.accountId} className="flex flex-col gap-4">
-              <div className="flex items-center justify-between border-b border-hairline-divider pb-2">
-                <h2 className="text-base font-bold text-primary-ink">
-                  {group.accountName}
-                  <span className="ml-2 text-xs font-normal text-secondary-ink">{group.accountId}</span>
-                  <span className="ml-3">
-                    <AccountTrafficBar
-                      usage={group.items[0]?.accountTrafficUsage}
-                      limit={group.items[0]?.accountTrafficLimit}
-                      unit={group.items[0]?.accountTrafficUnit}
+          {groupedByAccount.map((group) => {
+            const quotaSnapshot = quotaByAccount.get(group.accountId);
+            return (
+              <section key={group.accountId} className="flex flex-col gap-4">
+                <div className="flex items-center justify-between border-b border-hairline-divider pb-2">
+                  <h2 className="text-base font-bold text-primary-ink">
+                    {group.accountName}
+                    <span className="ml-2 text-xs font-normal text-secondary-ink">{group.accountId}</span>
+                    <span className="ml-3">
+                      <AccountTrafficBar
+                        usage={group.items[0]?.accountTrafficUsage}
+                        limit={group.items[0]?.accountTrafficLimit}
+                        unit={group.items[0]?.accountTrafficUnit}
+                      />
+                    </span>
+                  </h2>
+                  <span className="text-xs text-secondary-ink">{group.items.length} 台实例</span>
+                </div>
+                {quotaSnapshot && <CdtFreeQuotaCard snapshot={quotaSnapshot} />}
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
+                  {group.items.map((instance) => (
+                    <InstanceCard
+                      key={instance.id}
+                      instance={instance}
+                      detailsLoading={false}
+                      loadingStatus={tempState[instance.id]}
+                      effectiveStatus={statusOverride[instance.id] || instance.status}
+                      powerError={powerError[instance.id]}
+                      onTogglePower={togglePower}
+                      onOpenVnc={openVnc}
+                      onOpenSsh={openSsh}
+                      onOpenFirewall={(inst) => setActiveFirewallId(inst.id)}
+                      onToggleStateModal={(inst) => setActiveStateModalId(activeStateModalId === inst.id ? null : inst.id)}
+                      onManageInstance={openInstance}
+                      onViewPolicy={openPolicyModal}
                     />
-                  </span>
-                </h2>
-                <span className="text-xs text-secondary-ink">{group.items.length} 台实例</span>
-              </div>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
-                {group.items.map((instance) => (
-                  <InstanceCard
-                    key={instance.id}
-                    instance={instance}
-                    detailsLoading={false}
-                    loadingStatus={tempState[instance.id]}
-                    effectiveStatus={statusOverride[instance.id] || instance.status}
-                    powerError={powerError[instance.id]}
-                    onTogglePower={togglePower}
-                    onOpenVnc={openVnc}
-                    onOpenSsh={openSsh}
-                    onOpenFirewall={(inst) => setActiveFirewallId(inst.id)}
-                    onToggleStateModal={(inst) => setActiveStateModalId(activeStateModalId === inst.id ? null : inst.id)}
-                    onManageInstance={openInstance}
-                    onViewPolicy={openPolicyModal}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
+                  ))}
+                </div>
+              </section>
+            );
+          })}
 
           {filtered.length === 0 && (
             <div className="rounded border border-dashed border-hairline-divider bg-surface-white p-10 text-center text-sm text-secondary-ink">
@@ -307,11 +318,11 @@ export default function InstancesPage() {
         />
       )}
 
-      {/* Start Confirmation Modal — when CDT free quota is exceeded */}
-      {pendingStartInstance && cdtQuotaQuery.data && (
+      {/* Start Confirmation Modal — when the account's CDT free quota is used up */}
+      {pendingStartInstance && pendingQuotaSnapshot && (
         <OverQuotaConfirmModal
           instance={pendingStartInstance}
-          quotaSnapshot={cdtQuotaQuery.data}
+          quotaSnapshot={pendingQuotaSnapshot}
           onCancel={() => setPendingStartInstance(null)}
           onConfirm={confirmStartOverQuota}
         />

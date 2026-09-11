@@ -132,10 +132,15 @@ vi.mock('../features/runtime/hooks', () => ({
   useSaveTrafficPolicyMutation: () => ({mutate: vi.fn(), isPending: false}),
   useStartECSInstanceMutation: () => ({mutateAsync: vi.fn(), mutate: vi.fn(), isPending: false}),
   useStopECSInstanceMutation: () => ({mutateAsync: vi.fn(), mutate: vi.fn(), isPending: false}),
-  useCdtFreeQuotaQuery: () => ({data: null, isLoading: false}),
   useEffectiveTrafficGovernanceQuery: () => ({data: null, isLoading: false}),
   useECSVncUrlQuery: () => ({data: null, isLoading: false}),
   useECSMetricsQuery: () => ({data: null, isLoading: false}),
+}));
+
+// CDT free quota snapshots come from their own hook module (official Aliyun
+// bill source); the routing suite only needs an empty snapshot map.
+vi.mock('../features/runtime/trafficQuotaHooks', () => ({
+  useCdtFreeQuotaQueries: () => new Map(),
 }));
 
 vi.mock('../features/runtime/events', () => ({

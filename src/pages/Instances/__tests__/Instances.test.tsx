@@ -7,14 +7,15 @@ import InstancesPage from '../index';
 import CdtFreeQuotaCard from '../components/CdtFreeQuotaCard';
 import {INSTANCE_STATUS_LABELS, SOURCE_LAYER_LABELS, sourceLayerBadgeClass} from '../components/instanceLabels';
 
-const {useRuntimeDashboardMock, useEnrichedInstancesMock} = vi.hoisted(() => ({
+const {useRuntimeDashboardMock, useEnrichedInstancesMock, startInstanceMutateAsyncMock} = vi.hoisted(() => ({
   useRuntimeDashboardMock: vi.fn(),
   useEnrichedInstancesMock: vi.fn(),
+  startInstanceMutateAsyncMock: vi.fn().mockResolvedValue(undefined),
 }));
 
 let instancesData: any[] = [];
 let rawAccountsData: any[] = [];
-let cdtData: any = null;
+let quotaByAccount: Record<string, any> = {};
 let governanceData: any = null;
 let inventoryLoading = false;
 
@@ -52,14 +53,27 @@ vi.mock('../../../features/runtime/hooks', async (importOriginal) => {
         monitoringEnabled: true,
       },
     }),
-    useStartECSInstanceMutation: () => ({mutateAsync: vi.fn(), mutate: vi.fn(), isPending: false}),
+    useStartECSInstanceMutation: () => ({mutateAsync: startInstanceMutateAsyncMock, mutate: vi.fn(), isPending: false}),
     useStopECSInstanceMutation: () => ({mutateAsync: vi.fn(), mutate: vi.fn(), isPending: false}),
-    useCdtFreeQuotaQuery: () => ({data: cdtData, isLoading: false}),
     useEffectiveTrafficGovernanceQuery: () => ({data: governanceData, isLoading: false}),
     useECSVncUrlQuery: () => ({data: null, isLoading: false}),
     useECSMetricsQuery: () => ({data: null, isLoading: false}),
   };
 });
+
+// Official CDT free quota snapshots (Aliyun bill source) are fetched per
+// account through their own hook module.
+vi.mock('../../../features/runtime/trafficQuotaHooks', () => ({
+  useCdtFreeQuotaQueries: (accountIds: string[]) => {
+    const map = new Map<string, any>();
+    accountIds.forEach((accountId) => {
+      if (quotaByAccount[accountId]) {
+        map.set(accountId, quotaByAccount[accountId]);
+      }
+    });
+    return map;
+  },
+}));
 
 const {invalidateQueriesMock} = vi.hoisted(() => ({
   invalidateQueriesMock: vi.fn().mockResolvedValue(undefined),
@@ -108,6 +122,45 @@ beforeEach(() => {
   useEnrichedInstancesMock.mockClear();
 });
 
+function accountFixture() {
+  return {
+    id: 'acc-1',
+    name: 'Account A',
+    siteType: 'domestic',
+    regionId: 'cn-hangzhou',
+    accessKeyId: 'ak',
+    accessKeySecret: 'secret',
+    regions: ['cn-hangzhou'],
+    createdAt: '2026-06-17T00:00:00Z',
+    updatedAt: '2026-06-17T00:00:00Z',
+  };
+}
+
+function instanceFixture(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'i-1',
+    accountId: 'acc-1',
+    accountName: 'Account A',
+    name: 'ecs-a',
+    status: 'Running',
+    type: 'ecs.g6.large',
+    zone: 'cn-hangzhou-i',
+    regionId: 'cn-hangzhou-i',
+    publicIp: '1.1.1.1',
+    privateIp: '10.0.0.1',
+    trafficUsage: null,
+    trafficUsageUnit: 'GB',
+    trafficRate: null,
+    trafficRateUnit: 'Mbps',
+    trafficLimit: 0,
+    monitoringEnabled: true,
+    overflowAction: 'notify',
+    inherited: true,
+    alerts: [],
+    ...overrides,
+  };
+}
+
 function renderInstances() {
   const router = createMemoryRouter(
     [
@@ -125,7 +178,7 @@ function renderInstances() {
 
 describe('CdtFreeQuotaCard', () => {
   it('renders domestic and international progress bars with used / capacity values', () => {
-    cdtData = null;
+    quotaByAccount = {};
 
     render(
       <CdtFreeQuotaCard
@@ -221,7 +274,7 @@ describe('InstancesPage', () => {
   });
 
   it('renders the list header without the account-level CDT card by default', () => {
-    cdtData = null;
+    quotaByAccount = {};
     governanceData = null;
     instancesData = [];
 
@@ -236,7 +289,7 @@ describe('InstancesPage', () => {
 
   it('sync button invalidates graph/jobs/accounts only (targeted, no full invalidate)', async () => {
     const user = userEvent.setup();
-    cdtData = null;
+    quotaByAccount = {};
     governanceData = null;
     instancesData = [];
     invalidateQueriesMock.mockClear();
@@ -263,7 +316,7 @@ describe('InstancesPage', () => {
   });
 
   it('renders an instance card per filtered instance', () => {
-    cdtData = null;
+    quotaByAccount = {};
     governanceData = null;
     instancesData = [
       {
@@ -306,7 +359,7 @@ describe('InstancesPage', () => {
     const user = userEvent.setup();
     const openSpy = vi.fn();
     vi.stubGlobal('open', openSpy);
-    cdtData = null;
+    quotaByAccount = {};
     governanceData = null;
     instancesData = [
       {
@@ -367,7 +420,7 @@ describe('InstancesPage', () => {
 
   it('opens the shared auth policy modal when a permission notice is clicked', async () => {
     const user = userEvent.setup();
-    cdtData = null;
+    quotaByAccount = {};
     governanceData = null;
     rawAccountsData = [
       {
@@ -421,6 +474,87 @@ describe('InstancesPage', () => {
     expect(screen.getAllByText(/cdt:ListCdtInternetTraffic/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/bss:QueryInstanceBill/).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', {name: '关闭'})).toBeInTheDocument();
+  });
+
+  it('renders the official CDT free quota card for an account with a snapshot', () => {
+    quotaByAccount = {
+      'acc-1': {
+        billingMonth: '2026-09',
+        collectedAt: '2026-09-11T00:00:00Z',
+        dataDelayHours: 3,
+        domesticCapacityGb: 20,
+        domesticRemainingGb: 20,
+        domesticUsedGb: 0,
+        internationalCapacityGb: 200,
+        internationalRemainingGb: 0,
+        internationalUsedGb: 200,
+      },
+    };
+    rawAccountsData = [accountFixture()];
+    instancesData = [instanceFixture()];
+
+    renderInstances();
+
+    expect(screen.getByText('CDT 免费额度')).toBeInTheDocument();
+    expect(screen.getByText('0 / 20 GB')).toBeInTheDocument();
+    expect(screen.getByText('200 / 200 GB')).toBeInTheDocument();
+    expect(screen.getByText('账单月份: 2026-09')).toBeInTheDocument();
+  });
+
+  it('renders no quota card when the account snapshot is unavailable', () => {
+    quotaByAccount = {};
+    rawAccountsData = [accountFixture()];
+    instancesData = [instanceFixture()];
+
+    renderInstances();
+
+    expect(screen.queryByText('CDT 免费额度')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', {name: 'cn-hangzhou-i'})).toBeInTheDocument();
+  });
+
+  it('requires confirmation before starting an instance whose account used up the free quota', async () => {
+    const user = userEvent.setup();
+    startInstanceMutateAsyncMock.mockClear();
+    quotaByAccount = {
+      'acc-1': {
+        billingMonth: '2026-09',
+        collectedAt: '2026-09-11T00:00:00Z',
+        dataDelayHours: 3,
+        domesticCapacityGb: 20,
+        domesticRemainingGb: 20,
+        domesticUsedGb: 0,
+        internationalCapacityGb: 200,
+        internationalRemainingGb: 0,
+        internationalUsedGb: 200,
+      },
+    };
+    rawAccountsData = [accountFixture()];
+    instancesData = [instanceFixture({status: 'Stopped'})];
+
+    renderInstances();
+    await user.click(screen.getByRole('button', {name: '启动'}));
+
+    expect(screen.getByText(/当前 CDT 免费额度已用满/)).toBeInTheDocument();
+    expect(screen.getByText(/非中国内地: 200 \/ 200 GB/)).toBeInTheDocument();
+    expect(startInstanceMutateAsyncMock).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', {name: '确认启动'}));
+
+    await waitFor(() => expect(startInstanceMutateAsyncMock).toHaveBeenCalledWith({accountId: 'acc-1', instanceId: 'i-1'}));
+  });
+
+  it('starts an instance without confirmation when the account quota snapshot is unavailable', async () => {
+    const user = userEvent.setup();
+    startInstanceMutateAsyncMock.mockClear();
+    quotaByAccount = {};
+    rawAccountsData = [accountFixture()];
+    instancesData = [instanceFixture({status: 'Stopped'})];
+
+    renderInstances();
+    await user.click(screen.getByRole('button', {name: '启动'}));
+
+    expect(screen.queryByText(/当前 CDT 免费额度已用满/)).not.toBeInTheDocument();
+    await waitFor(() => expect(startInstanceMutateAsyncMock).toHaveBeenCalledWith({accountId: 'acc-1', instanceId: 'i-1'}));
   });
 });
 

@@ -9,7 +9,6 @@ import {
   createRegionGroup,
   deleteAccount,
   deleteRegionGroup,
-  getCdtFreeQuota,
   getCdtTotalTraffic,
   getEffectiveTrafficGovernance,
   getPlatformTrafficGovernance,
@@ -49,7 +48,6 @@ import {
   type ApiTrafficMeasurement,
   type ApiTrafficPolicy,
   type ApiTrafficPolicyRequest,
-  type ApiTrafficQuotaSnapshot,
   type CdtPermissionResult,
   type TrafficAuditFilters,
   validateAccount,
@@ -336,15 +334,6 @@ export function useEffectiveTrafficGovernanceQuery(accountId: string | null) {
     queryKey: ['effective-traffic-governance', accountId],
     queryFn: () => getEffectiveTrafficGovernance(accountId!),
     enabled: Boolean(accountId),
-  });
-}
-
-export function useCdtFreeQuotaQuery(accountId: string | null) {
-  return useQuery<ApiTrafficQuotaSnapshot>({
-    queryKey: ['cdt-free-quota', accountId],
-    queryFn: () => getCdtFreeQuota(accountId!),
-    enabled: Boolean(accountId),
-    refetchInterval: 60_000,
   });
 }
 

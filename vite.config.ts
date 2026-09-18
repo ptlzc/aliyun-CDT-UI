@@ -65,6 +65,10 @@ export default defineConfig(() => {
       globals: true,
       include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
       exclude: ['scripts/**/*.test.mjs'],
+      // The self-hosted CI runner is slow enough that heavy form tests
+      // (Deployment, InstanceFirewallModal) blow the 5000ms vitest default.
+      testTimeout: 20000,
+      hookTimeout: 20000,
     },
   };
 });

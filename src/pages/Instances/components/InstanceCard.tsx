@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {Activity, AlertTriangle, Check, Copy, Monitor, RefreshCw, ShieldCheck, Terminal} from 'lucide-react';
 
 import type {ECSInstance} from '../../../types';
@@ -175,6 +175,8 @@ export default function InstanceCard({
 
   // Copy feedback: which IP cell currently shows the Check icon (null = none).
   const [copiedField, setCopiedField] = useState<'public' | 'private' | null>(null);
+  const copyResetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(copyResetTimer.current), []);
 
   /**
    * Copies an IP to the clipboard and flips its cell to a Check feedback for
@@ -186,7 +188,8 @@ export default function InstanceCard({
   const handleCopyIp = (field: 'public' | 'private', text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2000);
+    clearTimeout(copyResetTimer.current);
+    copyResetTimer.current = setTimeout(() => setCopiedField(null), 2000);
   };
 
   // Traffic indicators
